@@ -41,6 +41,15 @@ main :: () {
 
     gl_load(*gl);
 
+    imgui_context := ImGui.CreateContext();
+    ImGui.SetCurrentContext(imgui_context);
+    ImGui_ImplSdl_Init(window);
+
+    // Setup style
+    ImGui.StyleColorsDark();
+
+    io := ImGui.GetIO();
+
     glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
     glEnable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);
@@ -62,7 +71,7 @@ main :: () {
     input := Input_State.{};
     last_refresh_time := seconds_since_init();
     just_reloaded_dll := false;
-    
+    print("Type: %\n", type_of(imgui_context));
     while input.window_closed == false {
         curr_time := seconds_since_init();
         time := curr_time - last_refresh_time;
@@ -78,7 +87,7 @@ main :: () {
 
         poll_input(*input);
         if global_game_code.UpdateAndRender != null {
-            global_game_code.UpdateAndRender(game_memory, *input, window, *just_reloaded_dll);
+            global_game_code.UpdateAndRender(game_memory, *input, window, *just_reloaded_dll, imgui_context);
         }
     }
 
@@ -102,4 +111,5 @@ VSYNC :: true;
 
 #load "math.jai";
 #load "input.jai";
+#load "imgui.jai";
 #load "win32/code_reload.jai";

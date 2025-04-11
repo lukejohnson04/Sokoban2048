@@ -6,19 +6,25 @@ Texture :: struct {
 
 load_texture :: (path: string) -> Texture {
     tex: Texture;
+
+    data := stbi_load(path.data, *tex.width, *tex.height, *tex.channels, 0);
+    if data == null {
+        print("No data!\n");
+        return tex;
+    }
+    
     glGenTextures(1, *tex.id);
     glBindTexture(GL_TEXTURE_2D, tex.id);
+    
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-    data := stbi_load(path.data, *tex.width, *tex.height, *tex.channels, 0);
-    if data {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, xx tex.width, xx tex.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-        glGenerateMipmap(GL_TEXTURE_2D);
-    } else {
-        print("No data!\n");
-    }
+    //glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, xx tex.width, xx tex.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+    glGenerateMipmap(GL_TEXTURE_2D);
+
     stbi_image_free(data);
+    glBindTexture(GL_TEXTURE_2D, 0);
     return tex;
 }
 

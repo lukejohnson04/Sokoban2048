@@ -46,12 +46,19 @@ poll_input :: (using input: *Input_State) {
 
     e : SDL_Event;
     while SDL_PollEvent(*e) {
+        ImGui_ImplSdl_ProcessEvent(*e);
+        io := ImGui.GetIO();
+        
         if e.type == SDL_KEYDOWN && e.key.repeat == 0 {
             input.just_pressed[e.key.keysym.scancode] = true;
             input.is_pressed[e.key.keysym.scancode] = true;
         } else if e.type == SDL_KEYUP {
             input.just_released[e.key.keysym.scancode] = true;
             input.is_pressed[e.key.keysym.scancode] = false;
+        }
+        
+        if (io.WantCaptureMouse) {
+            continue;
         }
 
         if e.type == SDL_MOUSEBUTTONDOWN && e.button.button == SDL_BUTTON_LEFT {

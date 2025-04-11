@@ -8,15 +8,21 @@ Game_State :: struct {
     quad_vbo : GLuint;
 
     sprites : Texture;
+    sprites_imgui : Texture;
 
     player_pos := v2i.{0,0};
 
-    level_num := 5;
+    level_num := 8;
 
     camera := Camera2D.{.{WINDOW_WIDTH/2, WINDOW_HEIGHT/2}, 1};
 
+    editor : Editor_State;
+    frame_number := 0;
+
     memory_initialized := false;
+
 }
+
 
 BLOCK_WALL :: 1000;
 BLOCK_BOULDER :: 1001;
@@ -197,13 +203,12 @@ on_startup :: (using game_state: *Game_State) {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     sprites = load_texture("data/sprites.png");
+    sprites_imgui = load_texture("data/sprites.png");
 
     create_shader(*texture_shader, "data/shaders/texture.vert", "data/shaders/texture.frag");
 
     use_shader(texture_shader);
     shader_uniform(texture_shader, "texture1", 0);
-
-    SDL_SetRelativeMouseMode(SDL_TRUE);
 
     player_pos = levels[level_num].player_start_pos;
 }

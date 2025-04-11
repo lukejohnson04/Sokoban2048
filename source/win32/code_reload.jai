@@ -1,7 +1,7 @@
 win32_game_code :: struct {
     dll: HMODULE;
     LastWriteTime: FILETIME;
-    UpdateAndRender: (*void, *Input_State, *SDL_Window, *bool) -> s32;
+    UpdateAndRender: (*void, *Input_State, *SDL_Window, *bool, *ImGui.ImGuiContext) -> s32;
     is_valid := false;
 };
 
@@ -28,7 +28,7 @@ LoadGameCode :: (game_code: *win32_game_code) {
 
     if (game_code.dll) {
         val := GetProcAddress(game_code.dll, "update_and_render");
-        game_code.UpdateAndRender = val.((*void, *Input_State, *SDL_Window, *bool) -> s32);
+        game_code.UpdateAndRender = val.((*void, *Input_State, *SDL_Window, *bool, *ImGui.ImGuiContext) -> s32);
         game_code.is_valid = val != null;
     } else {
         print("Couldn't load temporary DLL!\n");

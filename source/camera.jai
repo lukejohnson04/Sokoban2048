@@ -49,14 +49,15 @@ camera_view_matrix :: (using camera: Camera2D) -> Matrix4 {
 //     return view;
 // }
 
-// v2 GetMouseWorldPos(Camera *camera)
-// {
-//     v2i mPos = GetMousePosition();
-//     v2 pos = (v2)mPos;
-//     v2 screenCenter = {WINDOW_WIDTH/2.f, WINDOW_HEIGHT/2.f};
+get_mouse_world_pos :: (camera: Camera2D) -> Vector2 {
+    pos_x, pos_y := get_mouse_position();
+    pos := Vector2.{xx pos_x, xx pos_y};
+    
+    screenCenter := Vector2.{WINDOW_WIDTH/2, WINDOW_HEIGHT/2};
 
-//     v2 translated = pos - screenCenter;
-//     v2 scaled = translated * (1.f/camera->zoom);
-//     v2 worldPos = camera->pos + scaled + screenCenter;
-//     return worldPos;
-// }
+    translated := pos - screenCenter;
+    scaled := translated * (1/camera.zoom);
+    worldPos := camera.pos + scaled + screenCenter;
+
+    return worldPos;
+}

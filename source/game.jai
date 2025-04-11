@@ -1,16 +1,19 @@
-
 #program_export
-update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Window, just_reloaded_dll: *bool) -> s32 {
+update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Window, just_reloaded_dll: *bool, imgui_context: *ImGui.ImGuiContext) -> s32 {
     using game_state: *Game_State = xx game_memory;
     if memory_initialized == false {
+        ImGui.SetCurrentContext(imgui_context);
         on_startup(game_state);
         game_state.memory_initialized = true;
     }
 
     if just_reloaded_dll.* {
         gl_load(*gl);
+        ImGui.SetCurrentContext(imgui_context);
         just_reloaded_dll.* = false;
     }
+
+    frame_number += 1;
 
     if input.is_pressed[SDL_SCANCODE_ESCAPE] {
         input.window_closed = true;
@@ -18,6 +21,10 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     }
 
     // Input
+    if input.just_pressed[SDL_SCANCODE_GRAVE] {
+        editor.open ^= true;
+    }
+
     move := v2i.{0, 0};
     if input.just_pressed[SDL_SCANCODE_LEFT] {
         move.x = -1;
@@ -39,10 +46,6 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     if move != .{0, 0} {
         success := player_move(game_state, move);
         if success {
-            // Check for win
-            // if level.grid[level.goal_block_pos.x][level.goal_block_pos.y] == level.goal_block {
-                // beat_level = true;
-            // }
             beat_level = true;
             for x: 0..level.dimensions.x-1 {
                 for y: 0..level.dimensions.y-1 {
@@ -56,8 +59,80 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     }
 
 
-
     // Render begin
+    ImGui.SetNextWindowBgAlpha(1);    
+    ImGui_ImplSdl_NewFrame(window);
+    ImGui.NewFrame();
+
+    ImGui.Begin("Window");
+    draw_list := ImGui.GetWindowDrawList();
+    {
+        window_pos := ImGui.GetCursorScreenPos();
+
+        tile_scale :: 4;
+        tile_size :: 16 * tile_scale;
+        source := ImGui.ImVec2.{xx sprites_imgui.width, xx sprites_imgui.height};
+        dest := ImGui.ImVec2.{xx (sprites_imgui.width * tile_scale), xx (sprites_imgui.height * tile_scale)};
+
+        draw_list.AddImage(draw_list, cast,no_check(*void)(sprites.id), window_pos, window_pos + dest);
+
+        // Selected tile
+        focused := ImGui.IsItemActive();
+        mouse_x, mouse_y := get_mouse_position();
+
+        highlighted := false;
+        highlighted_block : int;
+        highlighted_xy : Vector2;
+
+        if mouse_x >= xx window_pos.x && mouse_x < xx window_pos.x + sprites_imgui.width * tile_scale {
+            if mouse_y >= xx window_pos.y && mouse_y < xx window_pos.y + sprites_imgui.height * tile_scale {
+                highlighted_xy.x = floor((mouse_x - window_pos.x) / tile_size);
+                highlighted_xy.y = floor((mouse_y - window_pos.y) / tile_size);
+
+                highlighted_block = xx (highlighted_xy.x + highlighted_xy.y * 8);
+                highlighted = true;
+            }
+        }
+    
+        if focused && highlighted {
+            if ImGui.IsMouseDown(ImGui.MouseButton.Left) {
+                real := highlighted_block;
+                if highlighted_block == 2 {
+                    real = BLOCK_BOULDER;
+                } else if highlighted_block == 3 {
+                    real = BLOCK_WALL;
+                } else if highlighted_block >= 8 {
+                    real = highlighted_block - 7;
+                }
+                editor.selected_block = real;
+                editor.selected_block_pos = highlighted_xy;
+            }
+        }
+
+        if highlighted && editor.selected_block_pos != highlighted_xy {
+            p1 := ImGui.ImVec2.{highlighted_xy.x * tile_size, highlighted_xy.y * tile_size};
+            p2 := p1 + .{tile_size, 0};
+            p3 := p1 + .{tile_size, tile_size};
+            p4 := p1 + .{0, tile_size};
+            colf := Vector4.{1, 1, 0, 1};
+            
+            draw_list.AddQuad(draw_list, window_pos + p1, window_pos + p2, window_pos + p3, window_pos + p4, ImGui.GetColorU32(colf), 2);
+        }
+
+        if editor.selected_block {
+            p1 := ImGui.ImVec2.{editor.selected_block_pos.x * tile_size, editor.selected_block_pos.y * tile_size};
+            p2 := p1 + .{tile_size, 0};
+            p3 := p1 + .{tile_size, tile_size};
+            p4 := p1 + .{0, tile_size};
+            colf := Vector4.{0, 1, 0, 1};
+            
+            draw_list.AddQuad(draw_list, window_pos + p1, window_pos + p2, window_pos + p3, window_pos + p4, ImGui.GetColorU32(colf), 2);
+        }
+    }
+    ImGui.End();
+
+    // Rendering
+
     glClearColor(0.35, 0.5, 0.9, 1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -94,36 +169,43 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     shader_uniform(texture_shader, "grayscale", 0);
 
     bind_texture(sprites);
+
+    mouse_world_pos := get_mouse_world_pos(camera);
+    mouse_tile := v2i.{xx (mouse_world_pos.x / 64), xx (mouse_world_pos.y / 64)};
+    if input.mouse_just_pressed {
+        if mouse_tile.x >= 0 && mouse_tile.y >= 0 && mouse_tile.x < level.dimensions.x && mouse_tile.y < level.dimensions.y {
+            level.grid[mouse_tile.x][mouse_tile.y] = editor.selected_block;
+        }
+    }
     
     for x: 0..level.dimensions.x-1 {
         for y: 0..level.dimensions.y-1 {
-            source : Rect;
-            grayscale := false;
+            source, dest : Rect;
+            block := level.grid[x][y];
             if player_pos == v2i.{xx x, xx y} {
                 source = Rect.{16,0,16,16};
-            } else if level.grid[x][y] > 0 {
-                if level.grid[x][y] == BLOCK_BOULDER {
-                    source = Rect.{32,0,16,16};
-                } else if level.grid[x][y] == BLOCK_WALL{
-                    source = Rect.{48,0,16,16};
-                } else {
-                    source = Rect.{xx ((level.grid[x][y]-1) * 16),16,16,16};
-                }
-            } else if level.grid[x][y] < 0 {
-                source = Rect.{xx ((abs(level.grid[x][y])-1) * 16),16,16,16};
-                shader_uniform(texture_shader, "grayscale", 1);
-                grayscale = true;
+            } else if mouse_tile == .{x, y} {
+                source = get_block_source(editor.selected_block);
             } else {
-                source = Rect.{0,0,16,16};
+                source = get_block_source(block);
             }
-            dest := Rect.{xx (x*64), xx (y*64), 64, 64};
+
+            dest = Rect.{xx (x*64), xx (y*64), 64, 64};
+            if block < 0 {
+                shader_uniform(texture_shader, "grayscale", 1);
+            }
+
             draw_texture(source, dest, *sprites, intermediate_vao, intermediate_vbo);
-            if grayscale {
+            if block < 0 {
                 shader_uniform(texture_shader, "grayscale", 0);
             }
         }
     }
 
+
+    ImGui.Render();
+
+    ImGui_ImplSdl_RenderDrawLists(ImGui.GetDrawData());
 
     SDL_GL_SwapWindow(window);
     render_end_time := seconds_since_init();
@@ -160,6 +242,9 @@ VSYNC :: true;
 
 Random :: #import "Random";
 
+#load "imgui.jai";
 #load "math.jai";
 #load "input.jai";
 #load "move.jai";
+#load "editor.jai";
+#load "block.jai";
