@@ -13,7 +13,7 @@ Input_State :: struct {
 
     mouse_motion : v2i;
 
-    window_closed : bool;
+    just_closed_window : bool;
 
     sdl_joystick: *SDL_Joystick;
     joystick: Joystick_State;
@@ -33,8 +33,8 @@ poll_input :: (using input: *Input_State) {
     input.mouse_just_released = false;
     input.rmouse_just_pressed = false;
     input.rmouse_just_released = false;
+    input.just_closed_window = false;
     input.mouse_motion = .{0, 0};
-    input.window_closed = false;
 
     if SDL_NumJoysticks() > 0 && sdl_joystick == null {
         sdl_joystick = SDL_JoystickOpen(0);
@@ -56,7 +56,12 @@ poll_input :: (using input: *Input_State) {
             input.just_released[e.key.keysym.scancode] = true;
             input.is_pressed[e.key.keysym.scancode] = false;
         }
-        
+
+        if e.type == SDL_QUIT {
+            input.just_closed_window = true;
+            return;
+        }
+
         if (io.WantCaptureMouse) {
             continue;
         }
@@ -105,12 +110,6 @@ poll_input :: (using input: *Input_State) {
                     }
                 }
             }
-        }
-
-
-        if e.type == SDL_QUIT {
-            input.window_closed = false;
-            return;
         }
     }
 }

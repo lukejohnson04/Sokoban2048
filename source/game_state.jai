@@ -20,7 +20,6 @@ Game_State :: struct {
     frame_number := 0;
 
     memory_initialized := false;
-
 }
 
 
@@ -33,8 +32,6 @@ Level :: struct {
     dimensions := v2i.{4, 4};
     grid: [MAX_WIDTH][MAX_HEIGHT]int;
 
-    goal_block_pos : v2i;
-    goal_block := 3;
     player_start_pos := v2i.{0, 0};
 }
 
