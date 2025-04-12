@@ -14,10 +14,13 @@ Game_State :: struct {
     camera := Camera2D.{.{WINDOW_WIDTH/2, WINDOW_HEIGHT/2}, 1};
     editor : Editor_State;
 
+    move_stack : Move_Stack;
+
     frame_number := 0;
 
     memory_initialized := false;
 }
+
 
 
 on_startup :: (using game_state: *Game_State) {

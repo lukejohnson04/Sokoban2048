@@ -1,0 +1,13 @@
+2 modes to test
+Generic sokoban mode.
+Sokoban 2048 but moving left moves every block including the player left. So the player is like a crushing mechanism to crush blocks together.
+
+Goal blocks you can push around?
+Solving a goal block gives you its remainder?
+Solving a goal block makes it disappear?
+Player can combine with other blocks
+Boulder block - block that you can push around, but can't be pushed by other blocks. You can use it as a prop block to setup combinations
+
+Secret puzzle where the big block from the previous room is brought in and used as a prop block (like the 1 blocks)
+
+Open world area full of secrets

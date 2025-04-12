@@ -43,6 +43,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
             move.y = 1;
         }
         if input.just_pressed[SDL_SCANCODE_R] {
+            move_undo(game_state);
             // Reset level
             
             // memcpy(*level, *levels_const[level_num], size_of(Level));
