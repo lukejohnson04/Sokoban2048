@@ -11,8 +11,6 @@ Level :: struct {
     id : u32 = 0;
 }
 
-#run print("%\n", size_of(Level));
-
 level_set_name :: (level: *Level, name: string) {
     assert(name.count <= MAX_LEVEL_NAME_LENGTH);
     memcpy(level.name.data, name.data, name.count);

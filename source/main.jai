@@ -71,7 +71,6 @@ main :: () {
     input := Input_State.{};
     last_refresh_time := seconds_since_init();
     just_reloaded_dll := false;
-    print("Type: %\n", type_of(imgui_context));
     while input.just_closed_window == false {
         curr_time := seconds_since_init();
         time := curr_time - last_refresh_time;
