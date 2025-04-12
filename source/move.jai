@@ -1,8 +1,8 @@
 player_move :: (using game_state: *Game_State, move: v2i) -> bool {
+    using level;
     new_pos := player_pos + move;
     success := false;
 
-    level := *levels[level_num];
     if new_pos.x < 0 || new_pos.x >= level.dimensions.x || new_pos.y < 0 || new_pos.y >= level.dimensions.y {
     } else if level.grid[new_pos.x][new_pos.y] == 0 {
         success = true;

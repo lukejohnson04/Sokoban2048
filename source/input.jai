@@ -114,8 +114,16 @@ poll_input :: (using input: *Input_State) {
     }
 }
 
-get_mouse_position :: () -> s32, s32 {
+get_mouse_position_explicit :: () -> s32, s32 {
     mouse_x, mouse_y : s32;
     SDL_GetMouseState(*mouse_x, *mouse_y);
     return mouse_x, mouse_y;
 }
+
+get_mouse_position :: () -> Vector2 {
+    mouse_x, mouse_y : s32;
+    SDL_GetMouseState(*mouse_x, *mouse_y);
+    res := Vector2.{xx mouse_x, xx mouse_y};
+    return res;
+}
+

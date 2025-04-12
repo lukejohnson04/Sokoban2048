@@ -4,7 +4,12 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     if memory_initialized == false {
         ImGui.SetCurrentContext(imgui_context);
         on_startup(game_state);
-        load_level("level", *levels[level_num]);
+
+        // Attempt recovery of last close
+        loaded_ini := load_ini_file(game_state);
+        if loaded_ini == false {
+            load_empty_level(*level);
+        }
         game_state.memory_initialized = true;
     }
 
@@ -21,11 +26,10 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     }
 
     if input.just_closed_window {
-        save_level(*levels[level_num]);
+        save_ini_file(game_state);
+        // save_level(*levels[level_num]);
         return 0;
     }
-
-    level := *levels[level_num];
 
     if editor.editing_level == false {
         move := v2i.{0, 0};
@@ -40,8 +44,9 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         }
         if input.just_pressed[SDL_SCANCODE_R] {
             // Reset level
-            memcpy(*levels[level_num], *levels_const[level_num], size_of(Level));
-            player_pos = levels[level_num].player_start_pos;
+            
+            // memcpy(*level, *levels_const[level_num], size_of(Level));
+            // player_pos = levels[level_num].player_start_pos;
         }
 
         if move != .{0, 0} {
@@ -69,11 +74,11 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     model := Matrix4_Identity;
 
     // camera deadzone
-    {
+    if editor.editing_level == false {
         DEADZONE_PERCENT :: 0.05;
         player_coord : Vector2;
-        player_coord.x = xx (player_pos.x * 64);
-        player_coord.y = xx (player_pos.y * 64);
+        player_coord.x = xx (level.player_pos.x * 64);
+        player_coord.y = xx (level.player_pos.y * 64);
         screen_center := Vector2.{WINDOW_WIDTH * 0.5, WINDOW_HEIGHT * 0.5};
         camera_dest := player_coord + Vector2.{32, 32} - screen_center;
         if abs(camera.pos.x - camera_dest.x) > WINDOW_WIDTH * DEADZONE_PERCENT {
@@ -82,9 +87,23 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         if abs(camera.pos.y - camera_dest.y) > WINDOW_HEIGHT * DEADZONE_PERCENT {
             camera.pos.y = lerp(camera.pos.y, camera_dest.y, 0.008);
         }
-        view = camera_view_matrix(camera);
+    } else if (SDL_GetWindowFlags(window) & SDL_WINDOW_INPUT_FOCUS) != 0 {
+        DEBUG_CAMERA_SPEED :: 12;
+        DEADZONE_PERCENT :: 0.01;
+        mouse_pos := get_mouse_position();
+        if mouse_pos.x >= WINDOW_WIDTH - WINDOW_WIDTH*DEADZONE_PERCENT {
+            camera.pos.x += DEBUG_CAMERA_SPEED;
+        } else if mouse_pos.x < WINDOW_WIDTH*DEADZONE_PERCENT {
+            camera.pos.x -= DEBUG_CAMERA_SPEED;
+        }
+        if mouse_pos.y >= WINDOW_HEIGHT - WINDOW_HEIGHT*DEADZONE_PERCENT {
+            camera.pos.y += DEBUG_CAMERA_SPEED;
+        } else if mouse_pos.y < WINDOW_HEIGHT*DEADZONE_PERCENT {
+            camera.pos.y -= DEBUG_CAMERA_SPEED;
+        }
     }
     
+    view = camera_view_matrix(camera);
     projection = orthographic_projection_matrix(0, WINDOW_WIDTH, WINDOW_HEIGHT, 0, -1, 1);
     projection = transpose(projection);
 
@@ -97,24 +116,26 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
 
     bind_texture(sprites);
 
-    mouse_world_pos := get_mouse_world_pos(camera);
-    mouse_tile := v2i.{xx (mouse_world_pos.x / 64), xx (mouse_world_pos.y / 64)};
-    if input.mouse_just_pressed || input.rmouse_just_pressed {
-        if mouse_tile.x >= 0 && mouse_tile.y >= 0 && mouse_tile.x < level.dimensions.x && mouse_tile.y < level.dimensions.y {
-            level.grid[mouse_tile.x][mouse_tile.y] = editor.selected_block;
-            if input.rmouse_just_pressed {
-                level.grid[mouse_tile.x][mouse_tile.y] *= -1;
-            }
-        }
+    if editor.editing_level {
+        update_editor(game_state, input);
     }
     
+    // Draw player spawn if in edit mode
+    if editor.editing_level {
+        source := get_block_source(BLOCK_PLAYER_SPAWN);
+        dest := Rect.{xx (level.player_spawn_pos.x*64), xx (level.player_spawn_pos.y*64), 64, 64};
+        draw_texture(source, dest, *sprites, intermediate_vao, intermediate_vbo);
+    }
+
     for x: 0..level.dimensions.x-1 {
         for y: 0..level.dimensions.y-1 {
             source, dest : Rect;
             block := level.grid[x][y];
-            if player_pos == v2i.{xx x, xx y} {
+
+            // Don't draw player in edit mode
+            if editor.editing_level == false && level.player_pos == v2i.{xx x, xx y} {
                 source = Rect.{16,0,16,16};
-            } else if mouse_tile == .{x, y} {
+            } else if editor.editing_level && editor.mouse_tile == .{x, y} {
                 source = get_block_source(editor.selected_block);
             } else {
                 source = get_block_source(block);
@@ -172,6 +193,5 @@ Random :: #import "Random";
 #load "math.jai";
 #load "input.jai";
 #load "move.jai";
-#load "editor.jai";
 #load "block.jai";
-#load "level_serializer.jai";
+#load "level/level.jai";
