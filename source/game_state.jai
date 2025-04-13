@@ -11,6 +11,8 @@ Game_State :: struct {
     sprites : Texture;
     sprites_imgui : Texture;
 
+    photograph_song : *Mix_Chunk;
+
     level : Level;
     just_got_photograph := false;
 
@@ -63,6 +65,8 @@ on_startup :: (using game_state: *Game_State) {
     shader_uniform(texture_shader, "texture1", 0);
 
     load_font_data(game_state);
+
+    photograph_song = Mix_LoadWAV("data/audio/photograph_song.ogg");
 }
 
 

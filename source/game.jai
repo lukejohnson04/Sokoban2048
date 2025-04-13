@@ -31,7 +31,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         return 0;
     }
 
-    if editor.editing_level == false {
+    if editor.editing_level == false && just_got_photograph == false {
         move := v2i.{0, 0};
         if input.just_pressed[SDL_SCANCODE_LEFT] {
             move.x = -1;
@@ -48,8 +48,16 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
 
         if move != .{0, 0} {
             player_move(game_state, move);
+            if just_got_photograph {
+                Mix_PlayChannel(0, photograph_song, 0);
+            }
         }
     }
+
+    if just_got_photograph && Mix_Playing(0) == 0 {
+        just_got_photograph = false;
+    }
+
 
     // Render begin
     ImGui_ImplSdl_NewFrame(window);
@@ -205,6 +213,7 @@ VSYNC :: true;
 #import "String";
 #import "SDL";
 #import "SDL_ttf";
+#import "SDL_mixer";
 #import "GL";
 #import "File";
 #import "stb_image";
