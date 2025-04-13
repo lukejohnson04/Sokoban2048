@@ -35,6 +35,18 @@ player_move :: (using game_state: *Game_State, move: v2i) -> bool {
         success = true;
 
         player_pos = new_pos;
+    } else if level.grid[new_pos.x][new_pos.y] == BLOCK_SIGNED_PHOTOGRAPH {
+        success = true;
+
+        player_pos = new_pos;
+
+        delta := add_move_delta(*delta_data);
+        delta.coord = new_pos;
+        delta.old_value = BLOCK_SIGNED_PHOTOGRAPH;
+        delta.new_value = 0;
+
+        level.grid[new_pos.x][new_pos.y] = 0;
+
     } else {
         stack : Stack(v2i);
 

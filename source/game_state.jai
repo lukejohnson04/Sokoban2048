@@ -1,6 +1,7 @@
 
 Game_State :: struct {
     texture_shader : Shader;
+    text_shader : Shader;
 
     intermediate_vao : GLuint;
     intermediate_vbo : GLuint;
@@ -11,6 +12,9 @@ Game_State :: struct {
     sprites_imgui : Texture;
 
     level : Level;
+
+    characters: [256] Character;
+    
     camera := Camera2D.{.{WINDOW_WIDTH/2, WINDOW_HEIGHT/2}, 1};
     editor : Editor_State;
 
@@ -52,9 +56,12 @@ on_startup :: (using game_state: *Game_State) {
     sprites_imgui = load_texture("data/sprites.png");
 
     create_shader(*texture_shader, "data/shaders/texture.vert", "data/shaders/texture.frag");
+    create_shader(*text_shader, "data/shaders/text.vert", "data/shaders/text.frag");
 
     use_shader(texture_shader);
     shader_uniform(texture_shader, "texture1", 0);
+
+    load_font_data(game_state);
 }
 
 

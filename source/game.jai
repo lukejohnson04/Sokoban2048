@@ -44,10 +44,6 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         }
         if input.just_pressed[SDL_SCANCODE_R] {
             move_undo(game_state);
-            // Reset level
-            
-            // memcpy(*level, *levels_const[level_num], size_of(Level));
-            // player_pos = levels[level_num].player_start_pos;
         }
 
         if move != .{0, 0} {
@@ -128,6 +124,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         draw_texture(source, dest, *sprites, intermediate_vao, intermediate_vbo);
     }
 
+
     for x: 0..level.dimensions.x-1 {
         for y: 0..level.dimensions.y-1 {
             source, dest : Rect;
@@ -156,7 +153,30 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         }
     }
 
+    // GUI Elements
+    {
+        glDisable(GL_DEPTH_TEST);
+        use_shader(text_shader);
+        gui_view := Matrix4_Identity;
+        shader_uniform(text_shader, "projection", *projection, false);
+        shader_uniform(text_shader, "view", *gui_view, true);
+        shader_uniform(text_shader, "model", *model, false);
+        shader_uniform(text_shader, "color", .{1, 1, 1, 1});
 
+        total_goal_blocks : int;
+        for x: 0..level.dimensions.x-1 {
+            for y: 0..level.dimensions.y-1 {
+                if level.grid[x][y] < 0 {
+                    total_goal_blocks += 1;
+                }
+            }
+        }
+
+        score_string := sprint("%", total_goal_blocks);
+        draw_text(score_string, .{32, 64}, characters, intermediate_vao, intermediate_vbo);
+        glEnable(GL_DEPTH_TEST);
+    }
+    
     ImGui.Render();
 
     ImGui_ImplSdl_RenderDrawLists(ImGui.GetDrawData());
@@ -174,6 +194,7 @@ WINDOW_HEIGHT :: 720;
 VSYNC :: true;
 
 #load "render/render.jai";
+#load "render/text.jai";
 #load "render/shader.jai";
 #load "camera.jai";
 #load "intrinsics.jai";
@@ -187,6 +208,7 @@ VSYNC :: true;
 #import "GL";
 #import "File";
 #import "stb_image";
+#import "freetype-2.12.1";
 
 Random :: #import "Random";
 

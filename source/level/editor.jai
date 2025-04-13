@@ -96,6 +96,8 @@ draw_editor :: (using game_state: *Game_State) {
                             real = BLOCK_WALL;
                         } else if highlighted_block == 4 {
                             real = BLOCK_PLAYER_SPAWN;
+                        } else if highlighted_block == 5 {
+                            real = BLOCK_SIGNED_PHOTOGRAPH;
                         } else if highlighted_block >= 8 {
                             real = highlighted_block - 7;
                         }

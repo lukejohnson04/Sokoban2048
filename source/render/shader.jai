@@ -19,6 +19,11 @@ shader_uniform :: (using shader: Shader, name: *u8, a: float32) {
     glUniform1f(glGetUniformLocation(id, name), a);
 }
 
+shader_uniform :: (using shader: Shader, name: *u8, a: Vector4) {
+    glUniform4f(glGetUniformLocation(id, name), a.x, a.y, a.z, a.w);
+}
+
+
 bind_texture :: (tex: GLuint, tex_num: GLuint = 0, tex_type: GLuint = GL_TEXTURE_2D) {
     if tex_num != 0 {
         glActiveTexture(tex_num);

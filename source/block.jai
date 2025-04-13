@@ -6,6 +6,8 @@ get_block_source :: (block: int) -> Rect {
             source = Rect.{64,0,16,16};
         } else if block == BLOCK_BOULDER {
             source = Rect.{32,0,16,16};
+        } else if block == BLOCK_SIGNED_PHOTOGRAPH {
+            source = Rect.{80,0,16,16};
         } else if block == BLOCK_WALL{
             source = Rect.{48,0,16,16};
         } else {
@@ -23,3 +25,4 @@ get_block_source :: (block: int) -> Rect {
 BLOCK_WALL :: 1000;
 BLOCK_BOULDER :: 1001;
 BLOCK_PLAYER_SPAWN :: 1002;
+BLOCK_SIGNED_PHOTOGRAPH :: 1003;
