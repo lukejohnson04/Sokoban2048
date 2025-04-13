@@ -28,6 +28,34 @@ load_texture :: (path: string) -> Texture {
     return tex;
 }
 
+draw_rect_with_outline :: (rect: Rect, thickness: int, vao: GLuint, vbo: GLuint) {
+    for 0..thickness-1 {
+        draw_line(.{rect.x+it, rect.y+it}, .{rect.x+rect.w-it, rect.y+it}, vao, vbo);
+        draw_line(.{rect.x+rect.w-it, rect.y+it}, .{rect.x+rect.w-it, rect.y+rect.h-it}, vao, vbo);
+        draw_line(.{rect.x+rect.w-it, rect.y+rect.h-it}, .{rect.x+it, rect.y+rect.h-it}, vao, vbo);
+        draw_line(.{rect.x+it, rect.y+rect.h-it}, .{rect.x+it, rect.y+it - 1}, vao, vbo);
+    }
+}
+
+draw_line :: (p1: Vector2, p2: Vector2, vao: GLuint, vbo: GLuint) {
+    vertices := float32.[
+        p1.x,         p1.y,         0,
+        p2.x,         p2.y,         0
+    ];
+
+    glBindVertexArray(vao);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, size_of(float32) * vertices.count, vertices.data, GL_STATIC_DRAW);
+
+    // position
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * size_of(float32), null);
+    glEnableVertexAttribArray(0);
+
+    glDrawArrays(GL_LINES, 0, 2);
+    glBindVertexArray(0);
+}
+
+
 
 draw_texture :: (source: Rect, dest: Rect, tex: *Texture, vao: GLuint, vbo: GLuint) {
     u1, u2, v1, v2 : float32;
@@ -84,8 +112,6 @@ draw_texture :: (source: Rect, dest: Rect, texture_size: v2i, vao: GLuint, vbo: 
     glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
     glBindVertexArray(0);
 }
-
-
 
 
 #load "mesh.jai";

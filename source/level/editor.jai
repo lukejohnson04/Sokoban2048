@@ -4,21 +4,40 @@ Editor_State :: struct {
 
     editing_level := false;
 
+    tool : Editor_Tool = .PAINT;
     mouse_tile : v2i;
+
+    select_state := Editor_Select_State.NOT_STARTED;
+    select_start : v2i;
+    select_end : v2i;
 
     load_level_field : [MAX_LEVEL_NAME_LENGTH]u8;
     save_level_field : [MAX_LEVEL_NAME_LENGTH]u8;
+
+    Editor_Tool :: enum {
+        PAINT;
+        SELECT;
+        PASTE;
+    }
+
+    Editor_Select_State :: enum {
+        NOT_STARTED;
+        STARTED;
+        FINISHED;
+    }
 }
+
+
 
 draw_editor :: (using game_state: *Game_State) {
     draw_list := ImGui.GetWindowDrawList();
     window_pos := ImGui.GetCursorScreenPos();
 
-    tile_scale :: 2;
-    tile_size :: 16 * tile_scale;
+    TILE_SCALE :: 2;
+    TILE_SIZE :: 16 * TILE_SCALE;
 
     source := ImGui.ImVec2.{xx sprites_imgui.width, xx sprites_imgui.height};
-    dest := ImGui.ImVec2.{xx (sprites_imgui.width * tile_scale), xx (sprites_imgui.height * tile_scale)};
+    dest := ImGui.ImVec2.{xx (sprites_imgui.width * TILE_SCALE), xx (sprites_imgui.height * TILE_SCALE)};
 
     if level.id != 0 {
         ImGui.LabelText("##level_title", tprint("Level: %", cast(string) level.name));
@@ -66,6 +85,26 @@ draw_editor :: (using game_state: *Game_State) {
                 editor.editing_level = false;
             }
         }
+        if ImGui.Button("Paint") {
+            editor.tool = .PAINT;
+        }
+        ImGui.SameLine();
+        if ImGui.Button("Select") {
+            editor.tool = .SELECT;
+            editor.select_state = .NOT_STARTED;
+        }
+        ImGui.SameLine();
+        if ImGui.Button("Cut") {
+            // Delete selection
+        }
+        ImGui.SameLine();
+        if ImGui.Button("Copy") {
+            // Copy selection
+        }
+        ImGui.SameLine();
+        if ImGui.Button("Paste") {
+            editor.tool = .PASTE;
+        }
 
         img_pos := window_pos + .{0, 128};
 
@@ -79,10 +118,10 @@ draw_editor :: (using game_state: *Game_State) {
         highlighted_block : int;
         highlighted_xy : Vector2;
 
-        if mouse_x >= xx img_pos.x && mouse_x < xx img_pos.x + sprites_imgui.width * tile_scale {
-            if mouse_y >= xx img_pos.y && mouse_y < xx img_pos.y + sprites_imgui.height * tile_scale {
-                highlighted_xy.x = floor((mouse_x - img_pos.x) / tile_size);
-                highlighted_xy.y = floor((mouse_y - img_pos.y) / tile_size);
+        if mouse_x >= xx img_pos.x && mouse_x < xx img_pos.x + sprites_imgui.width * TILE_SCALE {
+            if mouse_y >= xx img_pos.y && mouse_y < xx img_pos.y + sprites_imgui.height * TILE_SCALE {
+                highlighted_xy.x = floor((mouse_x - img_pos.x) / TILE_SIZE);
+                highlighted_xy.y = floor((mouse_y - img_pos.y) / TILE_SIZE);
 
                 highlighted_block = xx (highlighted_xy.x + highlighted_xy.y * 8);
                 highlighted = true;
@@ -109,20 +148,20 @@ draw_editor :: (using game_state: *Game_State) {
         }
 
         if highlighted && editor.selected_block_pos != highlighted_xy {
-            p1 := ImGui.ImVec2.{highlighted_xy.x * tile_size, highlighted_xy.y * tile_size};
-            p2 := p1 + .{tile_size, 0};
-            p3 := p1 + .{tile_size, tile_size};
-            p4 := p1 + .{0, tile_size};
+            p1 := ImGui.ImVec2.{highlighted_xy.x * TILE_SIZE, highlighted_xy.y * TILE_SIZE};
+            p2 := p1 + .{TILE_SIZE, 0};
+            p3 := p1 + .{TILE_SIZE, TILE_SIZE};
+            p4 := p1 + .{0, TILE_SIZE};
             colf := Vector4.{1, 1, 0, 1};
             
             draw_list.AddQuad(draw_list, img_pos + p1, img_pos + p2, img_pos + p3, img_pos + p4, ImGui.GetColorU32(colf), 2);
         }
 
         if editor.selected_block {
-            p1 := ImGui.ImVec2.{editor.selected_block_pos.x * tile_size, editor.selected_block_pos.y * tile_size};
-            p2 := p1 + .{tile_size, 0};
-            p3 := p1 + .{tile_size, tile_size};
-            p4 := p1 + .{0, tile_size};
+            p1 := ImGui.ImVec2.{editor.selected_block_pos.x * TILE_SIZE, editor.selected_block_pos.y * TILE_SIZE};
+            p2 := p1 + .{TILE_SIZE, 0};
+            p3 := p1 + .{TILE_SIZE, TILE_SIZE};
+            p4 := p1 + .{0, TILE_SIZE};
             colf := Vector4.{0, 1, 0, 1};
             
             draw_list.AddQuad(draw_list, img_pos + p1, img_pos + p2, img_pos + p3, img_pos + p4, ImGui.GetColorU32(colf), 2);
@@ -131,20 +170,50 @@ draw_editor :: (using game_state: *Game_State) {
 }
 
 
+is_in_bounds :: (pos: v2i, level: *Level) -> bool {
+    return pos.x >= 0 && pos.y >= 0 && pos.x < level.dimensions.x && pos.y < level.dimensions.y;
+}
+
 update_editor :: (using game_state: *Game_State, input: *Input_State) {
     mouse_world_pos := get_mouse_world_pos(camera);
     editor.mouse_tile = v2i.{xx (mouse_world_pos.x / 64), xx (mouse_world_pos.y / 64)};
     mouse_tile := editor.mouse_tile;
 
-    if input.mouse_just_pressed || input.rmouse_just_pressed {
-        if mouse_tile.x >= 0 && mouse_tile.y >= 0 && mouse_tile.x < level.dimensions.x && mouse_tile.y < level.dimensions.y {
-            // Spawn blocks have special functionality and don't show up in game
-            if editor.selected_block == BLOCK_PLAYER_SPAWN {
-                level.player_spawn_pos = .{mouse_tile.x, mouse_tile.y};
-            } else {
-                level.grid[mouse_tile.x][mouse_tile.y] = editor.selected_block;
-                if input.rmouse_just_pressed {
-                    level.grid[mouse_tile.x][mouse_tile.y] *= -1;
+    if editor.tool == {
+        case .PAINT; {
+            if input.mouse_just_pressed || input.rmouse_just_pressed {
+                if is_in_bounds(mouse_tile, *level) {
+                    // Spawn blocks have special functionality and don't show up in game
+                    if editor.selected_block == BLOCK_PLAYER_SPAWN {
+                        level.player_spawn_pos = .{mouse_tile.x, mouse_tile.y};
+                    } else {
+                        level.grid[mouse_tile.x][mouse_tile.y] = editor.selected_block;
+                        if input.rmouse_just_pressed {
+                            level.grid[mouse_tile.x][mouse_tile.y] *= -1;
+                        }
+                    }
+                }
+            }
+        }
+        case .SELECT; {
+            if is_in_bounds(mouse_tile, *level) {
+                if editor.select_state == .NOT_STARTED {
+                    editor.select_end = mouse_tile;
+                    if input.mouse_just_pressed {
+                        editor.select_start = mouse_tile;
+                        editor.select_state = .STARTED;
+                    }
+                } else if editor.select_state == .STARTED {
+                    editor.select_end = mouse_tile;
+                    if input.mouse_just_released {
+                        editor.select_state = .FINISHED;
+                    }
+                } else if editor.select_state == .FINISHED {
+                    if input.mouse_just_pressed {
+                        editor.select_start = mouse_tile;
+                        editor.select_end = mouse_tile;
+                        editor.select_state = .STARTED;
+                    }
                 }
             }
         }

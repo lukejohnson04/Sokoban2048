@@ -2,11 +2,14 @@
 Game_State :: struct {
     texture_shader : Shader;
     text_shader : Shader;
+    color_shader : Shader;
 
     intermediate_vao : GLuint;
     intermediate_vbo : GLuint;
     quad_vao : GLuint;
     quad_vbo : GLuint;
+    color_vao : GLuint;
+    color_vbo : GLuint;
 
     sprites : Texture;
     sprites_imgui : Texture;
@@ -49,17 +52,19 @@ on_startup :: (using game_state: *Game_State) {
     glBufferData(GL_ARRAY_BUFFER, size_of(Vertex) * QUAD_VERTICES.count, QUAD_VERTICES.data, GL_STATIC_DRAW);
     glBindVertexArray(quad_vao);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, size_of(Vertex), null);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, size_of(Vertex), cast(*void)(size_of(float32) * 3));
     glEnableVertexAttribArray(0);
-    glEnableVertexAttribArray(1);
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    glGenVertexArrays(1, *color_vao);
+    glGenBuffers(1, *color_vbo);
 
     sprites = load_texture("data/sprites.png");
     sprites_imgui = load_texture("data/sprites.png");
 
     create_shader(*texture_shader, "data/shaders/texture.vert", "data/shaders/texture.frag");
     create_shader(*text_shader, "data/shaders/text.vert", "data/shaders/text.frag");
+    create_shader(*color_shader, "data/shaders/color.vert", "data/shaders/color.frag");
 
     use_shader(texture_shader);
     shader_uniform(texture_shader, "texture1", 0);

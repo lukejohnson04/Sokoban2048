@@ -132,7 +132,6 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         draw_texture(source, dest, *sprites, intermediate_vao, intermediate_vbo);
     }
 
-
     for x: 0..level.dimensions.x-1 {
         for y: 0..level.dimensions.y-1 {
             source, dest : Rect;
@@ -141,7 +140,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
             // Don't draw player in edit mode
             if editor.editing_level == false && level.player_pos == v2i.{xx x, xx y} {
                 source = Rect.{16,0,16,16};
-            } else if editor.editing_level && editor.mouse_tile == .{x, y} {
+            } else if editor.editing_level && editor.tool == .PAINT && editor.mouse_tile == .{x, y} {
                 source = get_block_source(editor.selected_block);
             } else {
                 source = get_block_source(block);
@@ -161,9 +160,33 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         }
     }
 
+    // Editor draw final pass
+    glDisable(GL_DEPTH_TEST);
+    use_shader(color_shader);
+    shader_uniform(color_shader, "projection", *projection, false);
+    shader_uniform(color_shader, "view", *view, true);
+    shader_uniform(color_shader, "model", *model, false);
+
+    // Select tool
+    if editor.tool == .SELECT && editor.select_state != .NOT_STARTED
+    {
+        shader_uniform(color_shader, "color", ifx editor.select_state == .FINISHED then Vector4.{0, 1, 0, 1} else Vector4.{1, 0, 0, 1});
+    
+        TILE_SIZE :: 16 * 4;
+        top_left := v2i.{min(editor.select_start.x, editor.select_end.x), min(editor.select_start.y, editor.select_end.y)};
+        bot_right := v2i.{max(editor.select_start.x, editor.select_end.x), max(editor.select_start.y, editor.select_end.y)} + .{1, 1};
+
+        rect : Rect;
+        rect.x = xx (top_left.x * TILE_SIZE);
+        rect.y = xx (top_left.y * TILE_SIZE);
+        rect.w = xx ((bot_right.x-top_left.x) * TILE_SIZE);
+        rect.h = xx ((bot_right.y-top_left.y) * TILE_SIZE);
+        
+        draw_rect_with_outline(rect, 4, color_vao, color_vbo);
+    }
+
     // GUI Elements
     {
-        glDisable(GL_DEPTH_TEST);
         use_shader(text_shader);
         gui_view := Matrix4_Identity;
         shader_uniform(text_shader, "projection", *projection, false);
