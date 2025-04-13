@@ -12,9 +12,10 @@ Game_State :: struct {
     sprites_imgui : Texture;
 
     level : Level;
+    just_got_photograph := false;
 
     characters: [256] Character;
-    
+
     camera := Camera2D.{.{WINDOW_WIDTH/2, WINDOW_HEIGHT/2}, 1};
     editor : Editor_State;
 

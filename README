@@ -1,3 +1,6 @@
-JaiCube
+Sokoban2048
 
-A simple Minecraft clone written in Jai using OpenGL and SDL.
+A Sokoban game with 2048 mechanics written in Jai.
+
+TODO:
+	Make it so you don't need the mixer dll in the folder to compile

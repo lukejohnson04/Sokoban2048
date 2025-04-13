@@ -46,6 +46,7 @@ player_move :: (using game_state: *Game_State, move: v2i) -> bool {
         delta.new_value = 0;
 
         level.grid[new_pos.x][new_pos.y] = 0;
+        just_got_photograph = true;
 
     } else {
         stack : Stack(v2i);

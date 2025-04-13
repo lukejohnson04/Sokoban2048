@@ -20,6 +20,10 @@ main :: () {
         return;
     }
 
+    if Mix_OpenAudio( 44100, MIX_DEFAULT_FORMAT, 2, 2048 ) < 0 {
+        print("SDL_mixer could not initialize! SDL_mixer Error: %\n", Mix_GetError());
+        return;
+    }
 
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
@@ -104,6 +108,7 @@ VSYNC :: true;
 #import "String";
 #import "SDL";
 #import "SDL_ttf";
+#import "SDL_mixer";
 #import "GL";
 #import "File";
 #import "stb_image";
