@@ -94,7 +94,13 @@ load_ini_file :: (using game_state: *Game_State) -> bool {
         print("Failed to load ini file!\n");
         return false;
     }
-    return load_level(*game_state.level, data);
+    result := load_level(*level, data);
+    if result {
+        if result {
+            move_stack = .{};
+        }
+    }
+    return result;
 }
 
 Hash :: #import "Hash";

@@ -48,6 +48,7 @@ draw_editor :: (using game_state: *Game_State) {
     ImGui.SameLine();
     if ImGui.Button("Load Level") {
         loaded := load_level(*level, xx editor.load_level_field);
+        game_state.move_stack = .{};
         if loaded {
             for 0..editor.load_level_field.count-1 {
                 editor.load_level_field[it] = 0;
@@ -60,11 +61,17 @@ draw_editor :: (using game_state: *Game_State) {
         if ImGui.Button("Edit Level") {
             editor.editing_level = true;
             loaded := load_level(*level, xx level.name);
+            if loaded {
+                game_state.move_stack = .{};
+            }
         }
         ImGui.SameLine();
         if level.id != 0 {
             if ImGui.Button("Restart Level") {
                 loaded := load_level(*level, xx level.name);
+                if loaded {
+                    game_state.move_stack = .{};
+                }
             }
         }
     } else {
@@ -81,7 +88,10 @@ draw_editor :: (using game_state: *Game_State) {
                 print("Save level first!\n");
             } else {
                 save_level(*level, xx level.name);
-                load_level(*level, xx level.name);
+                loaded := load_level(*level, xx level.name);
+                if loaded {
+                    game_state.move_stack = .{};
+                }
                 editor.editing_level = false;
             }
         }
