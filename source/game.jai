@@ -33,13 +33,13 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
 
     if editor.editing_level == false && just_got_photograph == false {
         move := v2i.{0, 0};
-        if input.just_pressed[SDL_SCANCODE_LEFT] {
+        if input.just_pressed[SDL_SCANCODE_LEFT] || input.just_pressed[SDL_SCANCODE_A] {
             move.x = -1;
-        } else if input.just_pressed[SDL_SCANCODE_RIGHT] {
+        } else if input.just_pressed[SDL_SCANCODE_RIGHT] || input.just_pressed[SDL_SCANCODE_D] {
             move.x = 1;
-        } else if input.just_pressed[SDL_SCANCODE_UP] {
+        } else if input.just_pressed[SDL_SCANCODE_UP] || input.just_pressed[SDL_SCANCODE_W] {
             move.y = -1;
-        } else if input.just_pressed[SDL_SCANCODE_DOWN] {
+        } else if input.just_pressed[SDL_SCANCODE_DOWN] || input.just_pressed[SDL_SCANCODE_S] {
             move.y = 1;
         }
         if input.just_pressed[SDL_SCANCODE_R] {

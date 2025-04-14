@@ -26,7 +26,6 @@ load_empty_level :: (level: *Level) {
     level.id = 0;
 }
 
-
 MAX_LEVEL_NAME_LENGTH :: 16;
 
 #load "level_serializer.jai";
