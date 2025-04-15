@@ -67,7 +67,7 @@ player_move :: (using game_state: *Game_State, move: v2i) -> bool {
                 break;
             }
 
-            if block == BLOCK_WALL {
+            if is_block_wall(block) {
                 success = false;
                 break;
             }

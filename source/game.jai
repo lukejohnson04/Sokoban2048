@@ -96,6 +96,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         if abs(camera.pos.y - camera_dest.y) > WINDOW_HEIGHT * DEADZONE_PERCENT {
             camera.pos.y = lerp(camera.pos.y, camera_dest.y, 0.008);
         }
+        
     } else if (SDL_GetWindowFlags(window) & SDL_WINDOW_INPUT_FOCUS) != 0 {
         DEBUG_CAMERA_SPEED :: 12;
         DEADZONE_PERCENT :: 0.01;

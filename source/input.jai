@@ -12,6 +12,7 @@ Input_State :: struct {
     rmouse_pressed : bool;
 
     mouse_motion : v2i;
+    mouse_wheel : s32;
 
     just_closed_window : bool;
 
@@ -34,6 +35,7 @@ poll_input :: (using input: *Input_State) {
     input.rmouse_just_pressed = false;
     input.rmouse_just_released = false;
     input.just_closed_window = false;
+    input.mouse_wheel = 0;
     input.mouse_motion = .{0, 0};
 
     if SDL_NumJoysticks() > 0 && sdl_joystick == null {
@@ -83,6 +85,10 @@ poll_input :: (using input: *Input_State) {
         } else if e.type == SDL_MOUSEBUTTONUP && e.button.button == SDL_BUTTON_RIGHT {
             input.rmouse_pressed = false;
             input.rmouse_just_released = true;
+        }
+
+        if e.type == SDL_MOUSEWHEEL {
+            input.mouse_wheel = e.wheel.y;
         }
 
         if e.type == SDL_JOYAXISMOTION {

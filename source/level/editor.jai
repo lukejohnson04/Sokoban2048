@@ -182,8 +182,10 @@ draw_editor :: (using game_state: *Game_State) {
                             real = BLOCK_PLAYER_SPAWN;
                         } else if highlighted_block == 5 {
                             real = BLOCK_SIGNED_PHOTOGRAPH;
-                        } else if highlighted_block >= 8 {
+                        } else if highlighted_block >= 8 && highlighted_block < 16 {
                             real = highlighted_block - 7;
+                        } else if highlighted_block >= 16 && highlighted_block < 24 {
+                            real = highlighted_block - 16 + BLOCK_WALL_COLOR;
                         }
                         editor.selected_block = real;
                         editor.selected_block_pos = highlighted_xy;
@@ -223,6 +225,14 @@ update_editor :: (using game_state: *Game_State, input: *Input_State) {
     mouse_world_pos := get_mouse_world_pos(camera);
     editor.mouse_tile = v2i.{xx (mouse_world_pos.x / 64), xx (mouse_world_pos.y / 64)};
     mouse_tile := editor.mouse_tile;
+
+    if input.mouse_wheel {
+        if input.mouse_wheel > 0 {
+            camera.zoom *= 2.0;
+        } else {
+            camera.zoom *= 0.5;
+        }
+    }
 
     if editor.tool == {
         case .PAINT; {
