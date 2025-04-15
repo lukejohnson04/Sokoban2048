@@ -236,14 +236,14 @@ update_editor :: (using game_state: *Game_State, input: *Input_State) {
 
     if editor.tool == {
         case .PAINT; {
-            if input.mouse_just_pressed || input.rmouse_just_pressed {
+            if input.mouse_pressed || input.rmouse_pressed {
                 if is_in_bounds(mouse_tile, *level) {
                     // Spawn blocks have special functionality and don't show up in game
                     if editor.selected_block == BLOCK_PLAYER_SPAWN {
                         level.player_spawn_pos = .{mouse_tile.x, mouse_tile.y};
                     } else {
                         level.grid[mouse_tile.x][mouse_tile.y] = editor.selected_block;
-                        if input.rmouse_just_pressed {
+                        if input.rmouse_pressed {
                             level.grid[mouse_tile.x][mouse_tile.y] *= -1;
                         }
                     }
