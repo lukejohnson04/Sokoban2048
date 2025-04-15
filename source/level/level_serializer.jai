@@ -19,6 +19,7 @@ load_level :: (level: *Level, name: string) -> bool {
         print("Failed to load level at path: %\n", path);
         return false;
     }
+
     assert(data.count >= size_of(Level));
     memcpy(level, data.data, size_of(Level));
 

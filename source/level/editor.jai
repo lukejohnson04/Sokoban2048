@@ -13,6 +13,7 @@ Editor_State :: struct {
 
     load_level_field : [MAX_LEVEL_NAME_LENGTH]u8;
     save_level_field : [MAX_LEVEL_NAME_LENGTH]u8;
+    dimension_field : [MAX_LEVEL_NAME_LENGTH]u8;
 
     Editor_Tool :: enum {
         PAINT;
@@ -116,9 +117,43 @@ draw_editor :: (using game_state: *Game_State) {
             editor.tool = .PASTE;
         }
 
-        img_pos := window_pos + .{0, 128};
+        img_pos := window_pos + .{0, 160};
 
         draw_list.AddImage(draw_list, cast,no_check(*void)(sprites.id), img_pos, img_pos + dest);
+
+        if ImGui.Button("Add left") {
+            level_increase_dimensions(*level, 1, 0, 0, 0);
+        }
+        ImGui.SameLine();
+        if ImGui.Button("Add right") {
+            level_increase_dimensions(*level, 0, 1, 0, 0);
+        }
+        ImGui.SameLine();
+        if ImGui.Button("Add top") {
+            level_increase_dimensions(*level, 0, 0, 1, 0);
+        }
+        ImGui.SameLine();
+        if ImGui.Button("Add bot") {
+            level_increase_dimensions(*level, 0, 0, 0, 1);
+        }
+
+        if ImGui.Button("Rem left") {
+            level_increase_dimensions(*level, -1, 0, 0, 0);
+        }
+        ImGui.SameLine();
+        if ImGui.Button("Rem right") {
+            level_increase_dimensions(*level, 0, -1, 0, 0);
+        }
+        ImGui.SameLine();
+        if ImGui.Button("Rem top") {
+            level_increase_dimensions(*level, 0, 0, -1, 0);
+        }
+        ImGui.SameLine();
+        if ImGui.Button("Rem bot") {
+            level_increase_dimensions(*level, 0, 0, 0, -1);
+        }
+
+
 
         // Selected tile
         focused := ImGui.IsWindowFocused();

@@ -42,6 +42,10 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         } else if input.just_pressed[SDL_SCANCODE_DOWN] || input.just_pressed[SDL_SCANCODE_S] {
             move.y = 1;
         }
+
+        // if input.just_pressed[SDL_SCANCODE_J] || input.just_pressed[SDL_SCANCODE_K] {
+        //     level_increase_dimensions_left(*level, ifx input.just_pressed[SDL_SCANCODE_J] then 1 else -1, 0, 0, 0);
+        // }
         if input.just_pressed[SDL_SCANCODE_R] {
             move_undo(game_state);
         }
