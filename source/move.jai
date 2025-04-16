@@ -12,8 +12,14 @@ Move_Delta_Data :: struct {
     new_player_pos: v2i;
 }
 
-MAX_UNDO :: 100;
+MAX_UNDO :: 200;
 Move_Stack :: Stack_Circular(Move_Delta_Data, MAX_UNDO);
+
+
+// Each entry represents how many moves since the last checkpoint;
+MAX_CHECKPOINT_COUNT :: 10;
+Move_Checkpoint_Stack :: Stack_Circular(int, MAX_CHECKPOINT_COUNT);
+
 
 add_move_delta :: (data: *Move_Delta_Data) -> *Move_Delta {
     assert(data.count < MAX_MOVE_DELTAS);
@@ -25,6 +31,8 @@ player_move :: (using game_state: *Game_State, move: v2i) -> bool {
     using level;
     new_pos := player_pos + move;
     success := false;
+
+    activates_goal_block := false;
 
     delta_data : Move_Delta_Data;
     delta_data.old_player_pos = player_pos;
@@ -95,6 +103,11 @@ player_move :: (using game_state: *Game_State, move: v2i) -> bool {
                 // See if two blocks can be combined, and if so, combine them and replace one with air
                 if abs(curr_block) == abs(prev_block) {
                     prev_new_value : int;
+                    if curr_block < 0 || prev_block < 0 {
+                        // Goal block cleared
+                        activates_goal_block = true;
+                    }
+
                     if curr_block < 0 && prev_block < 0 {
                         prev_new_value = prev_block - 1;
                     } else {
@@ -140,9 +153,14 @@ player_move :: (using game_state: *Game_State, move: v2i) -> bool {
         }
     }
 
-    delta_data.new_player_pos = new_pos;
-    
-    stack_push(*move_stack, delta_data);
+    if success {
+        if activates_goal_block {
+            stack_push(*checkpoint_stack, move_number);
+        }
+        delta_data.new_player_pos = new_pos;
+        stack_push(*move_stack, delta_data);
+        move_number += 1;
+    }
 
     return success;
 }
@@ -161,4 +179,28 @@ move_undo :: (using game_state: *Game_State) {
         delta := delta_data.deltas[it];
         level.grid[delta.coord.x][delta.coord.y] = delta.old_value;
     }
+
+    move_number -= 1;
+}
+
+goto_last_checkpoint :: (using game_state: *Game_State) -> bool {
+    if stack_is_empty(*checkpoint_stack) {
+        return false;
+    }
+
+    last_count := stack_pop(*checkpoint_stack);
+    moves_since_last := move_number - last_count;
+    if moves_since_last > move_stack.count {
+        while (stack_is_empty(*checkpoint_stack) == false) {
+            stack_pop(*checkpoint_stack);
+        }
+        return false;
+    }
+
+    for 0..moves_since_last-1 {
+        move_undo(game_state);
+    }
+    move_number = last_count;
+
+    return true;
 }

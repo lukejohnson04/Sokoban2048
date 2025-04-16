@@ -24,6 +24,13 @@ Level :: struct {
     id : u32 = 0;
 }
 
+Visibility_Field :: [Level.MAX_WIDTH][Level.MAX_HEIGHT]bool;
+
+get_visibility_field :: (field: Visibility_Field) {
+    // Flood fill
+    
+}
+
 one_time_conversion :: () {
     old: Old_Level;
     new: Level;

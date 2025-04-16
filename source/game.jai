@@ -43,6 +43,10 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
             move.y = 1;
         }
 
+        if input.just_pressed[SDL_SCANCODE_LCTRL] {
+            goto_last_checkpoint(game_state);
+        }
+
         // if input.just_pressed[SDL_SCANCODE_J] || input.just_pressed[SDL_SCANCODE_K] {
         //     level_increase_dimensions_left(*level, ifx input.just_pressed[SDL_SCANCODE_J] then 1 else -1, 0, 0, 0);
         // }
@@ -96,7 +100,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         if abs(camera.pos.y - camera_dest.y) > WINDOW_HEIGHT * DEADZONE_PERCENT {
             camera.pos.y = lerp(camera.pos.y, camera_dest.y, 0.008);
         }
-        
+
     } else if (SDL_GetWindowFlags(window) & SDL_WINDOW_INPUT_FOCUS) != 0 {
         DEBUG_CAMERA_SPEED :: 12;
         DEADZONE_PERCENT :: 0.01;

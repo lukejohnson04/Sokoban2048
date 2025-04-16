@@ -17,6 +17,8 @@ Game_State :: struct {
     photograph_song : *Mix_Chunk;
 
     level : Level;
+    // visibility_field : Visibility_Field;
+    
     just_got_photograph := false;
 
     characters: [256] Character;
@@ -25,6 +27,9 @@ Game_State :: struct {
     editor : Editor_State;
 
     move_stack : Move_Stack;
+    move_number : int;
+
+    checkpoint_stack : Move_Checkpoint_Stack;
 
     frame_number := 0;
 
