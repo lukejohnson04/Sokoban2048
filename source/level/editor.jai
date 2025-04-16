@@ -40,6 +40,16 @@ draw_editor :: (using game_state: *Game_State) {
     source := ImGui.ImVec2.{xx sprites_imgui.width, xx sprites_imgui.height};
     dest := ImGui.ImVec2.{xx (sprites_imgui.width * TILE_SCALE), xx (sprites_imgui.height * TILE_SCALE)};
 
+    on_new_level_pressed :: (using game_state: *Game_State) {
+        if editor.editing_level {
+            if level.id != 0 {
+                save_level(*level, xx level.name);
+            }
+        }
+        load_empty_level(*level);
+        editor.editing_level = true;
+    }
+
     if level.id != 0 {
         ImGui.LabelText("##level_title", tprint("Level: %", cast(string) level.name));
     } else {
@@ -57,6 +67,7 @@ draw_editor :: (using game_state: *Game_State) {
             editor.editing_level = true;
         }
     }
+
     
     if editor.editing_level == false {
         if ImGui.Button("Edit Level") {
@@ -75,11 +86,20 @@ draw_editor :: (using game_state: *Game_State) {
                 }
             }
         }
+        ImGui.SameLine();
+        if ImGui.Button("New level") {
+            on_new_level_pressed(game_state);
+        }
     } else {
         ImGui.InputText("##save", editor.save_level_field.data, MAX_LEVEL_NAME_LENGTH);
         ImGui.SameLine();
         if ImGui.Button("Save Level") {
-            save_level(*level, xx editor.save_level_field);
+            if editor.save_level_field[0] == 0 {
+                save_level(*level, xx level.name);
+            } else {
+                save_level(*level, xx editor.save_level_field);
+            }
+            
             for 0..editor.save_level_field.count-1 {
                 editor.save_level_field[it] = 0;
             }
@@ -96,6 +116,11 @@ draw_editor :: (using game_state: *Game_State) {
                 editor.editing_level = false;
             }
         }
+        ImGui.SameLine();
+        if ImGui.Button("New level") {
+            on_new_level_pressed(game_state);
+        }
+
         if ImGui.Button("Paint") {
             editor.tool = .PAINT;
         }

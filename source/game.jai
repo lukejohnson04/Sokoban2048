@@ -47,9 +47,6 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
             goto_last_checkpoint(game_state);
         }
 
-        // if input.just_pressed[SDL_SCANCODE_J] || input.just_pressed[SDL_SCANCODE_K] {
-        //     level_increase_dimensions_left(*level, ifx input.just_pressed[SDL_SCANCODE_J] then 1 else -1, 0, 0, 0);
-        // }
         if input.just_pressed[SDL_SCANCODE_R] {
             move_undo(game_state);
         }
@@ -141,8 +138,10 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         draw_texture(source, dest, *sprites, intermediate_vao, intermediate_vbo);
     }
 
-    for x: 0..level.dimensions.x-1 {
-        for y: 0..level.dimensions.y-1 {
+    // Camera bounds
+    tile_begin, tile_end := get_camera_level_bounds(camera, *level);
+    for x: tile_begin.x..tile_end.x {
+        for y: tile_begin.y..tile_end.y {
             source, dest : Rect;
             block := level.grid[x][y];
 

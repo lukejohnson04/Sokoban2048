@@ -17,7 +17,7 @@ Move_Stack :: Stack_Circular(Move_Delta_Data, MAX_UNDO);
 
 
 // Each entry represents how many moves since the last checkpoint;
-MAX_CHECKPOINT_COUNT :: 10;
+MAX_CHECKPOINT_COUNT :: 15;
 Move_Checkpoint_Stack :: Stack_Circular(int, MAX_CHECKPOINT_COUNT);
 
 

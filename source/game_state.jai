@@ -18,7 +18,7 @@ Game_State :: struct {
 
     level : Level;
     // visibility_field : Visibility_Field;
-    
+
     just_got_photograph := false;
 
     characters: [256] Character;
@@ -96,10 +96,9 @@ save_ini_file :: (using game_state: *Game_State) -> bool {
 load_ini_file :: (using game_state: *Game_State) -> bool {
     data, success := read_entire_file(INI_FILE_LOCATION);
     if !success {
-        print("Failed to load ini file!\n");
         return false;
     }
-    result := load_level(*level, data);
+    result := load_level(*level, data, log_errors = false);
     if result {
         if result {
             move_stack = .{};

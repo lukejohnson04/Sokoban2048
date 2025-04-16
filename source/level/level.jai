@@ -28,7 +28,6 @@ Visibility_Field :: [Level.MAX_WIDTH][Level.MAX_HEIGHT]bool;
 
 get_visibility_field :: (field: Visibility_Field) {
     // Flood fill
-    
 }
 
 one_time_conversion :: () {
@@ -82,10 +81,9 @@ level_set_name :: (level: *Level, name: string) {
 
 load_empty_level :: (level: *Level) {
     level.* = .{};
-    level.dimensions = .{Level.MAX_WIDTH, Level.MAX_HEIGHT};
+    level.dimensions = .{32, 32};
     level.id = 0;
 }
-
 
 level_increase_dimensions :: (level: *Level, left: int, right: int, top: int, bottom: int) {
     if level.dimensions.x + left + right > level.MAX_WIDTH {
@@ -105,9 +103,9 @@ level_increase_dimensions :: (level: *Level, left: int, right: int, top: int, bo
         old_dimension := level.dimensions.x;
         level.dimensions.x += left;
         if left > 0 {
-            for #v2 < x: 0..old_dimension-1 {
+            for #v2 < x: 0..level.dimensions.x {
                 for y: 0..level.dimensions.y-1 {
-                    if x > left {
+                    if x >= left {
                         level.grid[x][y] = level.grid[x - left][y];
                     } else {
                         level.grid[x][y] = 0;
@@ -129,8 +127,8 @@ level_increase_dimensions :: (level: *Level, left: int, right: int, top: int, bo
         level.dimensions.y += top;
         if top > 0 {
             for x: 0..level.dimensions.x-1 {
-                for #v2 < y: 0..old_dimension-1 {
-                    if y > top {
+                for #v2 < y: 0..level.dimensions.y-1 {
+                    if y >= top {
                         level.grid[x][y] = level.grid[x][y - top];
                     } else {
                         level.grid[x][y] = 0;
@@ -148,7 +146,6 @@ level_increase_dimensions :: (level: *Level, left: int, right: int, top: int, bo
         level.dimensions.y += bottom;
     }
 }
-
 
 
 MAX_LEVEL_NAME_LENGTH :: 16;

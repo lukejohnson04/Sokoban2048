@@ -12,11 +12,13 @@ save_level :: (level: *Level, name: string) -> bool {
     }
 }
 
-load_level :: (level: *Level, name: string) -> bool {
+load_level :: (level: *Level, name: string, log_errors := true) -> bool {
     path := tprint("data/world/%", name);
     data, success := read_entire_file(tprint("data/world/%", name));
     if !success {
-        print("Failed to load level at path: %\n", path);
+        if log_errors {
+            print("Failed to load level at path: %\n", path);
+        }
         return false;
     }
 
