@@ -1,73 +1,15 @@
-Old_Level :: struct {
-    MAX_WIDTH :: 256;
-    MAX_HEIGHT :: 256;
-    dimensions := v2i.{4, 4};
-    grid: [MAX_WIDTH][MAX_HEIGHT]int;
-
-    player_pos := v2i.{0, 0};
-    player_spawn_pos := v2i.{0, 0};
-
-    name : [MAX_LEVEL_NAME_LENGTH]u8;
-    id : u32 = 0;
-}
 
 Level :: struct {
     MAX_WIDTH :: 128;
     MAX_HEIGHT :: 128;
     dimensions := v2i.{4, 4};
-    grid: [MAX_WIDTH][MAX_HEIGHT]int;
+    grid: [MAX_WIDTH][MAX_HEIGHT] Block;
 
     player_pos := v2i.{0, 0};
     player_spawn_pos := v2i.{0, 0};
 
     name : [MAX_LEVEL_NAME_LENGTH]u8;
     id : u32 = 0;
-}
-
-Visibility_Field :: [Level.MAX_WIDTH][Level.MAX_HEIGHT]bool;
-
-get_visibility_field :: (field: Visibility_Field) {
-    // Flood fill
-}
-
-one_time_conversion :: () {
-    old: Old_Level;
-    new: Level;
-    load_old_level(*old, "open");
-    level_format_converter(*new, *old);
-    save_level(*new, "open");
-    print("Finished conversion\n");
-}
-
-level_format_converter :: (level: *Level, old_level: *Old_Level) {
-    level.* = .{};
-    level.dimensions = old_level.dimensions;
-    for x: 0..level.dimensions.x-1 {
-        for y: 0..level.dimensions.y-1 {
-            level.grid[x][y] = old_level.grid[x][y];
-        }
-    }
-
-    level.player_pos = old_level.player_pos;
-    level.player_spawn_pos = old_level.player_spawn_pos;
-    memcpy(level.name.data, old_level.name.data, MAX_LEVEL_NAME_LENGTH);
-    level.id = old_level.id;
-}
-
-load_old_level :: (level: *Old_Level, name: string) -> bool {
-    path := tprint("data/world/%", name);
-    data, success := read_entire_file(tprint("data/world/%", name));
-    if !success {
-        print("Failed to load level at path: %\n", path);
-        return false;
-    }
-
-    assert(data.count >= size_of(Old_Level));
-    memcpy(level, data.data, size_of(Old_Level));
-
-    level.player_pos = level.player_spawn_pos;
-
-    return true;
 }
 
 level_set_name :: (level: *Level, name: string) {
@@ -108,7 +50,7 @@ level_increase_dimensions :: (level: *Level, left: int, right: int, top: int, bo
                     if x >= left {
                         level.grid[x][y] = level.grid[x - left][y];
                     } else {
-                        level.grid[x][y] = 0;
+                        level.grid[x][y] = .{};
                     }
                 }
             }
@@ -131,7 +73,7 @@ level_increase_dimensions :: (level: *Level, left: int, right: int, top: int, bo
                     if y >= top {
                         level.grid[x][y] = level.grid[x][y - top];
                     } else {
-                        level.grid[x][y] = 0;
+                        level.grid[x][y] = .{};
                     }
                 }
             }

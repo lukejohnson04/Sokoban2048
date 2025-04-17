@@ -133,7 +133,9 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     
     // Draw player spawn if in edit mode
     if editor.editing_level {
-        source := get_block_source(BLOCK_PLAYER_SPAWN);
+        spawn : Block;
+        spawn.type = .PLAYER_SPAWN;
+        source := get_block_source(spawn);
         dest := Rect.{xx (level.player_spawn_pos.x*64), xx (level.player_spawn_pos.y*64), 64, 64};
         draw_texture(source, dest, *sprites, intermediate_vao, intermediate_vbo);
     }
@@ -155,13 +157,13 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
             }
 
             dest = Rect.{xx (x*64), xx (y*64), 64, 64};
-            if block < 0 {
+            if block_is_goal(block) {
                 shader_uniform(texture_shader, "grayscale", 1);
                 shader_uniform(texture_shader, "colormult", 0.8);
             }
 
             draw_texture(source, dest, *sprites, intermediate_vao, intermediate_vbo);
-            if block < 0 {
+            if block_is_goal(block) {
                 shader_uniform(texture_shader, "grayscale", 0);
                 shader_uniform(texture_shader, "colormult", 1.0);
             }
@@ -205,7 +207,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         total_goal_blocks : int;
         for x: 0..level.dimensions.x-1 {
             for y: 0..level.dimensions.y-1 {
-                if level.grid[x][y] < 0 {
+                if block_is_goal(level.grid[x][y]) {
                     total_goal_blocks += 1;
                 }
             }

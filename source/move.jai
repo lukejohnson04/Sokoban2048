@@ -1,7 +1,7 @@
 Move_Delta :: struct {
     coord: v2i;
-    old_value: int;
-    new_value: int;
+    old_value: Block;
+    new_value: Block;
 }
 
 MAX_MOVE_DELTAS :: 16;
@@ -39,21 +39,22 @@ player_move :: (using game_state: *Game_State, move: v2i) -> bool {
 
     if new_pos.x < 0 || new_pos.x >= level.dimensions.x || new_pos.y < 0 || new_pos.y >= level.dimensions.y {
         return false;
-    } else if level.grid[new_pos.x][new_pos.y] == 0 {
-        success = true;
 
+    } else if level.grid[new_pos.x][new_pos.y].type == .NONE {
+        success = true;
         player_pos = new_pos;
-    } else if level.grid[new_pos.x][new_pos.y] == BLOCK_SIGNED_PHOTOGRAPH {
+
+    } else if level.grid[new_pos.x][new_pos.y].type == .SIGNED_PHOTOGRAPH {
         success = true;
 
         player_pos = new_pos;
 
         delta := add_move_delta(*delta_data);
         delta.coord = new_pos;
-        delta.old_value = BLOCK_SIGNED_PHOTOGRAPH;
-        delta.new_value = 0;
+        delta.old_value = .{type = .SIGNED_PHOTOGRAPH};
+        delta.new_value = .{};
 
-        level.grid[new_pos.x][new_pos.y] = 0;
+        level.grid[new_pos.x][new_pos.y] = .{};
         just_got_photograph = true;
 
     } else {
@@ -69,19 +70,19 @@ player_move :: (using game_state: *Game_State, move: v2i) -> bool {
                 success = false;
                 break;
             }
-            if block < 0 {
+            if block_is_goal(block) {
                 stack_push(*stack, iter_pos);
                 success = false;
                 break;
             }
 
-            if is_block_wall(block) {
+            if block.type == .WALL {
                 success = false;
                 break;
             }
 
             // Encounter air block
-            if block == 0 {
+            if block.type == .NONE {
                 success = true;
                 break;
             } else {
@@ -101,31 +102,30 @@ player_move :: (using game_state: *Game_State, move: v2i) -> bool {
                 curr_block := level.grid[pos.x][pos.y];
                 prev_block := level.grid[prev.x][prev.y];
                 // See if two blocks can be combined, and if so, combine them and replace one with air
-                if abs(curr_block) == abs(prev_block) {
-                    prev_new_value : int;
-                    if curr_block < 0 || prev_block < 0 {
+                if curr_block.type == prev_block.type && curr_block.number == prev_block.number {
+                    new_block := prev_block;
+                    new_block.number += 1;
+
+                    if block_is_goal(curr_block) || block_is_goal(prev_block) {
                         // Goal block cleared
                         activates_goal_block = true;
-                    }
-
-                    if curr_block < 0 && prev_block < 0 {
-                        prev_new_value = prev_block - 1;
-                    } else {
-                        prev_new_value = abs(prev_block) + 1;
+                        
+                        new_block.flags &= ~Block.Flag.GOAL;
+                        new_block.flags &= ~Block.Flag.VANISH_GOAL;
                     }
 
                     delta := add_move_delta(*delta_data);
                     delta.coord = prev;
                     delta.old_value = prev_block;
-                    delta.new_value = prev_new_value;
+                    delta.new_value = new_block;
 
                     delta = add_move_delta(*delta_data);
                     delta.coord = pos;
                     delta.old_value = curr_block;
-                    delta.new_value = 0;
+                    delta.new_value = .{};
 
-                    level.grid[prev.x][prev.y] = prev_new_value;
-                    level.grid[pos.x][pos.y] = 0;
+                    level.grid[prev.x][prev.y] = new_block;
+                    level.grid[pos.x][pos.y] = .{};
                     success = true;
                     break;
                 }
@@ -145,10 +145,10 @@ player_move :: (using game_state: *Game_State, move: v2i) -> bool {
                 delta = add_move_delta(*delta_data);
                 delta.coord = pos;
                 delta.old_value = level.grid[pos.x][pos.y];
-                delta.new_value = 0;
+                delta.new_value = .{};
 
                 level.grid[block_new_pos.x][block_new_pos.y] = level.grid[pos.x][pos.y];
-                level.grid[pos.x][pos.y] = 0;
+                level.grid[pos.x][pos.y] = .{};
             }
         }
     }

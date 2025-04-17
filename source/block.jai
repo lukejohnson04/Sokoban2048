@@ -1,29 +1,29 @@
 
-get_block_source :: (block: int) -> Rect {
-    source : Rect;
-    if block > 0 {
-        if block == BLOCK_PLAYER_SPAWN {
-            source = Rect.{64,0,16,16};
-        } else if block == BLOCK_BOULDER {
-            source = Rect.{32,0,16,16};
-        } else if block == BLOCK_SIGNED_PHOTOGRAPH {
-            source = Rect.{80,0,16,16};
-        } else if is_block_wall(block) {
-            if block == BLOCK_WALL {
-                source = Rect.{48,0,16,16};
-            } else {
-                source = Rect.{xx ((block - BLOCK_WALL_COLOR) * 16),32,16,16};
-            }
-        } else {
-            source = Rect.{xx ((block-1) * 16),16,16,16};
-        }
-    } else if block < 0 {
-        source = Rect.{xx ((abs(block)-1) * 16),16,16,16};
-    } else {
-        source = Rect.{0,0,16,16};
-    }
-    return source;
-}
+// get_block_source :: (block: int) -> Rect {
+//     source : Rect;
+//     if block > 0 {
+//         if block == BLOCK_PLAYER_SPAWN {
+//             source = Rect.{64,0,16,16};
+//         } else if block == BLOCK_BOULDER {
+//             source = Rect.{32,0,16,16};
+//         } else if block == BLOCK_SIGNED_PHOTOGRAPH {
+//             source = Rect.{80,0,16,16};
+//         } else if is_block_wall(block) {
+//             if block == BLOCK_WALL {
+//                 source = Rect.{48,0,16,16};
+//             } else {
+//                 source = Rect.{xx ((block - BLOCK_WALL_COLOR) * 16),32,16,16};
+//             }
+//         } else {
+//             source = Rect.{xx ((block-1) * 16),16,16,16};
+//         }
+//     } else if block < 0 {
+//         source = Rect.{xx ((abs(block)-1) * 16),16,16,16};
+//     } else {
+//         source = Rect.{0,0,16,16};
+//     }
+//     return source;
+// }
 
 get_block_source :: (block: Block) -> Rect {
     source : Rect;
@@ -39,7 +39,7 @@ get_block_source :: (block: Block) -> Rect {
         if block.number == 0 {
             source = Rect.{48,0,16,16};
         } else {
-            source = Rect.{xx ((block.number - 1) * 16),32,16,16};
+            source = Rect.{xx ((block.number - 1) * 16), 32, 16, 16};
         }
     } else if block.type == .NUMBERED {
         source = Rect.{xx ((block.number-1) * 16),16,16,16};
@@ -54,12 +54,16 @@ is_block_wall :: (block: int) -> bool {
     return block == BLOCK_WALL || (block >= BLOCK_WALL_COLOR && block < BLOCK_WALL_COLOR + BLOCK_WALL_COLOR_COUNT);
 }
 
-Block :: struct {
-    type: BLOCK_TYPE;
-    number: u8;
-    flags: u8;
+block_is_goal :: (block: Block) -> bool {
+    return (block.flags & Block.Flag.GOAL) != 0;
+}
 
-    BLOCK_TYPE :: enum u8 #specified {
+Block :: struct {
+    type: Block_Type;
+    number: u8;
+    flags: Flag;
+
+    Block_Type :: enum u8 #specified {
         NONE :: 0;
         NUMBERED :: 1;
         WALL :: 2;
@@ -68,7 +72,7 @@ Block :: struct {
         PLAYER_SPAWN :: 5;
     }
 
-    FLAG :: enum_flags u8 #specified {
+    Flag :: enum u8 #specified {
         GOAL :: 0x1;
         VANISH_GOAL :: 0x2;
     }
@@ -82,3 +86,8 @@ BLOCK_SIGNED_PHOTOGRAPH :: 1003;
 
 BLOCK_WALL_COLOR :: 2000;
 BLOCK_WALL_COLOR_COUNT :: 8;
+
+
+
+
+

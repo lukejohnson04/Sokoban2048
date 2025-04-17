@@ -29,3 +29,6 @@ load_level :: (level: *Level, name: string, log_errors := true) -> bool {
 
     return true;
 }
+
+
+#load "level_version_upgrade.jai";

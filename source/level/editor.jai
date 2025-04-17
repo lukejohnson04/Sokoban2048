@@ -1,5 +1,6 @@
+
 Editor_State :: struct {
-    selected_block := 0;
+    selected_block : Block;
     selected_block_pos : Vector2;
 
     editing_level := false;
@@ -198,21 +199,23 @@ draw_editor :: (using game_state: *Game_State) {
 
                 if focused {
                     if ImGui.IsMouseDown(ImGui.MouseButton.Left) {
-                        real := highlighted_block;
+                        block: Block;
                         if highlighted_block == 2 {
-                            real = BLOCK_BOULDER;
+                            block.type = .BOULDER;
                         } else if highlighted_block == 3 {
-                            real = BLOCK_WALL;
+                            block.type = .WALL;
                         } else if highlighted_block == 4 {
-                            real = BLOCK_PLAYER_SPAWN;
+                            block.type = .PLAYER_SPAWN;
                         } else if highlighted_block == 5 {
-                            real = BLOCK_SIGNED_PHOTOGRAPH;
+                            block.type = .SIGNED_PHOTOGRAPH;
                         } else if highlighted_block >= 8 && highlighted_block < 16 {
-                            real = highlighted_block - 7;
+                            block.type = .NUMBERED;
+                            block.number = xx (highlighted_block - 7);
                         } else if highlighted_block >= 16 && highlighted_block < 24 {
-                            real = highlighted_block - 16 + BLOCK_WALL_COLOR;
+                            block.type = .WALL;
+                            block.number = xx (highlighted_block - 15);
                         }
-                        editor.selected_block = real;
+                        editor.selected_block = block;
                         editor.selected_block_pos = highlighted_xy;
                     }
                 }
@@ -229,7 +232,7 @@ draw_editor :: (using game_state: *Game_State) {
             draw_list.AddQuad(draw_list, img_pos + p1, img_pos + p2, img_pos + p3, img_pos + p4, ImGui.GetColorU32(colf), 2);
         }
 
-        if editor.selected_block {
+        if editor.selected_block.type != .NONE {
             p1 := ImGui.ImVec2.{editor.selected_block_pos.x * TILE_SIZE, editor.selected_block_pos.y * TILE_SIZE};
             p2 := p1 + .{TILE_SIZE, 0};
             p3 := p1 + .{TILE_SIZE, TILE_SIZE};
@@ -264,12 +267,12 @@ update_editor :: (using game_state: *Game_State, input: *Input_State) {
             if input.mouse_pressed || input.rmouse_pressed {
                 if is_in_bounds(mouse_tile, *level) {
                     // Spawn blocks have special functionality and don't show up in game
-                    if editor.selected_block == BLOCK_PLAYER_SPAWN {
+                    if editor.selected_block.type == .PLAYER_SPAWN {
                         level.player_spawn_pos = .{mouse_tile.x, mouse_tile.y};
                     } else {
                         level.grid[mouse_tile.x][mouse_tile.y] = editor.selected_block;
                         if input.rmouse_pressed {
-                            level.grid[mouse_tile.x][mouse_tile.y] *= -1;
+                            level.grid[mouse_tile.x][mouse_tile.y].flags |= Block.Flag.GOAL;
                         }
                     }
                 }
