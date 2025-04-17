@@ -25,8 +25,53 @@ get_block_source :: (block: int) -> Rect {
     return source;
 }
 
+get_block_source :: (block: Block) -> Rect {
+    source : Rect;
+    if block.type == .NONE {
+        source = Rect.{0, 0, 16, 16};
+    } else if block.type == .PLAYER_SPAWN {
+        source = Rect.{64,0,16,16};
+    } else if block.type == .BOULDER {
+        source = Rect.{32,0,16,16};
+    } else if block.type == .SIGNED_PHOTOGRAPH {
+        source = Rect.{80,0,16,16};
+    } else if block.type == .WALL {
+        if block.number == 0 {
+            source = Rect.{48,0,16,16};
+        } else {
+            source = Rect.{xx ((block.number - 1) * 16),32,16,16};
+        }
+    } else if block.type == .NUMBERED {
+        source = Rect.{xx ((block.number-1) * 16),16,16,16};
+    } else {
+        source = Rect.{0,0,16,16};
+    }
+    return source;
+}
+
+
 is_block_wall :: (block: int) -> bool {
     return block == BLOCK_WALL || (block >= BLOCK_WALL_COLOR && block < BLOCK_WALL_COLOR + BLOCK_WALL_COLOR_COUNT);
+}
+
+Block :: struct {
+    type: BLOCK_TYPE;
+    number: u8;
+    flags: u8;
+
+    BLOCK_TYPE :: enum u8 #specified {
+        NONE :: 0;
+        NUMBERED :: 1;
+        WALL :: 2;
+        BOULDER :: 3;
+        SIGNED_PHOTOGRAPH :: 4;
+        PLAYER_SPAWN :: 5;
+    }
+
+    FLAG :: enum_flags u8 #specified {
+        GOAL :: 0x1;
+        VANISH_GOAL :: 0x2;
+    }
 }
 
 
