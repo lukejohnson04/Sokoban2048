@@ -19,9 +19,6 @@ Camera2D :: struct {
 
 camera_view_matrix :: (using camera: Camera2D) -> Matrix4 {
     view := Matrix4_Identity;
-    // view = translate(view, .{WINDOW_WIDTH * 0.5, WINDOW_HEIGHT * 0.5, 0});
-    // view = scale(view, .{zoom, zoom, 1});
-    // view = translate(view, Vector3.{-WINDOW_WIDTH * 0.5, -WINDOW_HEIGHT * 0.5, 0});
     view = translate(view, Vector3.{-pos.x, -pos.y, 0});
     return view;
 }

@@ -81,7 +81,7 @@ level_set_name :: (level: *Level, name: string) {
 
 load_empty_level :: (level: *Level) {
     level.* = .{};
-    level.dimensions = .{32, 32};
+    level.dimensions = .{8, 8};
     level.id = 0;
 }
 
