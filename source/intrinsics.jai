@@ -80,3 +80,34 @@ stack_pop :: (using stack: *Stack_Circular($T, $MAX_SIZE)) -> T {
 stack_is_empty  :: (using stack: *Stack_Circular($T, $MAX_SIZE)) -> bool {
     return top == -1 || count == 0;
 }
+
+
+Queue :: struct($T: Type, $MAX_SIZE: s64 = 50) {
+    memory: [MAX_SIZE]T;
+    count: s64;
+    front: s64;
+    back: s64;
+}
+
+queue_add :: (using queue: *Queue($T, $MAX_SIZE), value: T) {
+    assert(count < MAX_SIZE);
+    memory[back] = value;
+    count += 1;
+    back = (back + 1) % MAX_SIZE;
+}
+
+queue_remove :: (using queue: *Queue($T, $MAX_SIZE)) -> T {
+    value := memory[front];
+    count -= 1;
+    front = (front + 1) % MAX_SIZE;
+    return value;
+}
+
+queue_peek :: (using queue: *Queue($T, $MAX_SIZE)) -> T {
+    return queue[front];
+}
+
+queue_is_empty :: (using queue: *Queue($T, $MAX_SIZE)) -> bool {
+    return count == 0;
+}
+

@@ -109,9 +109,13 @@ player_move :: (using game_state: *Game_State, move: v2i) -> bool {
                     if block_is_goal(curr_block) || block_is_goal(prev_block) {
                         // Goal block cleared
                         activates_goal_block = true;
-                        
-                        new_block.flags &= ~Block.Flag.GOAL;
-                        new_block.flags &= ~Block.Flag.VANISH_GOAL;
+
+                        if curr_block.flags & .VANISH_GOAL || prev_block.flags & .VANISH_GOAL {
+                            new_block = .{};
+                        } else {
+                            new_block.flags &= ~Block.Flag.GOAL;
+                            new_block.flags &= ~Block.Flag.VANISH_GOAL;
+                        }
                     }
 
                     delta := add_move_delta(*delta_data);

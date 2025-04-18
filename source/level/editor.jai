@@ -245,10 +245,6 @@ draw_editor :: (using game_state: *Game_State) {
 }
 
 
-is_in_bounds :: (pos: v2i, level: *Level) -> bool {
-    return pos.x >= 0 && pos.y >= 0 && pos.x < level.dimensions.x && pos.y < level.dimensions.y;
-}
-
 update_editor :: (using game_state: *Game_State, input: *Input_State) {
     mouse_world_pos := get_mouse_world_pos(camera);
     editor.mouse_tile = v2i.{xx (mouse_world_pos.x / 64), xx (mouse_world_pos.y / 64)};
@@ -264,7 +260,7 @@ update_editor :: (using game_state: *Game_State, input: *Input_State) {
 
     if editor.tool == {
         case .PAINT; {
-            if input.mouse_pressed || input.rmouse_pressed {
+            if input.mouse_pressed || input.rmouse_pressed || input.mwheel_pressed {
                 if is_in_bounds(mouse_tile, *level) {
                     // Spawn blocks have special functionality and don't show up in game
                     if editor.selected_block.type == .PLAYER_SPAWN {
@@ -273,6 +269,8 @@ update_editor :: (using game_state: *Game_State, input: *Input_State) {
                         level.grid[mouse_tile.x][mouse_tile.y] = editor.selected_block;
                         if input.rmouse_pressed {
                             level.grid[mouse_tile.x][mouse_tile.y].flags |= Block.Flag.GOAL;
+                        } else if input.mwheel_pressed {
+                            level.grid[mouse_tile.x][mouse_tile.y].flags |= Block.Flag.VANISH_GOAL;
                         }
                     }
                 }

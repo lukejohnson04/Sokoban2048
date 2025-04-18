@@ -14,6 +14,10 @@ Input_State :: struct {
     mouse_motion : v2i;
     mouse_wheel : s32;
 
+    mwheel_just_pressed : bool;
+    mwheel_just_released: bool;
+    mwheel_pressed : bool;
+
     just_closed_window : bool;
 
     sdl_joystick: *SDL_Joystick;
@@ -34,7 +38,11 @@ poll_input :: (using input: *Input_State) {
     input.mouse_just_released = false;
     input.rmouse_just_pressed = false;
     input.rmouse_just_released = false;
+    input.mwheel_just_pressed = false;
+    input.mwheel_just_pressed = false;
+
     input.just_closed_window = false;
+    
     input.mouse_wheel = 0;
     input.mouse_motion = .{0, 0};
 
@@ -85,6 +93,14 @@ poll_input :: (using input: *Input_State) {
         } else if e.type == SDL_MOUSEBUTTONUP && e.button.button == SDL_BUTTON_RIGHT {
             input.rmouse_pressed = false;
             input.rmouse_just_released = true;
+        }
+
+        if e.type == SDL_MOUSEBUTTONDOWN && e.button.button == SDL_BUTTON_MIDDLE {
+            input.mwheel_pressed = true;
+            input.mwheel_just_pressed = true;
+        } else if e.type == SDL_MOUSEBUTTONUP && e.button.button == SDL_BUTTON_MIDDLE {
+            input.mwheel_pressed = false;
+            input.mwheel_just_released = true;
         }
 
         if e.type == SDL_MOUSEWHEEL {

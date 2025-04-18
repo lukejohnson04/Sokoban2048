@@ -89,8 +89,13 @@ level_increase_dimensions :: (level: *Level, left: int, right: int, top: int, bo
     }
 }
 
+is_in_bounds :: (pos: v2i, level: *Level) -> bool {
+    return pos.x >= 0 && pos.y >= 0 && pos.x < level.dimensions.x && pos.y < level.dimensions.y;
+}
+
 
 MAX_LEVEL_NAME_LENGTH :: 16;
 
 #load "level_serializer.jai";
 #load "editor.jai";
+#load "visibility_field.jai";

@@ -55,7 +55,7 @@ is_block_wall :: (block: int) -> bool {
 }
 
 block_is_goal :: (block: Block) -> bool {
-    return (block.flags & Block.Flag.GOAL) != 0;
+    return (block.flags & (.GOAL | .VANISH_GOAL)) != 0;
 }
 
 Block :: struct {

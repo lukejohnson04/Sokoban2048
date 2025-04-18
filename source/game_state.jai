@@ -17,7 +17,7 @@ Game_State :: struct {
     photograph_song : *Mix_Chunk;
 
     level : Level;
-    // visibility_field : Visibility_Field;
+    field : Visibility_Field;
 
     just_got_photograph := false;
 
@@ -35,7 +35,6 @@ Game_State :: struct {
 
     memory_initialized := false;
 }
-
 
 
 on_startup :: (using game_state: *Game_State) {
