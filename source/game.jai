@@ -60,15 +60,24 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
             move_undo(game_state);
         }
 
-        if input.just_pressed[SDL_SCANCODE_Y] {
-            success := save_game(game_state);
-            print("Success: %\n", success);
+        if input.just_pressed[SDL_SCANCODE_GRAVE] {
+            editor.enabled = !editor.enabled;
         }
 
         if move != .{0, 0} {
-            player_move(game_state, move);
-            if just_got_photograph {
-                Mix_PlayChannel(0, photograph_song, 0);
+            success, combines_block, activates_goal_block := player_move(game_state, move);
+            if success {
+                play_sound_effect(footsteps[move_number % footsteps.count]);
+                if combines_block {
+                    if activates_goal_block {
+                        play_sound_effect(note_echo);
+                    } else {
+                        play_sound_effect(note_normal);
+                    }
+                }
+                if just_got_photograph {
+                    Mix_PlayChannel(0, photograph_song, 0);
+                }
             }
         }
 
@@ -81,17 +90,23 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         just_got_photograph = false;
     }
 
+    if editor.enabled && editor.editing_level {
+        update_editor(game_state, input);
+    }
+
+
 
     // Render begin
-    ImGui_ImplSdl_NewFrame(window);
-    ImGui.NewFrame();
+    if editor.enabled {
+        ImGui_ImplSdl_NewFrame(window);
+        ImGui.NewFrame();
 
-    ImGui.Begin("Window");
-    draw_editor(game_state);
-    ImGui.End();
+        ImGui.Begin("Window");
+        draw_editor(game_state);
+        ImGui.End();
+    }
 
     // Rendering
-
     glClearColor(0.35, 0.5, 0.9, 1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -102,7 +117,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     model := Matrix4_Identity;
 
     // camera deadzone
-    if editor.editing_level == false {
+    if editor.enabled == false || editor.editing_level == false {
         DEADZONE_PERCENT :: 0.05;
         player_coord : Vector2;
         player_coord.x = xx (level.player_pos.x * 64);
@@ -143,20 +158,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     shader_uniform(texture_shader, "gold", 0);
     shader_uniform(texture_shader, "colormult", 1.0);
 
-    bind_texture(sprites);
-
-    if editor.editing_level {
-        update_editor(game_state, input);
-    }
-    
-    // Draw player spawn if in edit mode
-    if editor.editing_level {
-        spawn : Block;
-        spawn.type = .PLAYER_SPAWN;
-        source := get_block_source(spawn);
-        dest := Rect.{xx (level.player_spawn_pos.x*64), xx (level.player_spawn_pos.y*64), 64, 64};
-        draw_texture(source, dest, *sprites, intermediate_vao, intermediate_vbo);
-    }
+    bind_texture(sprites);    
 
     // Camera bounds
     tile_begin, tile_end := get_camera_level_bounds(camera, *level);
@@ -166,6 +168,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
             block := level.grid[x][y];
             dest = Rect.{xx (x*64), xx (y*64), 64, 64};
 
+            // Draw blocks that aren't visible
             if editor.editing_level == false && field[x][y].visible == false {
                 draw_texture(.{48, 0, 16, 16}, dest, *sprites, intermediate_vao, intermediate_vbo);
                 continue;
@@ -201,6 +204,14 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         }
     }
 
+    if editor.enabled && editor.editing_level {
+        spawn : Block;
+        spawn.type = .PLAYER_SPAWN;
+        source := get_block_source(spawn);
+        dest := Rect.{xx (level.player_spawn_pos.x*64), xx (level.player_spawn_pos.y*64), 64, 64};
+        draw_texture(source, dest, *sprites, intermediate_vao, intermediate_vbo);
+    }
+
     // Editor draw final pass
     glDisable(GL_DEPTH_TEST);
     use_shader(color_shader);
@@ -209,7 +220,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     shader_uniform(color_shader, "model", *model, false);
 
     // Select tool
-    if editor.tool == .SELECT && editor.select_state != .NOT_STARTED
+    if editor.enabled && editor.editing_level && editor.tool == .SELECT && editor.select_state != .NOT_STARTED
     {
         shader_uniform(color_shader, "color", ifx editor.select_state == .FINISHED then Vector4.{0, 1, 0, 1} else Vector4.{1, 0, 0, 1});
     
@@ -227,7 +238,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     }
 
     // GUI Elements
-    {
+    #if false {
         use_shader(text_shader);
         gui_view := Matrix4_Identity;
         shader_uniform(text_shader, "projection", *projection, false);
@@ -249,9 +260,10 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         glEnable(GL_DEPTH_TEST);
     }
     
-    ImGui.Render();
-
-    ImGui_ImplSdl_RenderDrawLists(ImGui.GetDrawData());
+    if editor.enabled {
+        ImGui.Render();
+        ImGui_ImplSdl_RenderDrawLists(ImGui.GetDrawData());
+    }
 
     SDL_GL_SwapWindow(window);
     render_end_time := seconds_since_init();
@@ -292,3 +304,4 @@ Random :: #import "Random";
 #load "move.jai";
 #load "block.jai";
 #load "level/level.jai";
+#load "audio/audio.jai";

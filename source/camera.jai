@@ -33,7 +33,7 @@ get_mouse_world_pos :: (camera: Camera2D) -> Vector2 {
 
     translated := pos - screenCenter;
     scaled := translated * (1/camera.zoom);
-    worldPos := camera.pos + scaled + screenCenter;
+    worldPos := camera.pos + scaled;
 
     return worldPos;
 }

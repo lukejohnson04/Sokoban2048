@@ -15,6 +15,10 @@ Game_State :: struct {
     sprites_imgui : Texture;
 
     photograph_song : *Mix_Chunk;
+    
+    note_normal : *Mix_Chunk;
+    note_echo : *Mix_Chunk;
+    footsteps : [7]*Mix_Chunk;
 
     font_arial: Font;
 
@@ -76,6 +80,13 @@ on_startup :: (using game_state: *Game_State) {
     load_font("data/fonts/arial.ttf", *font_arial);
 
     photograph_song = Mix_LoadWAV("data/audio/photograph_song.ogg");
+    note_normal = Mix_LoadWAV("data/audio/note_normal.ogg");
+    note_echo = Mix_LoadWAV("data/audio/note_echo.ogg");
+
+    for 0..6 {
+        path := tprint("data/audio/fstep_%.wav", it+1);
+        footsteps[it] = Mix_LoadWAV(path.data);
+    }
 
     // Attempt recovery of last close
     #if BUILD == .DEBUG {

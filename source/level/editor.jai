@@ -3,6 +3,13 @@ Editor_State :: struct {
     selected_block : Block;
     selected_block_pos : Vector2;
 
+    enabled : bool;
+    #if BUILD == .DEBUG {
+        enabled = true;
+    } else {
+        enabled = false;
+    }
+    
     editing_level := false;
 
     tool : Editor_Tool = .PAINT;
@@ -28,8 +35,6 @@ Editor_State :: struct {
         FINISHED;
     }
 }
-
-
 
 draw_editor :: (using game_state: *Game_State) {
     draw_list := ImGui.GetWindowDrawList();

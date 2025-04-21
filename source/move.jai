@@ -27,18 +27,19 @@ add_move_delta :: (data: *Move_Delta_Data) -> *Move_Delta {
     return *data.deltas[data.count - 1];
 }
 
-player_move :: (using game_state: *Game_State, move: v2i) -> bool {
+player_move :: (using game_state: *Game_State, move: v2i) -> bool, bool, bool {
     using level;
     new_pos := player_pos + move;
-    success := false;
 
     activates_goal_block := false;
+    combines_block := false;
+    success := false;
 
     delta_data : Move_Delta_Data;
     delta_data.old_player_pos = player_pos;
 
     if new_pos.x < 0 || new_pos.x >= level.dimensions.x || new_pos.y < 0 || new_pos.y >= level.dimensions.y {
-        return false;
+        return false, false, false;
 
     } else if level.grid[new_pos.x][new_pos.y].type == .NONE {
         success = true;
@@ -105,6 +106,7 @@ player_move :: (using game_state: *Game_State, move: v2i) -> bool {
                 if curr_block.type == prev_block.type && curr_block.number == prev_block.number {
                     new_block := prev_block;
                     new_block.number += 1;
+                    combines_block = true;
 
                     if block_is_goal(curr_block) || block_is_goal(prev_block) {
                         // Goal block cleared
@@ -166,7 +168,7 @@ player_move :: (using game_state: *Game_State, move: v2i) -> bool {
         move_number += 1;
     }
 
-    return success;
+    return success, combines_block, activates_goal_block;
 }
 
 move_undo :: (using game_state: *Game_State) {
