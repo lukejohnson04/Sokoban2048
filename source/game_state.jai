@@ -16,19 +16,19 @@ Game_State :: struct {
 
     photograph_song : *Mix_Chunk;
 
+    font_arial: Font;
+
     level : Level;
     field : Visibility_Field;
 
     just_got_photograph := false;
 
-    characters: [256] Character;
 
     camera := Camera2D.{.{WINDOW_WIDTH/2, WINDOW_HEIGHT/2}, 1};
     editor : Editor_State;
 
     move_stack : Move_Stack;
     move_number : int;
-
     checkpoint_stack : Move_Checkpoint_Stack;
 
     frame_number := 0;
@@ -73,9 +73,28 @@ on_startup :: (using game_state: *Game_State) {
     use_shader(texture_shader);
     shader_uniform(texture_shader, "texture1", 0);
 
-    load_font_data(game_state);
+    load_font("data/fonts/arial.ttf", *font_arial);
 
     photograph_song = Mix_LoadWAV("data/audio/photograph_song.ogg");
+
+    // Attempt recovery of last close
+    #if BUILD == .DEBUG {
+        loaded_ini := load_ini_file(game_state);
+        if loaded_ini == false {
+            load_empty_level(*level);
+        }    
+    }
+    #if BUILD == .RELEASE {
+        success := load_save(game_state, false);
+        if success == false {
+            // Start a new game
+            load_level(*level, "open", false);
+        }
+    }
+
+    vfield_generate_flood_fill(game_state);
+    camera.pos.x = xx (level.player_pos.x * 64);
+    camera.pos.y = xx (level.player_pos.y * 64);
 }
 
 
@@ -92,6 +111,7 @@ save_ini_file :: (using game_state: *Game_State) -> bool {
     return true;
 }
 
+// Auto save
 load_ini_file :: (using game_state: *Game_State) -> bool {
     data, success := read_entire_file(INI_FILE_LOCATION);
     if !success {
@@ -106,4 +126,7 @@ load_ini_file :: (using game_state: *Game_State) -> bool {
     return result;
 }
 
+
 Hash :: #import "Hash";
+
+#load "save_load_game.jai";

@@ -19,7 +19,10 @@ Camera2D :: struct {
 
 camera_view_matrix :: (using camera: Camera2D) -> Matrix4 {
     view := Matrix4_Identity;
-    view = translate(view, Vector3.{-pos.x, -pos.y, 0});
+    n_pos := camera.pos;
+    n_pos.x -= WINDOW_WIDTH/2;
+    n_pos.y -= WINDOW_HEIGHT/2;
+    view = translate(view, Vector3.{-n_pos.x, -n_pos.y, 0});
     return view;
 }
 
@@ -37,7 +40,7 @@ get_mouse_world_pos :: (camera: Camera2D) -> Vector2 {
 
 
 get_camera_level_bounds :: (camera: Camera2D, level: *Level) -> v2i, v2i {
-    camera_bound_begin := v2i.{xx (floor(camera.pos.x / 64) - 1), xx (floor(camera.pos.y / 64) - 1)};
+    camera_bound_begin := v2i.{xx (floor((camera.pos.x - WINDOW_WIDTH/2) / 64) - 1), xx (floor((camera.pos.y - WINDOW_HEIGHT/2) / 64) - 1)};
     camera_bound_end := v2i.{xx (ceil(WINDOW_WIDTH / 64) + 2), xx (ceil(WINDOW_HEIGHT / 64) + 2)};
     camera_bound_end += camera_bound_begin;
 

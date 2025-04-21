@@ -1,15 +1,18 @@
+BUILD_TYPE :: enum #specified {
+    RELEASE :: 0;
+    DEBUG :: 1;
+    PROFILE :: 2;
+}
+
+BUILD :: BUILD_TYPE.RELEASE;
+
+
 #program_export
 update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Window, just_reloaded_dll: *bool, imgui_context: *ImGui.ImGuiContext) -> s32 {
     using game_state: *Game_State = xx game_memory;
     if memory_initialized == false {
         ImGui.SetCurrentContext(imgui_context);
         on_startup(game_state);
-
-        // Attempt recovery of last close
-        loaded_ini := load_ini_file(game_state);
-        if loaded_ini == false {
-            load_empty_level(*level);
-        }
         game_state.memory_initialized = true;
     }
 
@@ -26,12 +29,18 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     }
 
     if input.just_closed_window {
-        save_ini_file(game_state);
-        // save_level(*levels[level_num]);
+        #if BUILD == .DEBUG {
+            save_ini_file(game_state);
+        }
+        #if BUILD == .RELEASE {
+            save_game(game_state);
+        }
         return 0;
     }
 
     if editor.editing_level == false && just_got_photograph == false {
+        starting_move_number := move_number;
+
         move := v2i.{0, 0};
         if input.just_pressed[SDL_SCANCODE_LEFT] || input.just_pressed[SDL_SCANCODE_A] {
             move.x = -1;
@@ -51,11 +60,20 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
             move_undo(game_state);
         }
 
+        if input.just_pressed[SDL_SCANCODE_Y] {
+            success := save_game(game_state);
+            print("Success: %\n", success);
+        }
+
         if move != .{0, 0} {
             player_move(game_state, move);
             if just_got_photograph {
                 Mix_PlayChannel(0, photograph_song, 0);
             }
+        }
+
+        if move_number != starting_move_number {
+            vfield_generate_flood_fill(game_state);
         }
     }
 
@@ -89,8 +107,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         player_coord : Vector2;
         player_coord.x = xx (level.player_pos.x * 64);
         player_coord.y = xx (level.player_pos.y * 64);
-        screen_center := Vector2.{WINDOW_WIDTH * 0.5, WINDOW_HEIGHT * 0.5};
-        camera_dest := player_coord + Vector2.{32, 32} - screen_center;
+        camera_dest := player_coord + Vector2.{32, 32};
         if abs(camera.pos.x - camera_dest.x) > WINDOW_WIDTH * DEADZONE_PERCENT {
             camera.pos.x = lerp(camera.pos.x, camera_dest.x, 0.008);
         }
@@ -141,7 +158,6 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         draw_texture(source, dest, *sprites, intermediate_vao, intermediate_vbo);
     }
 
-    vfield_generate_flood_fill(game_state);
     // Camera bounds
     tile_begin, tile_end := get_camera_level_bounds(camera, *level);
     for x: tile_begin.x..tile_end.x {
@@ -229,7 +245,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         }
 
         score_string := sprint("%", total_goal_blocks);
-        draw_text(score_string, .{32, 64}, characters, intermediate_vao, intermediate_vbo);
+        draw_text(score_string, .{32, 64}, *font_arial, intermediate_vao, intermediate_vbo);
         glEnable(GL_DEPTH_TEST);
     }
     
@@ -264,6 +280,7 @@ VSYNC :: true;
 #import "SDL_mixer";
 #import "GL";
 #import "File";
+#import "File_Utilities";
 #import "stb_image";
 #import "freetype-2.12.1";
 

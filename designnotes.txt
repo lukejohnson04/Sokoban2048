@@ -3,10 +3,9 @@ Generic sokoban mode.
 Sokoban 2048 but moving left moves every block including the player left. So the player is like a crushing mechanism to crush blocks together.
 
 Goal blocks you can push around?
-Solving a goal block gives you its remainder?
 Solving a goal block makes it disappear?
 Player can combine with other blocks
-Boulder block - block that you can push around, but can't be pushed by other blocks. You can use it as a prop block to setup combinations
+Block that you can push around, but can't be pushed by other blocks. You can use it as a prop block to setup combinations
 
 Block that disappears when you walk into it
 - Could have puzzles where it acts as a prop block, but then when you finish you can walk through it to clear the path to the exit
@@ -14,3 +13,19 @@ Block that disappears when you walk into it
 Secret puzzle where the big block from the previous room is brought in and used as a prop block (like the 1 blocks)
 
 Open world area full of secrets
+
+Entrance keys
+Two 8
+One 128
+
+Entrance exits
+One 4
+One 8
+One 16
+One 32
+
+Random
+One 16
+
+
+64 + 64 + 8

@@ -6,11 +6,15 @@ Character :: struct {
     advance : u32;
 }
 
-draw_text :: (text: string, position: v2i, characters: [] Character, vao: GLuint, vbo: GLuint) {
+Font :: struct {
+    characters: [256] Character;
+}
+
+draw_text :: (text: string, position: v2i, font: *Font, vao: GLuint, vbo: GLuint) {
     xpos := position.x;
     ypos := position.y;
     for text {
-        ch := *characters[it];
+        ch := *font.characters[it];
         x := xpos + ch.bearing.x;
         y := ypos - ch.bearing.y;
         w := ch.size.x;
@@ -21,18 +25,17 @@ draw_text :: (text: string, position: v2i, characters: [] Character, vao: GLuint
     }
 }
 
-// init font data
-load_font_data :: (using game_state: *Game_State) {
+load_font :: (path: string, font: *Font) -> bool {
     ft: FT_Library;
     if FT_Init_FreeType(*ft) {
         print("Failed to init freetype!\n");
-        return;
+        return false;
     }
 
     face: FT_Face;
-    if FT_New_Face(ft, "data/arial.ttf", 0, *face) {
-        print("Failed to load font face!\n");
-        return;
+    if FT_New_Face(ft, path.data, 0, *face) {
+        print("Failed to load font face at path %!\n", path);
+        return false;
     }
 
     FT_Set_Pixel_Sizes(face, 0, 48);
@@ -42,7 +45,7 @@ load_font_data :: (using game_state: *Game_State) {
     for 0..127 {
         if FT_Load_Char(face, xx it, FT_LOAD_RENDER) {
             print("Failed to load % char!\n", it);
-            continue;
+            return false;
         }
 
         texture: GLuint;
@@ -50,7 +53,7 @@ load_font_data :: (using game_state: *Game_State) {
         glBindTexture(GL_TEXTURE_2D, texture);
         if glGetError() != GL_NO_ERROR {
             print("OpenGL Error!\n");
-            return;
+            return false;
         }
 
         glTexImage2D(
@@ -70,7 +73,7 @@ load_font_data :: (using game_state: *Game_State) {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-        character := *characters[it];
+        character := *font.characters[it];
         character.texture = texture;
         character.size = .{face.glyph.bitmap.width, face.glyph.bitmap.rows};
         character.bearing = .{face.glyph.bitmap_left, face.glyph.bitmap_top};
@@ -78,4 +81,6 @@ load_font_data :: (using game_state: *Game_State) {
     }
     FT_Done_Face(face);
     FT_Done_FreeType(ft);
+
+    return true;
 }
