@@ -9,7 +9,7 @@ Editor_State :: struct {
     } else {
         enabled = false;
     }
-    
+
     editing_level := false;
 
     tool : Editor_Tool = .PAINT;
@@ -19,6 +19,10 @@ Editor_State :: struct {
     select_start : v2i;
     select_end : v2i;
 
+    move_state := Editor_Move_State.NOT_STARTED;
+    move_start : v2i;
+    move_end : v2i;
+
     load_level_field : [MAX_LEVEL_NAME_LENGTH]u8;
     save_level_field : [MAX_LEVEL_NAME_LENGTH]u8;
     dimension_field : [MAX_LEVEL_NAME_LENGTH]u8;
@@ -27,12 +31,19 @@ Editor_State :: struct {
         PAINT;
         SELECT;
         PASTE;
+        MOVE;
     }
 
     Editor_Select_State :: enum {
         NOT_STARTED;
         STARTED;
         FINISHED;
+        DRAGGING;
+    }
+
+    Editor_Move_State :: enum {
+        NOT_STARTED;
+        STARTED;
     }
 }
 
@@ -73,7 +84,6 @@ draw_editor :: (using game_state: *Game_State) {
             editor.editing_level = true;
         }
     }
-
     
     if editor.editing_level == false {
         if ImGui.Button("Edit Level") {
@@ -136,12 +146,11 @@ draw_editor :: (using game_state: *Game_State) {
             editor.select_state = .NOT_STARTED;
         }
         ImGui.SameLine();
-        if ImGui.Button("Cut") {
-            // Delete selection
-        }
-        ImGui.SameLine();
-        if ImGui.Button("Copy") {
-            // Copy selection
+        if ImGui.Button("Move") {
+            if editor.tool == .SELECT && editor.select_state == .FINISHED {
+                editor.tool = .MOVE;
+                editor.move_state = .NOT_STARTED;
+            }
         }
         ImGui.SameLine();
         if ImGui.Button("Paste") {
@@ -299,6 +308,58 @@ update_editor :: (using game_state: *Game_State, input: *Input_State) {
                         editor.select_start = mouse_tile;
                         editor.select_end = mouse_tile;
                         editor.select_state = .STARTED;
+                    }
+                }
+            }
+        }
+        case .MOVE; {
+            move_tiles :: (using game_state: *Game_State, offset: v2i) {
+                start, end : v2i;
+                start.x = min(editor.select_end.x, editor.select_start.x);
+                start.y = min(editor.select_end.y, editor.select_start.y);
+                end.x   = max(editor.select_end.x, editor.select_start.x);
+                end.y   = max(editor.select_end.y, editor.select_start.y);
+                
+                selection_size := end - start + .{1, 1};
+                memory := cast(*Block) temporary_alloc(selection_size.x * selection_size.y * size_of(Block));
+
+                for x: 0..selection_size.x-1 {
+                    for y: 0..selection_size.y-1 {
+                        memory[x + y * selection_size.x] = level.grid[start.x + x][start.y + y];
+                        level.grid[start.x + x][start.y + y] = .{};
+                    }
+                }
+
+                for x: 0..selection_size.x-1 {
+                    for y: 0..selection_size.y-1 {
+                        copied_block := memory[x + y * selection_size.x];
+                        block_ptr := *level.grid[start.x + x + offset.x][start.y + y + offset.y];
+                        if copied_block.type != .NONE {
+                            block_ptr.* = copied_block;
+                        }
+                    }
+                }
+
+                // Move the selection
+                editor.select_start += offset;
+                editor.select_end += offset;
+            }
+
+            if is_in_bounds(mouse_tile, *level) {
+                if editor.move_state == .NOT_STARTED {
+                    if input.mouse_just_pressed {
+                        editor.move_state = .STARTED;
+                        editor.move_start = mouse_tile;
+                        editor.move_end = mouse_tile;
+                    }
+                } else if editor.move_state == .STARTED {
+                    if mouse_tile != editor.move_end {
+                        editor.move_end = mouse_tile;
+                    }
+                    if input.mouse_just_released {
+                        editor.move_state = .NOT_STARTED;
+                        // Move all the tiles
+                        move_tiles(game_state, editor.move_end - editor.move_start);
                     }
                 }
             }
