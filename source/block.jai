@@ -29,6 +29,9 @@ get_block_source :: (block: Block) -> Rect {
     source : Rect;
     if block.type == .NONE {
         source = Rect.{0, 0, 16, 16};
+        if block.number > 0 {
+            source = Rect.{xx ((block.number - 1) * 16), 48, 16, 16};
+        }
     } else if block.type == .PLAYER_SPAWN {
         source = Rect.{64,0,16,16};
     } else if block.type == .BOULDER {

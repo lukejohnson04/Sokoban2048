@@ -228,6 +228,9 @@ draw_editor :: (using game_state: *Game_State) {
                         } else if highlighted_block >= 16 && highlighted_block < 24 {
                             block.type = .WALL;
                             block.number = xx (highlighted_block - 15);
+                        } else if highlighted_block >= 24 && highlighted_block < 32 {
+                            block.type == .NONE;
+                            block.number = xx (highlighted_block - 23);
                         }
                         editor.selected_block = block;
                         editor.selected_block_pos = highlighted_xy;

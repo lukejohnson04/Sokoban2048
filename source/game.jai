@@ -4,7 +4,7 @@ BUILD_TYPE :: enum #specified {
     PROFILE :: 2;
 }
 
-BUILD :: BUILD_TYPE.RELEASE;
+BUILD :: BUILD_TYPE.DEBUG;
 
 
 #program_export
