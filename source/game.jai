@@ -4,7 +4,7 @@ BUILD_TYPE :: enum #specified {
     PROFILE :: 2;
 }
 
-BUILD :: BUILD_TYPE.DEBUG;
+BUILD :: BUILD_TYPE.RELEASE;
 
 
 #program_export
@@ -263,7 +263,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     }
 
     // GUI Elements
-    #if false {
+    #if true {
         use_shader(text_shader);
         gui_view := Matrix4_Identity;
         shader_uniform(text_shader, "projection", *projection, false);
@@ -272,16 +272,20 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         shader_uniform(text_shader, "color", .{1, 1, 1, 1});
 
         total_goal_blocks : int;
+        total_secrets : int;
         for x: 0..level.dimensions.x-1 {
             for y: 0..level.dimensions.y-1 {
                 if block_is_goal(level.grid[x][y]) {
                     total_goal_blocks += 1;
+                } else if level.grid[x][y].type == .SIGNED_PHOTOGRAPH {
+                    total_secrets += 1;
                 }
             }
         }
 
-        score_string := sprint("%", total_goal_blocks);
+        score_string := sprint("%", total_secrets);
         draw_text(score_string, .{32, 64}, *font_arial, intermediate_vao, intermediate_vbo);
+        draw_text(score_string, .{32, 128}, *font_arial, intermediate_vao, intermediate_vbo);
         glEnable(GL_DEPTH_TEST);
     }
     
