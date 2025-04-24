@@ -3,7 +3,7 @@ Old_Level :: struct {
     MAX_WIDTH :: 128;
     MAX_HEIGHT :: 128;
     dimensions := v2i.{4, 4};
-    grid: [MAX_WIDTH][MAX_HEIGHT]int;
+    grid: [MAX_WIDTH][MAX_HEIGHT] Block;
 
     player_pos := v2i.{0, 0};
     player_spawn_pos := v2i.{0, 0};
@@ -11,6 +11,7 @@ Old_Level :: struct {
     name : [MAX_LEVEL_NAME_LENGTH]u8;
     id : u32 = 0;
 }
+
 
 one_time_conversion :: (level_name: string) {
     old: Old_Level;
@@ -21,34 +22,14 @@ one_time_conversion :: (level_name: string) {
     print("Finished conversion\n");
 }
 
-// #run one_time_conversion();
+// #run one_time_conversion("open");
 
 level_format_converter :: (level: *Level, old_level: *Old_Level) {
     level.* = .{};
     level.dimensions = old_level.dimensions;
     for x: 0..level.dimensions.x-1 {
         for y: 0..level.dimensions.y-1 {
-            block: Block;
-            if is_block_wall(old_level.grid[x][y]) {
-                block.type = .WALL;
-                if old_level.grid[x][y] != BLOCK_WALL {
-                    // colored wall
-                    block.number = xx (old_level.grid[x][y] - BLOCK_WALL_COLOR + 1);
-                }
-            } else if old_level.grid[x][y] == {
-                case 0;                         block = .{};
-                case BLOCK_BOULDER;             block.type = .BOULDER;
-                case BLOCK_PLAYER_SPAWN;        block.type = .PLAYER_SPAWN;
-                case BLOCK_SIGNED_PHOTOGRAPH;   block.type = .SIGNED_PHOTOGRAPH;
-                case; {
-                    // Numbered block
-                    block.type = .NUMBERED;
-                    block.number = xx abs(old_level.grid[x][y]);
-                    if old_level.grid[x][y] < 0 {
-                        block.flags |= Block.Flag.GOAL;
-                    }
-                }
-            }
+            block := old_level.grid[x][y];
             level.grid[x][y] = block;
         }
     }

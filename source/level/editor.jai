@@ -268,11 +268,8 @@ update_editor :: (using game_state: *Game_State, input: *Input_State) {
     mouse_tile := editor.mouse_tile;
 
     if input.mouse_wheel {
-        if input.mouse_wheel > 0 {
-            camera.zoom *= 2.0;
-        } else {
-            camera.zoom *= 0.5;
-        }
+        zoom_factor := ifx input.mouse_wheel > 0 then 2.0 else 0.5;
+        camera_zoom(*camera, get_mouse_position(), zoom_factor);
     }
 
     if editor.tool == {

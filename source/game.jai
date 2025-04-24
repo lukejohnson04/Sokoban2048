@@ -131,8 +131,9 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         }
 
     } else if (SDL_GetWindowFlags(window) & SDL_WINDOW_INPUT_FOCUS) != 0 {
-        DEBUG_CAMERA_SPEED :: 12;
+        DEBUG_CAMERA_SPEED := 12 * (1.0 / camera.zoom);
         DEADZONE_PERCENT :: 0.01;
+
         mouse_pos := get_mouse_position();
         if mouse_pos.x >= WINDOW_WIDTH - WINDOW_WIDTH*DEADZONE_PERCENT {
             camera.pos.x += DEBUG_CAMERA_SPEED;
