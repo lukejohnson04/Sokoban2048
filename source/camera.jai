@@ -32,7 +32,6 @@ get_mouse_world_pos :: (camera: Camera2D) -> Vector2 {
     pos := get_mouse_position();
     
     screenCenter := Vector2.{WINDOW_WIDTH/2, WINDOW_HEIGHT/2};
-
     translated := pos - screenCenter;
     scaled := translated * (1/camera.zoom);
     worldPos := camera.pos + scaled;
@@ -56,8 +55,8 @@ get_camera_level_bounds :: (camera: Camera2D, level: *Level) -> v2i, v2i {
     zoom := 1.0 / camera.zoom;
     CAMERA_SIZE := Vector2.{WINDOW_WIDTH * zoom, WINDOW_HEIGHT * zoom};
     CAMERA_TILE_SIZE := v2i.{xx (CAMERA_SIZE.x / 64), xx (CAMERA_SIZE.y / 64)} + .{2, 2};
-    camera_bound_begin.x = xx (floor(camera.pos.x / 64) - 1 - CAMERA_TILE_SIZE.x/2);
-    camera_bound_begin.y = xx (floor(camera.pos.y / 64) - 1 - CAMERA_TILE_SIZE.y/2);
+    camera_bound_begin.x = xx (floor(camera.pos.x / 64) - CAMERA_TILE_SIZE.x/2);
+    camera_bound_begin.y = xx (floor(camera.pos.y / 64) - CAMERA_TILE_SIZE.y/2);
     camera_bound_end = camera_bound_begin + CAMERA_TILE_SIZE;
 
     tile_begin, tile_end : v2i;
