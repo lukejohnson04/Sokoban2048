@@ -1,30 +1,4 @@
 
-// get_block_source :: (block: int) -> Rect {
-//     source : Rect;
-//     if block > 0 {
-//         if block == BLOCK_PLAYER_SPAWN {
-//             source = Rect.{64,0,16,16};
-//         } else if block == BLOCK_BOULDER {
-//             source = Rect.{32,0,16,16};
-//         } else if block == BLOCK_SIGNED_PHOTOGRAPH {
-//             source = Rect.{80,0,16,16};
-//         } else if is_block_wall(block) {
-//             if block == BLOCK_WALL {
-//                 source = Rect.{48,0,16,16};
-//             } else {
-//                 source = Rect.{xx ((block - BLOCK_WALL_COLOR) * 16),32,16,16};
-//             }
-//         } else {
-//             source = Rect.{xx ((block-1) * 16),16,16,16};
-//         }
-//     } else if block < 0 {
-//         source = Rect.{xx ((abs(block)-1) * 16),16,16,16};
-//     } else {
-//         source = Rect.{0,0,16,16};
-//     }
-//     return source;
-// }
-
 get_block_source :: (block: Block) -> Rect {
     source : Rect;
     if block.type == .NONE {
@@ -32,6 +6,8 @@ get_block_source :: (block: Block) -> Rect {
         if block.number > 0 {
             source = Rect.{xx ((block.number - 1) * 16), 48, 16, 16};
         }
+    } else if block.type == .BLOCK_BARRIER {
+        source = Rect.{96,0,16,16};
     } else if block.type == .PLAYER_SPAWN {
         source = Rect.{64,0,16,16};
     } else if block.type == .BOULDER {
@@ -73,6 +49,7 @@ Block :: struct {
         BOULDER :: 3;
         SIGNED_PHOTOGRAPH :: 4;
         PLAYER_SPAWN :: 5;
+        BLOCK_BARRIER :: 6;
     }
 
     Flag :: enum u8 #specified {

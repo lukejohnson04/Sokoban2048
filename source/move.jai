@@ -41,10 +41,9 @@ player_move :: (using game_state: *Game_State, move: v2i) -> bool, bool, bool {
     if new_pos.x < 0 || new_pos.x >= level.dimensions.x || new_pos.y < 0 || new_pos.y >= level.dimensions.y {
         return false, false, false;
 
-    } else if level.grid[new_pos.x][new_pos.y].type == .NONE {
+    } else if level.grid[new_pos.x][new_pos.y].type == .NONE || level.grid[new_pos.x][new_pos.y].type == .BLOCK_BARRIER {
         success = true;
         player_pos = new_pos;
-
     } else if level.grid[new_pos.x][new_pos.y].type == .SIGNED_PHOTOGRAPH {
         success = true;
 
@@ -77,7 +76,7 @@ player_move :: (using game_state: *Game_State, move: v2i) -> bool, bool, bool {
                 break;
             }
 
-            if block.type == .WALL {
+            if block.type == .WALL || block.type == .BLOCK_BARRIER {
                 success = false;
                 break;
             }
@@ -103,7 +102,7 @@ player_move :: (using game_state: *Game_State, move: v2i) -> bool, bool, bool {
                 curr_block := level.grid[pos.x][pos.y];
                 prev_block := level.grid[prev.x][prev.y];
                 // See if two blocks can be combined, and if so, combine them and replace one with air
-                if curr_block.type == prev_block.type && curr_block.number == prev_block.number && curr_block.type != .BOULDER {
+                if curr_block.type == prev_block.type && curr_block.number == prev_block.number && curr_block.type != .BOULDER && curr_block.type != .BLOCK_BARRIER {
                     new_block := prev_block;
                     new_block.number += 1;
                     combines_block = true;

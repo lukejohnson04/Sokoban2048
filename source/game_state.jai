@@ -108,55 +108,6 @@ on_startup :: (using game_state: *Game_State) {
 }
 
 
-INI_FILE_LOCATION :: "data/game.ini";
-
-Ini_File_Data :: struct {
-    level: Level;
-    editor: Editor_State;
-    camera: Camera2D;
-}
-
-save_ini_file :: (using game_state: *Game_State) -> bool {
-    last_level := level.name;
-    path := INI_FILE_LOCATION;
-
-    ini_data : Ini_File_Data;
-    ini_data.level = level;
-    ini_data.editor = editor;
-    ini_data.camera = camera;
-
-    success := write_entire_file(path, cast(*void) *ini_data, size_of(Ini_File_Data));
-
-    if !success {
-        print("Failed to save ini file!\n");
-        return false;
-    }
-    return true;
-}
-
-// Auto save
-load_ini_file :: (using game_state: *Game_State) -> bool {
-    data, success := read_entire_file(INI_FILE_LOCATION);
-    if !success {
-        print("Failed to load ini file!\n");
-        return false;
-    }
-    if data.count != size_of(Ini_File_Data) {
-        print("Failed to load ini file!\n");
-        return false;
-    }
-
-    ini_data : *Ini_File_Data = xx data.data;
-
-    level = ini_data.level;
-    editor = ini_data.editor;
-    camera = ini_data.camera;
-
-    move_stack = .{};
-    return true;
-}
-
-
 Hash :: #import "Hash";
 
 #load "save_load_game.jai";

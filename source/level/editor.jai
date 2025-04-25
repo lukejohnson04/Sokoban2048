@@ -222,6 +222,8 @@ draw_editor :: (using game_state: *Game_State) {
                             block.type = .PLAYER_SPAWN;
                         } else if highlighted_block == 5 {
                             block.type = .SIGNED_PHOTOGRAPH;
+                        } else if highlighted_block == 6 {
+                            block.type = .BLOCK_BARRIER;
                         } else if highlighted_block >= 8 && highlighted_block < 16 {
                             block.type = .NUMBERED;
                             block.number = xx (highlighted_block - 7);
@@ -229,7 +231,7 @@ draw_editor :: (using game_state: *Game_State) {
                             block.type = .WALL;
                             block.number = xx (highlighted_block - 15);
                         } else if highlighted_block >= 24 && highlighted_block < 32 {
-                            block.type == .NONE;
+                            block.type = .NONE;
                             block.number = xx (highlighted_block - 23);
                         }
                         editor.selected_block = block;
@@ -239,6 +241,7 @@ draw_editor :: (using game_state: *Game_State) {
             }
         }
 
+        // Draw yellow rect around hovered tile
         if highlighted && editor.selected_block_pos != highlighted_xy {
             p1 := ImGui.ImVec2.{highlighted_xy.x * TILE_SIZE, highlighted_xy.y * TILE_SIZE};
             p2 := p1 + .{TILE_SIZE, 0};
@@ -249,6 +252,7 @@ draw_editor :: (using game_state: *Game_State) {
             draw_list.AddQuad(draw_list, img_pos + p1, img_pos + p2, img_pos + p3, img_pos + p4, ImGui.GetColorU32(colf), 2);
         }
 
+        // Draw green rect around selected tile
         if editor.selected_block.type != .NONE {
             p1 := ImGui.ImVec2.{editor.selected_block_pos.x * TILE_SIZE, editor.selected_block_pos.y * TILE_SIZE};
             p2 := p1 + .{TILE_SIZE, 0};
