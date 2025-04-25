@@ -211,6 +211,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         source := get_block_source(spawn);
         dest := Rect.{xx (level.player_spawn_pos.x*64), xx (level.player_spawn_pos.y*64), 64, 64};
         draw_texture(source, dest, *sprites, intermediate_vao, intermediate_vbo);
+        print("Drawing spawn block\n");
     }
 
     // Editor draw final pass
@@ -287,7 +288,6 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         score_string := sprint("%", total_secrets);
         draw_text(score_string, .{32, 64}, *font_arial, intermediate_vao, intermediate_vbo);
         draw_text(score_string, .{32, 128}, *font_arial, intermediate_vao, intermediate_vbo);
-        glEnable(GL_DEPTH_TEST);
     }
     
     if editor.enabled {

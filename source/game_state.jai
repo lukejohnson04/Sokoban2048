@@ -101,20 +101,31 @@ on_startup :: (using game_state: *Game_State) {
             // Start a new game
             load_level(*level, "open", *field, false);
         }
+        camera.pos.x = xx (level.player_pos.x * 64);
+        camera.pos.y = xx (level.player_pos.y * 64);
     }
     vfield_generate_flood_fill(*level, field);
-
-    camera.pos.x = xx (level.player_pos.x * 64);
-    camera.pos.y = xx (level.player_pos.y * 64);
 }
 
 
 INI_FILE_LOCATION :: "data/game.ini";
 
+Ini_File_Data :: struct {
+    level: Level;
+    editor: Editor_State;
+    camera: Camera2D;
+}
+
 save_ini_file :: (using game_state: *Game_State) -> bool {
     last_level := level.name;
     path := INI_FILE_LOCATION;
-    success := write_entire_file(path, cast(*void) level.name.data, MAX_LEVEL_NAME_LENGTH);
+
+    ini_data : Ini_File_Data;
+    ini_data.level = level;
+    ini_data.editor = editor;
+    ini_data.camera = camera;
+
+    success := write_entire_file(path, cast(*void) *ini_data, size_of(Ini_File_Data));
 
     if !success {
         print("Failed to save ini file!\n");
@@ -127,13 +138,22 @@ save_ini_file :: (using game_state: *Game_State) -> bool {
 load_ini_file :: (using game_state: *Game_State) -> bool {
     data, success := read_entire_file(INI_FILE_LOCATION);
     if !success {
+        print("Failed to load ini file!\n");
         return false;
     }
-    result := load_level(*level, data, *game_state.field, log_errors = false);
-    if result {
-        move_stack = .{};
+    if data.count != size_of(Ini_File_Data) {
+        print("Failed to load ini file!\n");
+        return false;
     }
-    return result;
+
+    ini_data : *Ini_File_Data = xx data.data;
+
+    level = ini_data.level;
+    editor = ini_data.editor;
+    camera = ini_data.camera;
+
+    move_stack = .{};
+    return true;
 }
 
 
