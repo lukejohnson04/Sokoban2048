@@ -14,6 +14,8 @@ get_block_source :: (block: Block) -> Rect {
         source = Rect.{32,0,16,16};
     } else if block.type == .SIGNED_PHOTOGRAPH {
         source = Rect.{80,0,16,16};
+    } else if block.type == .INTERACTABLE {
+        source = Rect.{xx (block.number * 16),112,16,16};
     } else if block.type == .WALL {
         if block.number == 0 {
             source = Rect.{48,0,16,16};
@@ -28,10 +30,6 @@ get_block_source :: (block: Block) -> Rect {
     return source;
 }
 
-
-is_block_wall :: (block: int) -> bool {
-    return block == BLOCK_WALL || (block >= BLOCK_WALL_COLOR && block < BLOCK_WALL_COLOR + BLOCK_WALL_COLOR_COUNT);
-}
 
 block_is_goal :: (block: Block) -> bool {
     return (block.flags & (.GOAL | .VANISH_GOAL)) != 0;
@@ -50,6 +48,7 @@ Block :: struct {
         SIGNED_PHOTOGRAPH :: 4;
         PLAYER_SPAWN :: 5;
         BLOCK_BARRIER :: 6;
+        INTERACTABLE :: 7;
     }
 
     Flag :: enum u8 #specified {
@@ -57,17 +56,3 @@ Block :: struct {
         VANISH_GOAL :: 0x2;
     }
 }
-
-
-BLOCK_WALL :: 1000;
-BLOCK_BOULDER :: 1001;
-BLOCK_PLAYER_SPAWN :: 1002;
-BLOCK_SIGNED_PHOTOGRAPH :: 1003;
-
-BLOCK_WALL_COLOR :: 2000;
-BLOCK_WALL_COLOR_COUNT :: 8;
-
-
-
-
-

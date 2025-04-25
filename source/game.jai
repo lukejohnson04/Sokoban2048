@@ -107,7 +107,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     }
 
     // Rendering
-    glClearColor(0.35, 0.5, 0.9, 1.0);
+    glClearColor(0, 0, 0, 1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     use_shader(texture_shader);
@@ -159,7 +159,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     shader_uniform(texture_shader, "gold", 0);
     shader_uniform(texture_shader, "colormult", 1.0);
 
-    bind_texture(sprites);    
+    bind_texture(sprites);
 
     // Camera bounds
     tile_begin, tile_end := get_camera_level_bounds(camera, *level);
@@ -171,8 +171,8 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
 
             // Draw blocks that aren't visible
             if editor.editing_level == false && field[x][y].visible == false {
-                draw_texture(.{48, 0, 16, 16}, dest, *sprites, intermediate_vao, intermediate_vbo);
                 continue;
+                // draw_texture(.{48, 0, 16, 16}, dest, *sprites, intermediate_vao, intermediate_vbo);
             }
 
             // Don't draw player in edit mode
