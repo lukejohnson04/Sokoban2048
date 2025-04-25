@@ -6,11 +6,10 @@ Visibility_Node :: struct {
 }
 Visibility_Field :: [Level.MAX_WIDTH][Level.MAX_HEIGHT] Visibility_Node;
 
-vfield_generate_flood_fill :: (using game_state: *Game_State) {
+vfield_generate_flood_fill :: (level: *Level, field: [][Level.MAX_HEIGHT] Visibility_Node) {
     for x: 0..level.dimensions.x-1 {
         for y: 0..level.dimensions.y-1 {
             field[x][y] = .{.{x, y}, false, false};
-
         }
     }
 
@@ -27,7 +26,7 @@ vfield_generate_flood_fill :: (using game_state: *Game_State) {
         for dir: dirs {
             pos := coord + dir;
             
-            if !is_in_bounds(pos, *level) continue;
+            if !is_in_bounds(pos, level) continue;
             if field[pos.x][pos.y].visited          continue;
             block := level.grid[pos.x][pos.y];
 
@@ -37,8 +36,6 @@ vfield_generate_flood_fill :: (using game_state: *Game_State) {
                 continue;
             }
             
-
-
             queue_add(*queue, pos);
         }
     }

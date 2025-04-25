@@ -99,11 +99,11 @@ on_startup :: (using game_state: *Game_State) {
         success := load_save(game_state, false);
         if success == false {
             // Start a new game
-            load_level(*level, "open", false);
+            load_level(*level, "open", *field, false);
         }
     }
+    vfield_generate_flood_fill(*level, field);
 
-    vfield_generate_flood_fill(game_state);
     camera.pos.x = xx (level.player_pos.x * 64);
     camera.pos.y = xx (level.player_pos.y * 64);
 }
@@ -115,6 +115,7 @@ save_ini_file :: (using game_state: *Game_State) -> bool {
     last_level := level.name;
     path := INI_FILE_LOCATION;
     success := write_entire_file(path, cast(*void) level.name.data, MAX_LEVEL_NAME_LENGTH);
+
     if !success {
         print("Failed to save ini file!\n");
         return false;
@@ -128,11 +129,9 @@ load_ini_file :: (using game_state: *Game_State) -> bool {
     if !success {
         return false;
     }
-    result := load_level(*level, data, log_errors = false);
+    result := load_level(*level, data, *game_state.field, log_errors = false);
     if result {
-        if result {
-            move_stack = .{};
-        }
+        move_stack = .{};
     }
     return result;
 }

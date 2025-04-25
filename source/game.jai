@@ -4,7 +4,7 @@ BUILD_TYPE :: enum #specified {
     PROFILE :: 2;
 }
 
-BUILD :: BUILD_TYPE.RELEASE;
+BUILD :: BUILD_TYPE.DEBUG;
 
 
 #program_export
@@ -82,7 +82,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         }
 
         if move_number != starting_move_number {
-            vfield_generate_flood_fill(game_state);
+            vfield_generate_flood_fill(*level, field);
         }
     }
 

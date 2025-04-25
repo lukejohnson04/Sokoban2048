@@ -6,6 +6,17 @@ Goal blocks you can push around?
 Solving a goal block makes it disappear?
 Player can combine with other blocks
 Block that you can push around, but can't be pushed by other blocks. You can use it as a prop block to setup combinations
+Timer blocks
+	Block that can be pushed a specific amount of times before it locks in place
+	Block that can be pushed a specific amount of times before it disappears
+	Block that only exists for a certain amount of moves before it disappears
+	Block that toggles on or off every turn
+	Waste a move button mechanic?
+
+What is every possible way a player could waste a move?
+
+Boulder visibility puzzle where blocks combine behind the boulder and it isn't visible because the boulder is between it, but the player realizes they combined two blocks just by the audio cue
+
 
 Block that disappears when you walk into it
 - Could have puzzles where it acts as a prop block, but then when you finish you can walk through it to clear the path to the exit
@@ -13,19 +24,3 @@ Block that disappears when you walk into it
 Secret puzzle where the big block from the previous room is brought in and used as a prop block (like the 1 blocks)
 
 Open world area full of secrets
-
-Entrance keys
-Two 8
-One 128
-
-Entrance exits
-One 4
-One 8
-One 16
-One 32
-
-Random
-One 16
-
-
-64 + 64 + 8
