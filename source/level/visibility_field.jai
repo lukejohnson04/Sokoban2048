@@ -31,7 +31,7 @@ vfield_generate_flood_fill :: (using game_state: *Game_State) {
             if field[pos.x][pos.y].visited          continue;
             block := level.grid[pos.x][pos.y];
 
-            if block.type == .WALL || block_is_goal(block) {
+            if block.type == .WALL || block_is_goal(block) || block.type == .BOULDER {
                 field[pos.x][pos.y].visible = true;
                 field[pos.x][pos.y].visited = true;
                 continue;

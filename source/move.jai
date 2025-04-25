@@ -103,7 +103,7 @@ player_move :: (using game_state: *Game_State, move: v2i) -> bool, bool, bool {
                 curr_block := level.grid[pos.x][pos.y];
                 prev_block := level.grid[prev.x][prev.y];
                 // See if two blocks can be combined, and if so, combine them and replace one with air
-                if curr_block.type == prev_block.type && curr_block.number == prev_block.number {
+                if curr_block.type == prev_block.type && curr_block.number == prev_block.number && curr_block.type != .BOULDER {
                     new_block := prev_block;
                     new_block.number += 1;
                     combines_block = true;
