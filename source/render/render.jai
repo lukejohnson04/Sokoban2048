@@ -10,7 +10,7 @@ load_texture :: (path: string) -> Texture {
 
     data := stbi_load(path.data, *tex.width, *tex.height, *tex.channels, 0);
     if data == null {
-        print("No data!\n");
+        print("No data at path: \"%\"\n", path);
         return tex;
     }
     

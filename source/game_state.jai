@@ -21,11 +21,9 @@ Game_State :: struct {
     color_vao : GLuint;
     color_vbo : GLuint;
 
-    // textures : [20] Resource(Texture);
-
-    sprites : Texture;
-    sprites_imgui : Texture;
-    dialogue_player_texture : Texture;
+    sprites : Resource(Texture);
+    sprites_imgui : Resource(Texture);
+    dialogue_player_texture : Resource(Texture);
 
     photograph_song : *Mix_Chunk;
     
@@ -49,6 +47,8 @@ Game_State :: struct {
     move_stack : Move_Stack;
     move_number : int;
     checkpoint_stack : Move_Checkpoint_Stack;
+
+    resource_check_timer : float32;
 
     frame_number := 0;
 
@@ -82,9 +82,9 @@ on_startup :: (using game_state: *Game_State) {
     glGenVertexArrays(1, *color_vao);
     glGenBuffers(1, *color_vbo);
 
-    sprites = load_texture("data/art/sprites.png");
-    sprites_imgui = load_texture("data/art/sprites.png");
-    dialogue_player_texture = load_texture("data/art/dialoguebox.png");
+    load_resource(*sprites, "data/art/sprites.png");
+    load_resource(*sprites_imgui, "data/art/sprites.png");
+    load_resource(*dialogue_player_texture, "data/art/dialoguebox.png");
 
     create_shader(*texture_shader, "data/shaders/texture.vert", "data/shaders/texture.frag");
     create_shader(*text_shader, "data/shaders/text.vert", "data/shaders/text.frag");

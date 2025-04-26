@@ -5,7 +5,7 @@ Resource_Header :: struct {
 }
 
 Resource :: struct($T: Type) {
-    data: T;
+    #as using data: T;
 
     MAX_PATH_LENGTH :: 64;
     path: [MAX_PATH_LENGTH] u8;
@@ -14,9 +14,9 @@ Resource :: struct($T: Type) {
 }
 
 resource_set_path :: (resource: *Resource($T), path: string) {
-    assert(path.count <= Resource.MAX_PATH_LENGTH);
+    assert(path.count <= resource.MAX_PATH_LENGTH);
     memcpy(resource.path.data, path.data, path.count);
-    for path.count..Resource.MAX_PATH_LENGTH-1 {
+    for path.count..resource.MAX_PATH_LENGTH-1 {
         resource.path[it] = 0;
     }
 }
@@ -36,4 +36,14 @@ check_resource_reload :: (res: *Resource($T)) -> bool {
         return true;
     }
     return false;
+}
+
+load_resource :: (resource: *Resource($T), path: string) {
+    #if T == Texture {
+        resource.data = load_texture(path);
+    }
+    resource_set_path(resource, path);
+    modtime, size, success := File_Utilities.file_modtime_and_size(xx path);
+    resource.header.modtime = modtime;
+    resource.header.size = size;
 }
