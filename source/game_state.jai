@@ -110,8 +110,6 @@ on_startup :: (using game_state: *Game_State) {
         camera.pos.y = xx (level.player_pos.y * 64);
     }
     vfield_generate_flood_fill(*level, field);
-
-    dialogue_set_text(*dialogue_state, "Dear ronald, I'm just going to be so honest with you. I just don't fw you at all!!!");
 }
 
 

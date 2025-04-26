@@ -85,7 +85,8 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
             vfield_generate_flood_fill(*level, field);
         }
     }
-    if dialogue_state.open {
+    
+    if dialogue_state.open || dialogue_state.nodes.count > 0 {
         dialogue_update(*dialogue_state, input);
     }
 
@@ -277,7 +278,11 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         shader_uniform(text_shader, "view", *Matrix4_Identity, true);
         shader_uniform(text_shader, "model", *model, false);
         shader_uniform(text_shader, "color", .{1, 1, 1, 1});
-        draw_text(dialogue_state.text, .{64, 100}, *font_m5x7, intermediate_vao, intermediate_vbo, WINDOW_WIDTH - 200);
+        
+        str: string;
+        str.data = queue_peek(*dialogue_state.nodes).text_buffer.data;
+        str.count = dialogue_state.index;
+        draw_text(str, .{64, 100}, *font_m5x7, intermediate_vao, intermediate_vbo, WINDOW_WIDTH - 200);
     }
 
     #if false {
