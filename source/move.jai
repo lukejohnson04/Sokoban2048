@@ -40,7 +40,9 @@ player_move :: (using game_state: *Game_State, move: v2i) -> bool, bool, bool {
 
     if new_pos.x < 0 || new_pos.x >= level.dimensions.x || new_pos.y < 0 || new_pos.y >= level.dimensions.y {
         return false, false, false;
-
+    } else if level.grid[new_pos.x][new_pos.y].type == .INTERACTABLE {
+        dialogue_set_text(*dialogue_state, "Holy cow... Thank goodness you found me!!!");
+        return true, false, false;
     } else if level.grid[new_pos.x][new_pos.y].type == .NONE || level.grid[new_pos.x][new_pos.y].type == .BLOCK_BARRIER {
         success = true;
         player_pos = new_pos;

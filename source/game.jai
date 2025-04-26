@@ -38,7 +38,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         return 0;
     }
 
-    if editor.editing_level == false && just_got_photograph == false {
+    if editor.editing_level == false && just_got_photograph == false && dialogue_state.open == false {
         starting_move_number := move_number;
 
         move := v2i.{0, 0};
@@ -85,6 +85,9 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
             vfield_generate_flood_fill(*level, field);
         }
     }
+    if dialogue_state.open {
+        dialogue_update(*dialogue_state, input);
+    }
 
     if just_got_photograph && Mix_Playing(0) == 0 {
         just_got_photograph = false;
@@ -93,7 +96,6 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     if editor.enabled && editor.editing_level {
         update_editor(game_state, input);
     }
-
 
 
     // Render begin
@@ -264,11 +266,24 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     }
 
     // GUI Elements
-    #if true {
+    // Draw dialogue player
+    if dialogue_state.open {
+        use_shader(texture_shader);
+        shader_uniform(texture_shader, "view", *Matrix4_Identity, true);
+        bind_texture(dialogue_player_texture);
+        draw_texture(.{0, 0, 320, 180}, .{0, 0, WINDOW_WIDTH, WINDOW_HEIGHT}, *dialogue_player_texture, intermediate_vao, intermediate_vbo);
         use_shader(text_shader);
-        gui_view := Matrix4_Identity;
         shader_uniform(text_shader, "projection", *projection, false);
-        shader_uniform(text_shader, "view", *gui_view, true);
+        shader_uniform(text_shader, "view", *Matrix4_Identity, true);
+        shader_uniform(text_shader, "model", *model, false);
+        shader_uniform(text_shader, "color", .{1, 1, 1, 1});
+        draw_text(dialogue_state.text, .{64, 100}, *font_m5x7, intermediate_vao, intermediate_vbo, WINDOW_WIDTH - 200);
+    }
+
+    #if false {
+        use_shader(text_shader);
+        shader_uniform(text_shader, "projection", *projection, false);
+        shader_uniform(text_shader, "view", *Matrix4_Identity, true);
         shader_uniform(text_shader, "model", *model, false);
         shader_uniform(text_shader, "color", .{1, 1, 1, 1});
 
@@ -334,3 +349,4 @@ Random :: #import "Random";
 #load "block.jai";
 #load "level/level.jai";
 #load "audio/audio.jai";
+#load "dialogue.jai";

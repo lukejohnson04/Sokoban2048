@@ -13,6 +13,7 @@ Game_State :: struct {
 
     sprites : Texture;
     sprites_imgui : Texture;
+    dialogue_player_texture : Texture;
 
     photograph_song : *Mix_Chunk;
     
@@ -21,6 +22,7 @@ Game_State :: struct {
     footsteps : [7]*Mix_Chunk;
 
     font_arial: Font;
+    font_m5x7: Font;
 
     level : Level;
     field : Visibility_Field;
@@ -30,6 +32,7 @@ Game_State :: struct {
 
     camera := Camera2D.{.{WINDOW_WIDTH/2, WINDOW_HEIGHT/2}, 1};
     editor : Editor_State;
+    dialogue_state : Dialogue_Player_State;
 
     move_stack : Move_Stack;
     move_number : int;
@@ -67,8 +70,9 @@ on_startup :: (using game_state: *Game_State) {
     glGenVertexArrays(1, *color_vao);
     glGenBuffers(1, *color_vbo);
 
-    sprites = load_texture("data/sprites.png");
-    sprites_imgui = load_texture("data/sprites.png");
+    sprites = load_texture("data/art/sprites.png");
+    sprites_imgui = load_texture("data/art/sprites.png");
+    dialogue_player_texture = load_texture("data/art/dialoguebox.png");
 
     create_shader(*texture_shader, "data/shaders/texture.vert", "data/shaders/texture.frag");
     create_shader(*text_shader, "data/shaders/text.vert", "data/shaders/text.frag");
@@ -78,6 +82,7 @@ on_startup :: (using game_state: *Game_State) {
     shader_uniform(texture_shader, "texture1", 0);
 
     load_font("data/fonts/arial.ttf", *font_arial);
+    load_font("data/fonts/m5x7.ttf", *font_m5x7, 60);
 
     photograph_song = Mix_LoadWAV("data/audio/photograph_song.ogg");
     note_normal = Mix_LoadWAV("data/audio/note_normal.ogg");
@@ -105,6 +110,8 @@ on_startup :: (using game_state: *Game_State) {
         camera.pos.y = xx (level.player_pos.y * 64);
     }
     vfield_generate_flood_fill(*level, field);
+
+    dialogue_set_text(*dialogue_state, "Dear ronald, I'm just going to be so honest with you. I just don't fw you at all!!!");
 }
 
 

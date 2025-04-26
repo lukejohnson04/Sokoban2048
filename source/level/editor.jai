@@ -126,6 +126,7 @@ draw_editor :: (using game_state: *Game_State) {
             } else {
                 save_level(*level, xx level.name);
                 loaded := load_level(*level, xx level.name, *game_state.field);
+                camera.zoom = 1;
                 if loaded {
                     game_state.move_stack = .{};
                 }
