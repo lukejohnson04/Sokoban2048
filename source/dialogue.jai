@@ -10,7 +10,7 @@ Dialogue_Player_State :: struct {
     index := 0;
 
     timer : float32;
-    timer_interval : float32 = 0.1;
+    timer_interval : float32 = 0.05;
 
     open := false;
 }
@@ -65,15 +65,24 @@ dialogue_queue_text :: (dialogue_state: *Dialogue_Player_State, text: string) {
 
 
 generate_dialogue_queue :: (using state: *Dialogue_Player_State, id: u8) {
+    queue_text :: (text: string) #expand {
+        dialogue_queue_text(state, text);
+    }
+
     if id == {
         case 0; {
-            dialogue_queue_text(state, "Oh my goodness! Thank heavens you rescued me!");
-            dialogue_queue_text(state, "I spent so long trying to find the perfect hiding spot for a key to my house...");
-            dialogue_queue_text(state, "That I forgot I needed the key to get out as well!");
-            dialogue_queue_text(state, "I've been stuck here for so long, wasting away my years just patiently waiting for someone to come by.");
-            dialogue_queue_text(state, "Now that you've come by and restored my freedom, I'm now thinking nostolgically about the good times I had here.");
-            dialogue_queue_text(state, "I cannot hold my emotions any longer! I should have appreciated what I had before I lost it.");
-            dialogue_queue_text(state, "You know what? I think I'll stay put here after all!");
+            queue_text("Oh my goodness! Thank heavens you rescued me!");
+            queue_text("I spent so long trying to find the perfect hiding spot for a key to my house...");
+            queue_text("That I forgot I needed the key to get out as well!");
+            queue_text("I've been stuck here for so long, wasting away my years just patiently waiting for someone to come by.");
+            queue_text("Now that you've come by and restored my freedom, I'm now thinking nostalgically about the good times I had here.");
+            queue_text("I cannot hold my emotions any longer! I should have appreciated what I had before I lost it.");
+            queue_text("You know what? I think I'll stay put here after all!");
+        }
+        case 1; {
+            queue_text("I don't know why people even bother with some puzzles.");
+            queue_text("My buddy Eric told me about a puzzle where the solution involved bringing in a block from the previous room!");
+            queue_text("Of course, he must be lying. A puzzle that requires that attention to detail is simply absurd!");
         }
     }
 }
