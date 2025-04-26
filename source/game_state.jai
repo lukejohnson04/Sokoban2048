@@ -1,3 +1,13 @@
+/*
+
+Asset system
+Asset types:
+ - Textures
+ - Shaders
+
+We can do audio later but I"m not 100% definite we'll stick with SDL mixer
+
+*/
 
 Game_State :: struct {
     texture_shader : Shader;
@@ -10,6 +20,8 @@ Game_State :: struct {
     quad_vbo : GLuint;
     color_vao : GLuint;
     color_vbo : GLuint;
+
+    // textures : [20] Resource(Texture);
 
     sprites : Texture;
     sprites_imgui : Texture;

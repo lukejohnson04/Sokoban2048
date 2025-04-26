@@ -1,6 +1,7 @@
+
 Texture :: struct {
-    width, height: s32;
     id: GLuint;
+    width, height: s32;
     channels: s32;
 }
 

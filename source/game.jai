@@ -109,6 +109,9 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         ImGui.End();
     }
 
+    // Reload
+    // check_resource_reload()
+
     // Rendering
     glClearColor(0, 0, 0, 1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -341,10 +344,10 @@ VSYNC :: true;
 #import "SDL_mixer";
 #import "GL";
 #import "File";
-#import "File_Utilities";
 #import "stb_image";
 #import "freetype-2.12.1";
 
+File_Utilities :: #import "File_Utilities";
 Random :: #import "Random";
 
 #load "imgui.jai";
@@ -355,3 +358,4 @@ Random :: #import "Random";
 #load "level/level.jai";
 #load "audio/audio.jai";
 #load "dialogue.jai";
+#load "assets/assets.jai";
