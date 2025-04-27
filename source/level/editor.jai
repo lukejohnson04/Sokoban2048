@@ -14,6 +14,8 @@ Editor_State :: struct {
 
     tool : Editor_Tool = .PAINT;
     mouse_tile : v2i;
+    block_flip_x: bool;
+    block_flip_y: bool;
 
     select_state := Editor_Select_State.NOT_STARTED;
     select_start : v2i;
@@ -158,6 +160,11 @@ draw_editor :: (using game_state: *Game_State) {
             editor.tool = .PASTE;
         }
 
+        ImGui.SameLine();
+        ImGui.Checkbox("Flip x", *editor.block_flip_x);
+        ImGui.SameLine();
+        ImGui.Checkbox("Flip y", *editor.block_flip_y);
+
         img_pos := window_pos + .{0, 160};
 
         draw_list.AddImage(draw_list, cast,no_check(*void)(sprites.id), img_pos, img_pos + dest);
@@ -193,8 +200,6 @@ draw_editor :: (using game_state: *Game_State) {
         if ImGui.Button("Rem bot") {
             level_increase_dimensions(*level, 0, 0, 0, -1);
         }
-
-
 
         // Selected tile
         focused := ImGui.IsWindowFocused();
@@ -242,6 +247,16 @@ draw_editor :: (using game_state: *Game_State) {
                         editor.selected_block_pos = highlighted_xy;
                     }
                 }
+            }
+        }
+
+        // Make sure flip is always synchronized with checkbox
+        if editor.selected_block.type != .NONE {
+            if editor.block_flip_x != cast(bool) (editor.selected_block.flags & .FLIPPED_X) {
+                editor.selected_block.flags ^= .FLIPPED_X;
+            }
+            if editor.block_flip_y != cast(bool) (editor.selected_block.flags & .FLIPPED_Y) {
+                editor.selected_block.flags ^= .FLIPPED_Y;
             }
         }
 

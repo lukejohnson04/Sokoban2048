@@ -84,5 +84,34 @@ generate_dialogue_queue :: (using state: *Dialogue_Player_State, id: u8) {
             queue_text("My buddy Eric told me about a puzzle where the solution involved bringing in a block from the previous room!");
             queue_text("Of course, he must be lying. A puzzle that requires that attention to detail is simply absurd!");
         }
+        case 2; {
+            queue_text("I don't care what my mom says. I am going to be the greatest block-pushing puzzle solver of all time!");
+        }
+        case 3; #through;
+        case 4; {
+            queue_text("Mom look what I found!");
+            queue_text("Can I please keep him as a pet? Pleeeeease?");
+            queue_text("For the last time, no blocks allowed inside the house!");
+        }
+    }
+
+    // Ideas
+    #if false {
+        queue_text("One must wonder what the meaning of this all is. Are we put here just to push blocks?");
+        queue_text("Is there a greater reason behind it all? Or are we just blocks on a grid?");
+
+        queue_text("I had a crazy idea last night. What if there were blocks that could push themselves?");
+
+        queue_text("I had a dream that I was in a Utopia.");
+        queue_text("An endless world of blocks that push themselves.");
+        queue_text("In a world like that, there's no need for us to push the blocks anymore.");
+        queue_text("We could finally rest.");
+
+        queue_text("Do you think blocks like it when we push them around?");
+
+        // House where there's a wall 2 blocks in front of the door, so the front door must be pushed in and not out
+        // And the reason the wall is there is because construction accidentally came too close to the house, so
+        // they got locked in on accident, and nobody has helped them until you pushed their front door in.
+        // queue_text(")
     }
 }

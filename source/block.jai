@@ -54,5 +54,7 @@ Block :: struct {
     Flag :: enum u8 #specified {
         GOAL :: 0x1;
         VANISH_GOAL :: 0x2;
+        FLIPPED_X :: 0x4;
+        FLIPPED_Y :: 0x8;
     }
 }

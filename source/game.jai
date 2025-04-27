@@ -190,9 +190,10 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
             // Don't draw player in edit mode
             if editor.editing_level == false && level.player_pos == v2i.{xx x, xx y} {
                 source = Rect.{16,0,16,16};
-            } else if editor.editing_level && editor.tool == .PAINT && editor.mouse_tile == .{x, y} {
-                source = get_block_source(editor.selected_block);
             } else {
+                if editor.editing_level && editor.tool == .PAINT && editor.mouse_tile == .{x, y} {
+                    block = editor.selected_block;
+                }
                 source = get_block_source(block);
             }
 
@@ -203,6 +204,15 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
                     shader_uniform(texture_shader, "gold", 1);
                 }
                 shader_uniform(texture_shader, "colormult", 0.8);
+            }
+
+            if block.flags & .FLIPPED_X {
+                dest.x += dest.w;
+                dest.w *= -1;
+            }
+            if block.flags & .FLIPPED_Y {
+                dest.y += dest.h;
+                dest.h *= -1;
             }
 
             draw_texture(source, dest, *sprites, intermediate_vao, intermediate_vbo);
