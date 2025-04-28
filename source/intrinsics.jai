@@ -39,6 +39,9 @@ stack_is_empty  :: (using stack: *Stack($T, $MAX_SIZE)) -> bool {
     return count == 0;
 }
 
+stack_clear :: (using stack: *Stack($T, $MAX_SIZE)) {
+    stack.count = 0;
+}
 
 
 Stack_Circular :: struct($T: Type, $MAX_SIZE: s64 = 50) {
@@ -79,6 +82,11 @@ stack_pop :: (using stack: *Stack_Circular($T, $MAX_SIZE)) -> T {
 
 stack_is_empty  :: (using stack: *Stack_Circular($T, $MAX_SIZE)) -> bool {
     return top == -1 || count == 0;
+}
+
+stack_clear :: (using stack: *Stack_Circular($T, $MAX_SIZE)) {
+    stack.top = 0;
+    stack.count = 0;
 }
 
 

@@ -269,6 +269,9 @@ draw_editor :: (using game_state: *Game_State) {
                             block.type = .SIGNED_PHOTOGRAPH;
                         } else if highlighted_block == 6 {
                             block.type = .BLOCK_BARRIER;
+                        } else if highlighted_block == 7 {
+                            block.type = .INTERACTABLE;
+                            block.interaction_id = 10_000;
                         } else if highlighted_block >= 8 && highlighted_block < 16 {
                             block.type = .NUMBERED;
                             block.number = xx (highlighted_block - 7);

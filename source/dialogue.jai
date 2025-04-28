@@ -64,12 +64,18 @@ dialogue_queue_text :: (dialogue_state: *Dialogue_Player_State, text: string) {
 
 
 
-generate_dialogue_queue :: (using state: *Dialogue_Player_State, block: Block) {
+generate_interaction_queue :: (state: *Dialogue_Player_State, using game_state: *Game_State, block: Block) {
     queue_text :: (text: string) #expand {
         dialogue_queue_text(state, text);
     }
 
-    if block.number == {
+    if block.interaction_id == 10_000 {
+        queue_text("Game has been saved.");
+        save_game(game_state);
+        stack_clear(*move_stack);
+        stack_clear(*checkpoint_stack);
+        return;
+    } if block.number == {
         case 0; {
             queue_text("Oh my goodness! Thank heavens you rescued me!");
             queue_text("I spent so long trying to find the perfect hiding spot for a key to my house...");
@@ -117,7 +123,19 @@ generate_dialogue_queue :: (using state: *Dialogue_Player_State, block: Block) {
                 case 1; {
                     queue_text("Town Square: South");
                 }
+                case 2; {
+                    queue_text("WARNING: DO NOT PASS THIS POINT");
+                    queue_text("The rest of this cave is uncharted. Tread at your own warning. You can and will get stuck. Rescue attempts will not be made.");
+                }
             }
+        }
+        case 7; {
+            queue_text("Oh, thank god you found me!");
+            queue_text("I went exploring and accidentally pushed a boulder through this rooms only entrance.");
+            queue_text("I immediately realized my horrific mistake. I got the boulder through the door, but couldn't go to the other side to unblock the exit.");
+            queue_text("I have no idea how long I have been waiting. It feels like it's been millions of turns, maybe longer.");
+            queue_text("Now I can use my freedom to fight for what I believe in:");
+            queue_text("Gerrymandering the village so that my cousin Jeffrey's vote doesn't matter anymore.");
         }
     }
 
@@ -137,7 +155,7 @@ generate_dialogue_queue :: (using state: *Dialogue_Player_State, block: Block) {
 
         queue_text("Yo mama so fat, she takes up two tiles!");
         queue_text("How could you say something so hurtful?");
-        
+
         // House where there's a wall 2 blocks in front of the door, so the front door must be pushed in and not out
         // And the reason the wall is there is because construction accidentally came too close to the house, so
         // they got locked in on accident, and nobody has helped them until you pushed their front door in.

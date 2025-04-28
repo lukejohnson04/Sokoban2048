@@ -16,6 +16,9 @@ get_block_source :: (block: Block) -> Rect {
         source = Rect.{80,0,16,16};
     } else if block.type == .INTERACTABLE {
         source = Rect.{xx (block.number * 16),112,16,16};
+        if block.interaction_id == 10_000 {
+            source = Rect.{112,0,16,16};
+        }
     } else if block.type == .WALL {
         if block.number == 0 {
             source = Rect.{48,0,16,16};
