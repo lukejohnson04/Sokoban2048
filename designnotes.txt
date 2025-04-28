@@ -33,3 +33,18 @@ Possible stories
 Journey to escape the grid
 Journey to become the greatest block pusher of all time
 Journey to find a land with no puzzles
+
+
+An NPC who is convinced that there is a world that is not on a grid, and that a scientist somehow took him from that world and put him into the grid world.
+
+
+
+
+
+
+You were put in puzzle jail, a place where only legendary puzzle masters can escape each puzzle. After escaping, you realize you must use your puzzle solving powers to put a stop to the tyrannical block-pushing-puzzle-obsessed empire.
+
+
+You can undo text options and dialogue
+
+
