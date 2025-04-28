@@ -12,6 +12,8 @@ Move_Delta_Data :: struct {
     new_player_pos: v2i;
 }
 
+
+
 MAX_UNDO :: 200;
 Move_Stack :: Stack_Circular(Move_Delta_Data, MAX_UNDO);
 
