@@ -10,7 +10,7 @@ load_texture :: (path: string, log_errors := false) -> Texture, bool {
 
     data := stbi_load(path.data, *tex.width, *tex.height, *tex.channels, 0);
     if data == null {
-        print("At path \"%\" Error: %\n", to_string(stbi_failure_reason()));
+        print("At path \"%\" Error: %\n", path, to_string(stbi_failure_reason()));
         return tex, false;
     }
     

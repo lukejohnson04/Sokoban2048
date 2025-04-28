@@ -98,6 +98,9 @@ generate_dialogue_queue :: (using state: *Dialogue_Player_State, id: u8) {
             queue_text("Is it all just puzzles?");
             queue_text("Are we the ones pushing boxes or is the mere concept of box pushing the one pushing us?");
         }
+        case 6; {
+            queue_text("In order to leave, you must seal off the entrance.");
+        }
     }
 
     // Ideas

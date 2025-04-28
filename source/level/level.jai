@@ -30,11 +30,11 @@ load_empty_level :: (level: *Level) {
 
 level_increase_dimensions :: (level: *Level, left: int, right: int, top: int, bottom: int) {
     if level.dimensions.x + left + right > level.MAX_WIDTH {
-        print("Can't increase x dimensions: % is greater than the max width!\n", level.dimensions.x + left);
+        print("Can't increase x dimensions: % is greater than the max width!\n", level.dimensions.x + left + right);
         return;
     }
-    if level.dimensions.y + top + bottom > level.MAX_WIDTH {
-        print("Can't increase y dimensions: % is greater than the max height!\n", level.dimensions.x + left);
+    if level.dimensions.y + top + bottom > level.MAX_HEIGHT {
+        print("Can't increase y dimensions: % is greater than the max height!\n", level.dimensions.y + top + bottom);
         return;
     }
 
@@ -50,8 +50,10 @@ level_increase_dimensions :: (level: *Level, left: int, right: int, top: int, bo
                 for y: 0..level.dimensions.y-1 {
                     if x >= left {
                         level.grid[x][y] = level.grid[x - left][y];
+                        level.floor[x][y] = level.floor[x - left][y];
                     } else {
                         level.grid[x][y] = .{};
+                        level.floor[x][y] = .{};
                     }
                 }
             }
@@ -59,6 +61,7 @@ level_increase_dimensions :: (level: *Level, left: int, right: int, top: int, bo
             for x: 0..level.dimensions.x-1 {
                 for y: 0..level.dimensions.y-1 {
                     level.grid[x][y] = level.grid[x - left][y];
+                    level.floor[x][y] = level.floor[x - left][y];
                 }
             }
         }
@@ -73,8 +76,10 @@ level_increase_dimensions :: (level: *Level, left: int, right: int, top: int, bo
                 for #v2 < y: 0..level.dimensions.y-1 {
                     if y >= top {
                         level.grid[x][y] = level.grid[x][y - top];
+                        level.floor[x][y] = level.floor[x][y - top];
                     } else {
                         level.grid[x][y] = .{};
+                        level.floor[x][y] = .{};
                     }
                 }
             }
@@ -82,6 +87,7 @@ level_increase_dimensions :: (level: *Level, left: int, right: int, top: int, bo
             for x: 0..level.dimensions.x-1 {
                 for y: 0..level.dimensions.y-1 {
                     level.grid[x][y] = level.grid[x][y - top];
+                    level.floor[x][y] = level.floor[x][y - top];
                 }
             }
         }
