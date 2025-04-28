@@ -93,6 +93,11 @@ generate_dialogue_queue :: (using state: *Dialogue_Player_State, id: u8) {
             queue_text("Can I please keep him as a pet? Pleeeeease?");
             queue_text("For the last time, no blocks allowed inside the house!");
         }
+        case 5; {
+            queue_text("I've been going through all the puzzles in the area and I can't help but ask myself...");
+            queue_text("Is it all just puzzles?");
+            queue_text("Are we the ones pushing boxes or is the mere concept of box pushing the one pushing us?");
+        }
     }
 
     // Ideas
