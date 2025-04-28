@@ -1,7 +1,7 @@
 
 Old_Level :: struct {
-    MAX_WIDTH :: 128;
-    MAX_HEIGHT :: 128;
+    MAX_WIDTH :: 256;
+    MAX_HEIGHT :: 256;
     dimensions := v2i.{4, 4};
     grid: [MAX_WIDTH][MAX_HEIGHT] Block;
 
@@ -11,7 +11,6 @@ Old_Level :: struct {
     name : [MAX_LEVEL_NAME_LENGTH]u8;
     id : u32 = 0;
 }
-
 
 one_time_conversion :: (level_name: string) {
     old: Old_Level;

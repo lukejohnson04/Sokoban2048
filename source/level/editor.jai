@@ -312,6 +312,15 @@ update_editor :: (using game_state: *Game_State, input: *Input_State) {
         camera_zoom(*camera, get_mouse_position(), zoom_factor);
     }
 
+    blocks : *type_of(Level.grid);
+    if editor.layer == 0 {
+        blocks = *level.grid;
+    } else if editor.layer == 1 {
+        blocks = *level.floor;
+    } else {
+        return;
+    }
+
     if editor.tool == {
         case .PAINT; {
             if input.mouse_pressed || input.rmouse_pressed || input.mwheel_pressed {
@@ -320,11 +329,11 @@ update_editor :: (using game_state: *Game_State, input: *Input_State) {
                     if editor.selected_block.type == .PLAYER_SPAWN {
                         level.player_spawn_pos = .{mouse_tile.x, mouse_tile.y};
                     } else {
-                        level.grid[mouse_tile.x][mouse_tile.y] = editor.selected_block;
+                        blocks.*[mouse_tile.x][mouse_tile.y] = editor.selected_block;
                         if input.rmouse_pressed {
-                            level.grid[mouse_tile.x][mouse_tile.y].flags |= Block.Flag.GOAL;
+                            blocks.*[mouse_tile.x][mouse_tile.y].flags |= Block.Flag.GOAL;
                         } else if input.mwheel_pressed {
-                            level.grid[mouse_tile.x][mouse_tile.y].flags |= Block.Flag.VANISH_GOAL;
+                            blocks.*[mouse_tile.x][mouse_tile.y].flags |= Block.Flag.VANISH_GOAL;
                         }
                     }
                 }
@@ -353,7 +362,7 @@ update_editor :: (using game_state: *Game_State, input: *Input_State) {
             }
         }
         case .MOVE; {
-            move_tiles :: (using game_state: *Game_State, offset: v2i) {
+            move_tiles :: (using game_state: *Game_State, blocks: *type_of(Level.grid), offset: v2i) {
                 start, end : v2i;
                 start.x = min(editor.select_end.x, editor.select_start.x);
                 start.y = min(editor.select_end.y, editor.select_start.y);
@@ -365,15 +374,15 @@ update_editor :: (using game_state: *Game_State, input: *Input_State) {
 
                 for x: 0..selection_size.x-1 {
                     for y: 0..selection_size.y-1 {
-                        memory[x + y * selection_size.x] = level.grid[start.x + x][start.y + y];
-                        level.grid[start.x + x][start.y + y] = .{};
+                        memory[x + y * selection_size.x] = blocks.*[start.x + x][start.y + y];
+                        blocks.*[start.x + x][start.y + y] = .{};
                     }
                 }
 
                 for x: 0..selection_size.x-1 {
                     for y: 0..selection_size.y-1 {
                         copied_block := memory[x + y * selection_size.x];
-                        block_ptr := *level.grid[start.x + x + offset.x][start.y + y + offset.y];
+                        block_ptr := *blocks.*[start.x + x + offset.x][start.y + y + offset.y];
                         if copied_block.type != .NONE {
                             block_ptr.* = copied_block;
                         }
@@ -399,7 +408,7 @@ update_editor :: (using game_state: *Game_State, input: *Input_State) {
                     if input.mouse_just_released {
                         editor.move_state = .NOT_STARTED;
                         // Move all the tiles
-                        move_tiles(game_state, editor.move_end - editor.move_start);
+                        move_tiles(game_state, blocks, editor.move_end - editor.move_start);
                     }
                 }
             }

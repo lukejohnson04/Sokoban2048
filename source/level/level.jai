@@ -4,6 +4,7 @@ Level :: struct {
     MAX_HEIGHT :: 256;
     dimensions := v2i.{4, 4};
     grid: [MAX_WIDTH][MAX_HEIGHT] Block;
+    floor: [MAX_WIDTH][MAX_HEIGHT] Block;
 
     player_pos := v2i.{0, 0};
     player_spawn_pos := v2i.{0, 0};

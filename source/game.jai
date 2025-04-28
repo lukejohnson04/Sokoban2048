@@ -193,6 +193,10 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
             } else {
                 if editor.editing_level && editor.tool == .PAINT && editor.mouse_tile == .{x, y} {
                     block = editor.selected_block;
+                } else {
+                    if block.type == .NONE && block.number == 0 {
+                        block = level.floor[x][y];
+                    }
                 }
                 source = get_block_source(block);
             }
