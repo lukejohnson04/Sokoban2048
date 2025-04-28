@@ -11,6 +11,7 @@ Editor_State :: struct {
     }
 
     editing_level := false;
+    layer: int;
 
     tool : Editor_Tool = .PAINT;
     mouse_tile : v2i;
@@ -140,6 +141,21 @@ draw_editor :: (using game_state: *Game_State) {
             on_new_level_pressed(game_state);
         }
 
+        items := string.["Layer1", "Floor"];
+        if ImGui.BeginCombo("##combo", items[editor.layer].data) {
+            for 0..items.count-1 {
+                is_selected : bool = editor.layer == it;
+                if ImGui.Selectable(items[it].data, is_selected) {
+                    editor.layer = it;
+                }
+
+                if is_selected {
+                    ImGui.SetItemDefaultFocus();
+                }
+            }
+            ImGui.EndCombo();
+        }
+
         if ImGui.Button("Paint") {
             editor.tool = .PAINT;
         }
@@ -165,7 +181,7 @@ draw_editor :: (using game_state: *Game_State) {
         ImGui.SameLine();
         ImGui.Checkbox("Flip y", *editor.block_flip_y);
 
-        img_pos := window_pos + .{0, 160};
+        img_pos := window_pos + .{0, 200};
 
         draw_list.AddImage(draw_list, cast,no_check(*void)(sprites.id), img_pos, img_pos + dest);
 
@@ -184,6 +200,7 @@ draw_editor :: (using game_state: *Game_State) {
         if ImGui.Button("Add bot") {
             level_increase_dimensions(*level, 0, 0, 0, 1);
         }
+
 
         if ImGui.Button("Rem left") {
             level_increase_dimensions(*level, -1, 0, 0, 0);

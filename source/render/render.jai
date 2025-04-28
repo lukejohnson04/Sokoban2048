@@ -5,13 +5,13 @@ Texture :: struct {
     channels: s32;
 }
 
-load_texture :: (path: string) -> Texture {
+load_texture :: (path: string, log_errors := false) -> Texture, bool {
     tex: Texture;
 
     data := stbi_load(path.data, *tex.width, *tex.height, *tex.channels, 0);
     if data == null {
-        print("No data at path: \"%\"\n", path);
-        return tex;
+        print("At path \"%\" Error: %\n", to_string(stbi_failure_reason()));
+        return tex, false;
     }
     
     glGenTextures(1, *tex.id);
@@ -26,7 +26,7 @@ load_texture :: (path: string) -> Texture {
 
     stbi_image_free(data);
     glBindTexture(GL_TEXTURE_2D, 0);
-    return tex;
+    return tex, true;
 }
 
 draw_rect_with_outline :: (rect: Rect, thickness: int, vao: GLuint, vbo: GLuint) {

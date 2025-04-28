@@ -166,7 +166,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     shader_uniform(texture_shader, "colormult", 1.0);
 
     resource_check_timer += FRAME_TIME;
-    if resource_check_timer > 0.1 {
+    if resource_check_timer > 0.25 {
         check_resource_reload(*sprites);
         resource_check_timer = 0;
     }
