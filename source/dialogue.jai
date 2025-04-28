@@ -64,12 +64,12 @@ dialogue_queue_text :: (dialogue_state: *Dialogue_Player_State, text: string) {
 
 
 
-generate_dialogue_queue :: (using state: *Dialogue_Player_State, id: u8) {
+generate_dialogue_queue :: (using state: *Dialogue_Player_State, block: Block) {
     queue_text :: (text: string) #expand {
         dialogue_queue_text(state, text);
     }
 
-    if id == {
+    if block.number == {
         case 0; {
             queue_text("Oh my goodness! Thank heavens you rescued me!");
             queue_text("I spent so long trying to find the perfect hiding spot for a key to my house...");

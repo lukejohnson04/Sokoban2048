@@ -1,9 +1,16 @@
 
+Old_Block :: struct {
+    type: Block.Block_Type;
+    number: u8;
+    flags: Block.Flag;
+}
+
 Old_Level :: struct {
     MAX_WIDTH :: 256;
     MAX_HEIGHT :: 256;
     dimensions := v2i.{4, 4};
-    grid: [MAX_WIDTH][MAX_HEIGHT] Block;
+    grid: [MAX_WIDTH][MAX_HEIGHT] Old_Block;
+    floor: [MAX_WIDTH][MAX_HEIGHT] Old_Block;
 
     player_pos := v2i.{0, 0};
     player_spawn_pos := v2i.{0, 0};
@@ -29,7 +36,9 @@ level_format_converter :: (level: *Level, old_level: *Old_Level) {
     for x: 0..level.dimensions.x-1 {
         for y: 0..level.dimensions.y-1 {
             block := old_level.grid[x][y];
-            level.grid[x][y] = block;
+            level.grid[x][y].type = block.type;
+            level.grid[x][y].number = block.number;
+            level.grid[x][y].flags = block.flags;
         }
     }
 

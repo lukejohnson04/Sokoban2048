@@ -39,6 +39,7 @@ Block :: struct {
     type: Block_Type;
     number: u8;
     flags: Flag;
+    interaction_id: u16;
 
     Block_Type :: enum u8 #specified {
         NONE :: 0;
