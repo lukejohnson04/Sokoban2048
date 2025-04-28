@@ -30,6 +30,8 @@ Editor_State :: struct {
     save_level_field : [MAX_LEVEL_NAME_LENGTH]u8;
     dimension_field : [MAX_LEVEL_NAME_LENGTH]u8;
 
+    interaction_id : s32;
+
     Editor_Tool :: enum {
         PAINT;
         SELECT;
@@ -181,7 +183,7 @@ draw_editor :: (using game_state: *Game_State) {
         ImGui.SameLine();
         ImGui.Checkbox("Flip y", *editor.block_flip_y);
 
-        img_pos := window_pos + .{0, 200};
+        img_pos := window_pos + .{0, 215};
 
         draw_list.AddImage(draw_list, cast,no_check(*void)(sprites.id), img_pos, img_pos + dest);
 
@@ -216,6 +218,26 @@ draw_editor :: (using game_state: *Game_State) {
         ImGui.SameLine();
         if ImGui.Button("Rem bot") {
             level_increase_dimensions(*level, 0, 0, 0, -1);
+        }
+
+
+        ImGui.PushItemWidth(150);
+        ImGui.InputInt("Interaction Id", *editor.interaction_id);
+        if editor.tool == .SELECT && editor.select_start == editor.select_end {
+            if is_in_bounds(editor.select_start, *level) {
+                ImGui.SameLine();
+                if ImGui.Button("Set interaction id") {
+                    print("pressed button\n");
+                    tile := level.grid[editor.select_start.x][editor.select_start.y];
+                    if tile.type != .NONE {
+                        if editor.interaction_id > 65535 || editor.interaction_id < 0 {
+                            print("Interaction id is out of range of u16!\n");
+                        } else {
+                            level.grid[editor.select_start.x][editor.select_start.y].interaction_id = xx editor.interaction_id;
+                        }
+                    }
+                }
+            }
         }
 
         // Selected tile

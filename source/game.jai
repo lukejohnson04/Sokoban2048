@@ -308,28 +308,39 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         draw_text(str, .{64, 100}, *font_m5x7, intermediate_vao, intermediate_vbo, WINDOW_WIDTH - 200);
     }
 
-    #if false {
+    #if true {
         use_shader(text_shader);
         shader_uniform(text_shader, "projection", *projection, false);
         shader_uniform(text_shader, "view", *Matrix4_Identity, true);
         shader_uniform(text_shader, "model", *model, false);
-        shader_uniform(text_shader, "color", .{1, 1, 1, 1});
+        shader_uniform(text_shader, "color", .{1, 0, 0, 1});
 
-        total_goal_blocks : int;
-        total_secrets : int;
-        for x: 0..level.dimensions.x-1 {
-            for y: 0..level.dimensions.y-1 {
-                if block_is_goal(level.grid[x][y]) {
-                    total_goal_blocks += 1;
-                } else if level.grid[x][y].type == .SIGNED_PHOTOGRAPH {
-                    total_secrets += 1;
+        if editor.editing_level {
+            if is_in_bounds(editor.mouse_tile, *level) {
+                tile := level.grid[editor.mouse_tile.x][editor.mouse_tile.y];
+                if tile.type == .NONE {
+                    tile = level.floor[editor.mouse_tile.x][editor.mouse_tile.y];
                 }
+                struct_str := sprint("%", tile);
+                draw_text(struct_str, .{32, 64}, *font_m5x7, intermediate_vao, intermediate_vbo);
             }
         }
 
-        score_string := sprint("%", total_secrets);
-        draw_text(score_string, .{32, 64}, *font_arial, intermediate_vao, intermediate_vbo);
-        draw_text(score_string, .{32, 128}, *font_arial, intermediate_vao, intermediate_vbo);
+        // total_goal_blocks : int;
+        // total_secrets : int;
+        // for x: 0..level.dimensions.x-1 {
+        //     for y: 0..level.dimensions.y-1 {
+        //         if block_is_goal(level.grid[x][y]) {
+        //             total_goal_blocks += 1;
+        //         } else if level.grid[x][y].type == .SIGNED_PHOTOGRAPH {
+        //             total_secrets += 1;
+        //         }
+        //     }
+        // }
+
+        // score_string := sprint("%", total_secrets);
+        // draw_text(score_string, .{32, 64}, *font_arial, intermediate_vao, intermediate_vbo);
+        // draw_text(score_string, .{32, 128}, *font_arial, intermediate_vao, intermediate_vbo);
     }
     
     if editor.enabled {

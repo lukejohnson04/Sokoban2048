@@ -84,8 +84,17 @@ generate_dialogue_queue :: (using state: *Dialogue_Player_State, block: Block) {
             queue_text("My buddy Eric told me about a puzzle where the solution involved bringing in a block from the previous room!");
             queue_text("Of course, he must be lying. A puzzle that requires that attention to detail is simply absurd!");
         }
+        // Blue boy
         case 2; {
-            queue_text("I don't care what my mom says. I am going to be the greatest block-pushing puzzle solver of all time!");
+            if block.interaction_id == {
+                case 0; {
+                    queue_text("I don't care what my mom says. I am going to be the greatest block-pushing puzzle solver of all time!");
+                }
+                case 1; {
+                    queue_text("Jeez lousie! I got so excited solving all these puzzles, that I ended up getting lost!");
+                    queue_text("Thanks for finding me. You are a gentleman and a scholar!");
+                }
+            }
         }
         case 3; #through;
         case 4; {
@@ -98,8 +107,17 @@ generate_dialogue_queue :: (using state: *Dialogue_Player_State, block: Block) {
             queue_text("Is it all just puzzles?");
             queue_text("Are we the ones pushing boxes or is the mere concept of box pushing the one pushing us?");
         }
+
+        // Sign
         case 6; {
-            queue_text("In order to leave, you must seal off the entrance.");
+            if block.interaction_id == {
+                case 0; {
+                    queue_text("In order to leave, you must seal off the entrance.");
+                }
+                case 1; {
+                    queue_text("Town Square: South");
+                }
+            }
         }
     }
 
@@ -117,6 +135,9 @@ generate_dialogue_queue :: (using state: *Dialogue_Player_State, block: Block) {
 
         queue_text("Do you think blocks like it when we push them around?");
 
+        queue_text("Yo mama so fat, she takes up two tiles!");
+        queue_text("How could you say something so hurtful?");
+        
         // House where there's a wall 2 blocks in front of the door, so the front door must be pushed in and not out
         // And the reason the wall is there is because construction accidentally came too close to the house, so
         // they got locked in on accident, and nobody has helped them until you pushed their front door in.
