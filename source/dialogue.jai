@@ -108,10 +108,20 @@ generate_interaction_queue :: (state: *Dialogue_Player_State, using game_state: 
             queue_text("Can I please keep him as a pet? Pleeeeease?");
             queue_text("For the last time, no blocks allowed inside the house!");
         }
+        // Guy with funny eyebrows
         case 5; {
-            queue_text("I've been going through all the puzzles in the area and I can't help but ask myself...");
-            queue_text("Is it all just puzzles?");
-            queue_text("Are we the ones pushing boxes or is the mere concept of box pushing the one pushing us?");
+            if block.interaction_id == {
+                case 0; {
+                    queue_text("Why hello there! My my my, it's not everyday you see a new face around here.");
+                    queue_text("I love exploring but I've always been a little too scared to go in the mines.");
+                    queue_text("I had a friend go in once, but he quickly came back. Said it was underwhelming.");
+                }
+                case 1; {
+                    queue_text("I've been going through all the puzzles in the area and I can't help but ask myself...");
+                    queue_text("Is it all just puzzles?");
+                    queue_text("Are we the ones pushing boxes or is the mere concept of box pushing the one pushing us?");
+                }
+            }
         }
 
         // Sign
@@ -121,21 +131,34 @@ generate_interaction_queue :: (state: *Dialogue_Player_State, using game_state: 
                     queue_text("In order to leave, you must seal off the entrance.");
                 }
                 case 1; {
-                    queue_text("Town Square: South");
+                    queue_text("Wingrove Mines - KEEP OUT");
                 }
                 case 2; {
                     queue_text("WARNING: DO NOT PASS THIS POINT");
                     queue_text("The rest of this cave is uncharted. Tread at your own warning. You can and will get stuck. Rescue attempts will not be made.");
                 }
+                case 3; {
+                    queue_text("Mineshaft is out of commission. Do not continue.");
+                }
+                case 4; {
+                    queue_text("*It's a small stone tablet with writing engraved on it*");
+                    // queue_text("My love, I'm so so sorry things had to happen like this.");
+                    // queue_text("I would have gladly offered myself in your place, if I had known you would get stuck the way you did.");
+                    queue_text("I know you can't see or hear me, but I am always thinking about you, and I hope you're thinking about me too.");
+                    queue_text("If I had known this would have happened of course I would have done things differently.");
+                    queue_text("I beg you for forgiveness and I beg God.");
+                    queue_text("The fact you will always be there, stuck, thinking I abandoned you, is one I cannot accept.");
+                    queue_text("I will wait a million turns and I'll wait a million more to see you again.");
+                }
             }
         }
         case 7; {
-            queue_text("Oh, thank god you found me!");
+            queue_text("Jeez louise! Thank heavens you rescued me!");
             queue_text("I went exploring and accidentally pushed a boulder through this rooms only entrance.");
             queue_text("I immediately realized my horrific mistake. I got the boulder through the door, but couldn't go to the other side to unblock the exit.");
-            queue_text("I have no idea how long I have been waiting. It feels like it's been millions of turns, maybe longer.");
-            queue_text("Now I can use my freedom to fight for what I believe in:");
-            queue_text("Gerrymandering the village so that my cousin Jeffrey's vote doesn't matter anymore.");
+            queue_text("I have no idea how long I have been waiting. It felt like the first half of infinity, and longer still.");
+            queue_text("Now that I'm free, I'm I can finally accomplish my true goal in life:");
+            queue_text("Successfuly gerrymandering my hometown so that my cousin Jeffrey's vote no longer matters!");
         }
     }
 

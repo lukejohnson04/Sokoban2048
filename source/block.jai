@@ -4,7 +4,8 @@ get_block_source :: (block: Block) -> Rect {
     if block.type == .NONE {
         source = Rect.{0, 0, 16, 16};
         if block.number > 0 {
-            source = Rect.{xx ((block.number - 1) * 16), 48, 16, 16};
+            row : int = (block.number - 1) / 8;
+            source = Rect.{xx (((block.number - 1) % 8) * 16), xx (48 + (row * 16)), 16, 16};
         }
     } else if block.type == .BLOCK_BARRIER {
         source = Rect.{96,0,16,16};
