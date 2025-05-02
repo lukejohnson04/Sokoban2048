@@ -63,3 +63,10 @@ Block :: struct {
         FLIPPED_Y :: 0x8;
     }
 }
+
+operator == :: (a: Block, b: Block) -> bool {
+    return a.type == b.type &&
+            a.number == b.number &&
+            a.flags == b.flags &&
+            a.interaction_id == b.interaction_id;
+}

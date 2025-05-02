@@ -364,54 +364,60 @@ update_editor :: (using game_state: *Game_State, input: *Input_State) {
             }
         }
         case .FILL; {
-            // editor_paint_fill :: (level: *Level, editor: *Editor_State, start_pos: v2i, start_block: Block) {
-            //     field: Visibility_Field;
-            //     for x: 0..level.dimensions.x-1 {
-            //         for y: 0..level.dimensions.y-1 {
-            //             field[x][y] = .{.{x, y}, false, false};
-            //         }
-            //     }
+            editor_paint_fill :: (level: *Level, editor: *Editor_State, start_pos: v2i, start_block: Block) {
+                field := cast(*Visibility_Field)New(Visibility_Field);
+                for x: 0..level.dimensions.x-1 {
+                    for y: 0..level.dimensions.y-1 {
+                        field.*[x][y] = .{.{x, y}, false, false};
+                    }
+                }
 
-            //     queue: Queue(v2i, 1000);
-            //     queue_add(*queue, start_pos);
+                blocks: *type_of(Level.grid);
+                if editor.layer == 0 {
+                    blocks = *level.grid;
+                } else if editor.layer == 1 {
+                    blocks = *level.floor;
+                }
 
-            //     dirs := v2i.[.{1,0}, .{0,1}, .{-1,0}, .{0,-1}];
+                queue := cast(*Queue(v2i,1000))New(Queue(v2i, 1000));
+                queue_add(queue, start_pos);
+                comparison_block := blocks.*[start_pos.x][start_pos.y];
 
-            //     while queue_is_empty(*queue) == false {
-            //         coord := queue_remove(*queue);
-            //         if field[coord.x][coord.y].visited continue;
-            //         field[coord.x][coord.y].visible = true;
-            //         field[coord.x][coord.y].visited = true;
-            //         for dir: dirs {
-            //             pos := coord + dir;
+                dirs := v2i.[.{1,0}, .{0,1}, .{-1,0}, .{0,-1}];
+
+                while queue_is_empty(queue) == false {
+                    coord := queue_remove(queue);
+                    if field.*[coord.x][coord.y].visited continue;
+                    field.*[coord.x][coord.y].visible = true;
+                    field.*[coord.x][coord.y].visited = true;
+                    for dir: dirs {
+                        pos := coord + dir;
                         
-            //             if !is_in_bounds(pos, level) continue;
-            //             if field[pos.x][pos.y].visited          continue;
-            //             block := level.grid[pos.x][pos.y];
+                        if !is_in_bounds(pos, level) continue;
+                        if field.*[pos.x][pos.y].visited          continue;
+                        block := blocks.*[pos.x][pos.y];
 
-            //             if block.type == .WALL || block_is_goal(block) || block.type == .BOULDER {
-            //                 field[pos.x][pos.y].visible = true;
-            //                 field[pos.x][pos.y].visited = true;
-            //                 continue;
-            //             }
+                        if block != comparison_block {
+                            continue;
+                        }
                         
-            //             queue_add(*queue, pos);
-            //         }
-            //     }
-            // }
+                        queue_add(queue, pos);
+                    }
+                }
+                for x: 0..level.dimensions.x-1 {
+                    for y: 0..level.dimensions.y-1 {
+                        if field.*[x][y].visible {
+                            blocks.*[x][y] = start_block;
+                        }
+                    }
+                }
+                free(field);
+                free(queue);
+            }
+            
             if input.mouse_pressed || input.rmouse_pressed || input.mwheel_pressed {
                 if is_in_bounds(mouse_tile, *level) {
-                    // Spawn blocks have special functionality and don't show up in game
-                    // if editor.selected_block.type == .PLAYER_SPAWN {
-                    //     level.player_spawn_pos = .{mouse_tile.x, mouse_tile.y};
-                    // } else {
-                    //     blocks.*[mouse_tile.x][mouse_tile.y] = editor.selected_block;
-                    //     if input.rmouse_pressed {
-                    //         blocks.*[mouse_tile.x][mouse_tile.y].flags |= Block.Flag.GOAL;
-                    //     } else if input.mwheel_pressed {
-                    //         blocks.*[mouse_tile.x][mouse_tile.y].flags |= Block.Flag.VANISH_GOAL;
-                    //     }
-                    // }
+                    editor_paint_fill(*level, *editor, mouse_tile, editor.selected_block);
                 }
             }
         }
