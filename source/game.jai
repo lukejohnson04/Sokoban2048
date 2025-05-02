@@ -191,7 +191,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
             if editor.editing_level == false && level.player_pos == v2i.{xx x, xx y} {
                 source = Rect.{16,0,16,16};
             } else {
-                if editor.editing_level && editor.tool == .PAINT && editor.mouse_tile == .{x, y} {
+                if editor.editing_level && (editor.tool == .BRUSH || editor.tool == .FILL) && editor.mouse_tile == .{x, y} {
                     block = editor.selected_block;
                 } else {
                     if block.type == .NONE && block.number == 0 {

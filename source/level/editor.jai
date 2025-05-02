@@ -13,7 +13,7 @@ Editor_State :: struct {
     editing_level := false;
     layer: int;
 
-    tool : Editor_Tool = .PAINT;
+    tool : Editor_Tool = .BRUSH;
     mouse_tile : v2i;
     block_flip_x: bool;
     block_flip_y: bool;
@@ -33,10 +33,10 @@ Editor_State :: struct {
     interaction_id : s32;
 
     Editor_Tool :: enum {
-        PAINT;
+        BRUSH;
         SELECT;
-        PASTE;
         MOVE;
+        FILL;
     }
 
     Editor_Select_State :: enum {
@@ -158,8 +158,8 @@ draw_editor :: (using game_state: *Game_State) {
             ImGui.EndCombo();
         }
 
-        if ImGui.Button("Paint") {
-            editor.tool = .PAINT;
+        if ImGui.Button("Brush") {
+            editor.tool = .BRUSH;
         }
         ImGui.SameLine();
         if ImGui.Button("Select") {
@@ -174,8 +174,8 @@ draw_editor :: (using game_state: *Game_State) {
             }
         }
         ImGui.SameLine();
-        if ImGui.Button("Paste") {
-            editor.tool = .PASTE;
+        if ImGui.Button("Fill") {
+            editor.tool = .FILL;
         }
 
         ImGui.SameLine();
@@ -227,7 +227,6 @@ draw_editor :: (using game_state: *Game_State) {
             if is_in_bounds(editor.select_start, *level) {
                 ImGui.SameLine();
                 if ImGui.Button("Set interaction id") {
-                    print("pressed button\n");
                     tile := level.grid[editor.select_start.x][editor.select_start.y];
                     if tile.type != .NONE {
                         if editor.interaction_id > 65535 || editor.interaction_id < 0 {
@@ -347,7 +346,7 @@ update_editor :: (using game_state: *Game_State, input: *Input_State) {
     }
 
     if editor.tool == {
-        case .PAINT; {
+        case .BRUSH; {
             if input.mouse_pressed || input.rmouse_pressed || input.mwheel_pressed {
                 if is_in_bounds(mouse_tile, *level) {
                     // Spawn blocks have special functionality and don't show up in game
@@ -361,6 +360,58 @@ update_editor :: (using game_state: *Game_State, input: *Input_State) {
                             blocks.*[mouse_tile.x][mouse_tile.y].flags |= Block.Flag.VANISH_GOAL;
                         }
                     }
+                }
+            }
+        }
+        case .FILL; {
+            // editor_paint_fill :: (level: *Level, editor: *Editor_State, start_pos: v2i, start_block: Block) {
+            //     field: Visibility_Field;
+            //     for x: 0..level.dimensions.x-1 {
+            //         for y: 0..level.dimensions.y-1 {
+            //             field[x][y] = .{.{x, y}, false, false};
+            //         }
+            //     }
+
+            //     queue: Queue(v2i, 1000);
+            //     queue_add(*queue, start_pos);
+
+            //     dirs := v2i.[.{1,0}, .{0,1}, .{-1,0}, .{0,-1}];
+
+            //     while queue_is_empty(*queue) == false {
+            //         coord := queue_remove(*queue);
+            //         if field[coord.x][coord.y].visited continue;
+            //         field[coord.x][coord.y].visible = true;
+            //         field[coord.x][coord.y].visited = true;
+            //         for dir: dirs {
+            //             pos := coord + dir;
+                        
+            //             if !is_in_bounds(pos, level) continue;
+            //             if field[pos.x][pos.y].visited          continue;
+            //             block := level.grid[pos.x][pos.y];
+
+            //             if block.type == .WALL || block_is_goal(block) || block.type == .BOULDER {
+            //                 field[pos.x][pos.y].visible = true;
+            //                 field[pos.x][pos.y].visited = true;
+            //                 continue;
+            //             }
+                        
+            //             queue_add(*queue, pos);
+            //         }
+            //     }
+            // }
+            if input.mouse_pressed || input.rmouse_pressed || input.mwheel_pressed {
+                if is_in_bounds(mouse_tile, *level) {
+                    // Spawn blocks have special functionality and don't show up in game
+                    // if editor.selected_block.type == .PLAYER_SPAWN {
+                    //     level.player_spawn_pos = .{mouse_tile.x, mouse_tile.y};
+                    // } else {
+                    //     blocks.*[mouse_tile.x][mouse_tile.y] = editor.selected_block;
+                    //     if input.rmouse_pressed {
+                    //         blocks.*[mouse_tile.x][mouse_tile.y].flags |= Block.Flag.GOAL;
+                    //     } else if input.mwheel_pressed {
+                    //         blocks.*[mouse_tile.x][mouse_tile.y].flags |= Block.Flag.VANISH_GOAL;
+                    //     }
+                    // }
                 }
             }
         }
