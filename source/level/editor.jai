@@ -17,6 +17,7 @@ Editor_State :: struct {
     mouse_tile : v2i;
     block_flip_x: bool;
     block_flip_y: bool;
+    fill_all_layers: bool;
 
     select_state := Editor_Select_State.NOT_STARTED;
     select_start : v2i;
@@ -178,6 +179,8 @@ draw_editor :: (using game_state: *Game_State) {
             editor.tool = .FILL;
         }
 
+        ImGui.SameLine();
+        ImGui.Checkbox("Fill All Layers", *editor.fill_all_layers);
         ImGui.SameLine();
         ImGui.Checkbox("Flip x", *editor.block_flip_x);
         ImGui.SameLine();
@@ -394,11 +397,22 @@ update_editor :: (using game_state: *Game_State, input: *Input_State) {
                         pos := coord + dir;
                         
                         if !is_in_bounds(pos, level) continue;
-                        if field.*[pos.x][pos.y].visited          continue;
+                        if field.*[pos.x][pos.y].visited continue;
                         block := blocks.*[pos.x][pos.y];
 
                         if block != comparison_block {
                             continue;
+                        }
+                        if editor.fill_all_layers {
+                            other_block: Block;
+                            if blocks == *level.floor {
+                                other_block = level.grid[pos.x][pos.y];
+                            } else {
+                                other_block = level.floor[pos.x][pos.y];
+                            }
+                            if other_block != comparison_block && other_block.type != .NONE {
+                                continue;
+                            }
                         }
                         
                         queue_add(queue, pos);
