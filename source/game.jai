@@ -184,7 +184,6 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
             // Draw blocks that aren't visible
             if editor.editing_level == false && field[x][y].visible == false {
                 continue;
-                // draw_texture(.{48, 0, 16, 16}, dest, *sprites, intermediate_vao, intermediate_vbo);
             }
 
             // Don't draw player in edit mode
@@ -201,14 +200,23 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
                 source = get_block_source(block);
             }
 
+            colormult : float = 1;
             if block_is_goal(block) {
                 if block.flags & .GOAL {
                     shader_uniform(texture_shader, "grayscale", 1);
                 } else {
                     shader_uniform(texture_shader, "gold", 1);
                 }
-                shader_uniform(texture_shader, "colormult", 0.8);
+                colormult = 0.8;
             }
+            if editor.editing_level == false {
+                dist : float;
+                dist = xx field[x][y].steps;
+                dist = max(0.0, (dist - 1));
+                dist = min(dist, 12);
+                colormult *= pow(0.85, xx dist);
+            }
+            shader_uniform(texture_shader, "colormult", colormult);
 
             if block.flags & .FLIPPED_X {
                 dest.x += dest.w;

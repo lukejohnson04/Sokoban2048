@@ -379,7 +379,7 @@ update_editor :: (using game_state: *Game_State, input: *Input_State) {
                 field := cast(*Visibility_Field)New(Visibility_Field);
                 for x: 0..level.dimensions.x-1 {
                     for y: 0..level.dimensions.y-1 {
-                        field.*[x][y] = .{.{x, y}, false, false};
+                        field.*[x][y] = .{.{x, y}, false, false, 0};
                     }
                 }
 
