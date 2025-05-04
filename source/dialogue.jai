@@ -15,6 +15,16 @@ Dialogue_Player_State :: struct {
     open := false;
 }
 
+
+// All data for dialogue that's transient throughout the game is stored here
+Dialogue_Data :: struct {
+    interaction_data: [1000] Interaction_Data;
+}
+
+Interaction_Data :: struct {
+    times_interacted := 0;
+}
+
 dialogue_update :: (using dialogue_state: *Dialogue_Player_State, input: *Input_State) {
     if queue_is_empty(*nodes) {
         open = false;
@@ -65,8 +75,12 @@ dialogue_queue_text :: (dialogue_state: *Dialogue_Player_State, text: string) {
 
 
 generate_interaction_queue :: (state: *Dialogue_Player_State, using game_state: *Game_State, block: Block) {
+    new_interaction := false;
+    inter := *level.dialogue_data.interaction_data;
+
     queue_text :: (text: string) #expand {
         dialogue_queue_text(state, text);
+        new_interaction = true;
     }
 
     if block.interaction_id == 10_000 {
@@ -74,8 +88,7 @@ generate_interaction_queue :: (state: *Dialogue_Player_State, using game_state: 
         save_game(game_state);
         stack_clear(*move_stack);
         stack_clear(*checkpoint_stack);
-        return;
-    } if block.number == {
+    } else if block.number == {
         case 0; {
             queue_text("Oh my goodness! Thank heavens you rescued me!");
             queue_text("I spent so long trying to find the perfect hiding spot for a key to my house...");
@@ -173,7 +186,17 @@ generate_interaction_queue :: (state: *Dialogue_Player_State, using game_state: 
             queue_text("I spent so long lining it up and figuring it out, but when I finally solved it and was exploring the next area-");
             queue_text("I realized I had moved a boulder in such a way that it blocked me off from escaping from the way I came!");
         }
+
+        // Hiding person
+        case 9; {
+            queue_text("Who says you can come to my home? I did not invite you.");
+        }
+
+        case; {
+            return;
+        }
     }
+    
 
     // Ideas
     #if false {

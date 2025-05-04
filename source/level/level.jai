@@ -11,6 +11,8 @@ Level :: struct {
 
     name : [MAX_LEVEL_NAME_LENGTH]u8;
     id : u32 = 0;
+
+    dialogue_data: Dialogue_Data;
 }
 
 level_set_name :: (level: *Level, name: string) {
