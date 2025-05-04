@@ -164,6 +164,8 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     shader_uniform(texture_shader, "grayscale", 0);
     shader_uniform(texture_shader, "gold", 0);
     shader_uniform(texture_shader, "colormult", 1.0);
+    shader_uniform(texture_shader, "light_left", 0.0);
+    shader_uniform(texture_shader, "light_right", 0.0);
 
     resource_check_timer += FRAME_TIME;
     if resource_check_timer > 0.25 {
@@ -172,6 +174,17 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     }
 
     bind_texture(sprites);
+
+    light_levels: [Level.MAX_WIDTH][Level.MAX_HEIGHT] float;
+    for x: 0..level.dimensions.x {
+        for y: 0..level.dimensions.y {
+            level: float;
+            level = xx field[x][y].steps;
+            level = max(0.0, (level - 1));
+            level = min(level, 12);
+            light_levels[x][y] = level;
+        }
+    }
 
     // Camera bounds
     tile_begin, tile_end := get_camera_level_bounds(camera, *level);
@@ -210,13 +223,13 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
                 colormult = 0.8;
             }
             if editor.editing_level == false {
-                dist : float;
-                dist = xx field[x][y].steps;
-                dist = max(0.0, (dist - 1));
-                dist = min(dist, 12);
-                colormult *= pow(0.85, xx dist);
+                colormult *= light_levels[x][y];
             }
+
+            shader_uniform(texture_shader, "light_left", light_levels[x - 1][y]);
+            shader_uniform(texture_shader, "light_right", light_levels[x + 1][y]);
             shader_uniform(texture_shader, "colormult", colormult);
+
 
             if block.flags & .FLIPPED_X {
                 dest.x += dest.w;
