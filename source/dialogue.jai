@@ -131,7 +131,7 @@ generate_interaction_queue :: (state: *Dialogue_Player_State, using game_state: 
                     queue_text("In order to leave, you must seal off the entrance.");
                 }
                 case 1; {
-                    queue_text("Wingrove Mines - KEEP OUT");
+                    queue_text("Tiletown Mines - KEEP OUT");
                 }
                 case 2; {
                     queue_text("WARNING: DO NOT PASS THIS POINT");
@@ -159,6 +159,19 @@ generate_interaction_queue :: (state: *Dialogue_Player_State, using game_state: 
             queue_text("I have no idea how long I have been waiting. It felt like the first half of infinity, and longer still.");
             queue_text("Now that I'm free, I'm I can finally accomplish my true goal in life:");
             queue_text("Successfuly gerrymandering my hometown so that my cousin Jeffrey's vote no longer matters!");
+        }
+
+        // Atlas
+        case 8; {
+            queue_text("Oh, thank God you found me!");
+            queue_text("I was starting to lose hope. I was exploring the caves, and I went rather deep, and, well, I got stuck.");
+            queue_text("I thought I knew the caves by heart, but I found this passageway I hadn't seen before. Of course I just had to explore it.");
+            queue_text("Usually, you might want to have a buddy explore with you, but I got so excited I just couldn't help myself.");
+            queue_text("There was so many new tunnels to explore...");
+            queue_text("I found a puzzle deep in the cave. I thought nobody explored the mines anymore, so I had no idea how long it had been there unsolved.");
+            queue_text("It felt like it was just calling my name, begging for me to solve it.");
+            queue_text("I spent so long lining it up and figuring it out, but when I finally solved it and was exploring the next area-");
+            queue_text("I realized I had moved a boulder in such a way that it blocked me off from escaping from the way I came!");
         }
     }
 

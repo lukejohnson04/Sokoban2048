@@ -283,6 +283,9 @@ draw_editor :: (using game_state: *Game_State) {
                         } else if highlighted_block >= 24 && highlighted_block < 48 {
                             block.type = .NONE;
                             block.number = xx (highlighted_block - 23);
+                        } else if highlighted_block >= 48 && highlighted_block < 56 {
+                            block.type = .INTERACTABLE;
+                            block.number = xx (highlighted_block - 40);
                         } else if highlighted_block >= 56 && highlighted_block < 64 {
                             block.type = .INTERACTABLE;
                             block.number = xx (highlighted_block - 56);
@@ -356,6 +359,11 @@ update_editor :: (using game_state: *Game_State, input: *Input_State) {
                     if editor.selected_block.type == .PLAYER_SPAWN {
                         level.player_spawn_pos = .{mouse_tile.x, mouse_tile.y};
                     } else {
+                        if blocks == *level.floor {
+                            if editor.selected_block.type != .NONE {
+                                return;
+                            }
+                        }
                         blocks.*[mouse_tile.x][mouse_tile.y] = editor.selected_block;
                         if input.rmouse_pressed {
                             blocks.*[mouse_tile.x][mouse_tile.y].flags |= Block.Flag.GOAL;
@@ -479,15 +487,11 @@ update_editor :: (using game_state: *Game_State, input: *Input_State) {
                     for y: 0..selection_size.y-1 {
                         copied_block := memory[x + y * selection_size.x];
                         block_ptr := *blocks.*[start.x + x + offset.x][start.y + y + offset.y];
-                        if copied_block.type != .NONE {
+                        if copied_block != .{} {
                             block_ptr.* = copied_block;
                         }
                     }
                 }
-
-                // Move the selection
-                editor.select_start += offset;
-                editor.select_end += offset;
             }
 
             if is_in_bounds(mouse_tile, *level) {
@@ -504,10 +508,14 @@ update_editor :: (using game_state: *Game_State, input: *Input_State) {
                     if input.mouse_just_released {
                         editor.move_state = .NOT_STARTED;
                         // Move all the tiles
-                        move_tiles(game_state, blocks, editor.move_end - editor.move_start);
+                        move_tiles(game_state, *level.grid, editor.move_end - editor.move_start);
+                        move_tiles(game_state, *level.floor, editor.move_end - editor.move_start);
+                        editor.select_start += editor.move_end - editor.move_start;
+                        editor.select_end += editor.move_end - editor.move_start;
                     }
                 }
             }
         }
     }
 }
+

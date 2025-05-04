@@ -16,7 +16,11 @@ get_block_source :: (block: Block) -> Rect {
     } else if block.type == .SIGNED_PHOTOGRAPH {
         source = Rect.{80,0,16,16};
     } else if block.type == .INTERACTABLE {
-        source = Rect.{xx (block.number * 16),112,16,16};
+        if block.number >= 8 {
+            source = Rect.{xx ((block.number % 8) * 16), 96, 16,16};
+        } else {
+            source = Rect.{xx (block.number * 16), 112, 16,16};
+        }
         if block.interaction_id == 10_000 {
             source = Rect.{112,0,16,16};
         }
