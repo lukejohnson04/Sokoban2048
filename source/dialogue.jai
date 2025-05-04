@@ -8,7 +8,6 @@ Dialogue_Node :: struct {
 Dialogue_Player_State :: struct {
     nodes : Queue(Dialogue_Node, 64);
     index := 0;
-
     timer : float32;
     timer_interval : float32 = 0.05;
 
@@ -18,12 +17,19 @@ Dialogue_Player_State :: struct {
 
 // All data for dialogue that's transient throughout the game is stored here
 Dialogue_Data :: struct {
-    interaction_data: [1000] Interaction_Data;
+    interaction_count: [256] [256] u16;
 }
 
-Interaction_Data :: struct {
-    times_interacted := 0;
-}
+
+// Frontend
+// Interactable blocks have a texture id and a dialogue trigger id
+// block.type = .INTERACTABLE;
+// block.number = 5;
+// block.interaction_id := hash_string("Guy");
+
+// When you interact with a tile, the counter for the specific block and interaction id
+// is incremented. For example a tile with number 5 and interaction id 3 would be incremented.
+// To do this, we need a way to hash both numbers together with zero collisions.
 
 dialogue_update :: (using dialogue_state: *Dialogue_Player_State, input: *Input_State) {
     if queue_is_empty(*nodes) {
@@ -72,23 +78,36 @@ dialogue_queue_text :: (dialogue_state: *Dialogue_Player_State, text: string) {
     node.text_buffer_size = text.count;
 }
 
-
-
 generate_interaction_queue :: (state: *Dialogue_Player_State, using game_state: *Game_State, block: Block) {
+    assert(block.type == .INTERACTABLE);
+
     new_interaction := false;
-    inter := *level.dialogue_data.interaction_data;
 
     queue_text :: (text: string) #expand {
         dialogue_queue_text(state, text);
         new_interaction = true;
     }
 
+    Tile_Name :: enum u8 #specified {
+        HIDDEN_HOUSE_OLD_MAN :: 0;
+        ATLAS :: 8;
+        PURPLE_GUY :: 9;
+    }
+
+    using Tile_Name;
+
     if block.interaction_id == 10_000 {
         queue_text("Game has been saved.");
         save_game(game_state);
         stack_clear(*move_stack);
         stack_clear(*checkpoint_stack);
-    } else if block.number == {
+        return;
+    }
+    assert(block.interaction_id < 256);
+
+    count := level.dialogue_data.interaction_count[block.number][block.interaction_id];
+    if block.number == {
+        // Guy in hidden house
         case 0; {
             queue_text("Oh my goodness! Thank heavens you rescued me!");
             queue_text("I spent so long trying to find the perfect hiding spot for a key to my house...");
@@ -106,9 +125,11 @@ generate_interaction_queue :: (state: *Dialogue_Player_State, using game_state: 
         // Blue boy
         case 2; {
             if block.interaction_id == {
+                // Top of town location
                 case 0; {
                     queue_text("I don't care what my mom says. I am going to be the greatest block-pushing puzzle solver of all time!");
                 }
+                // Deep in puzzle location
                 case 1; {
                     queue_text("Jeez lousie! I got so excited solving all these puzzles, that I ended up getting lost!");
                     queue_text("Thanks for finding me. You are a gentleman and a scholar!");
@@ -189,14 +210,25 @@ generate_interaction_queue :: (state: *Dialogue_Player_State, using game_state: 
 
         // Hiding person
         case 9; {
-            queue_text("Who says you can come to my home? I did not invite you.");
+            if count == 0 {
+                queue_text("Who says you can come to my home? I did not invite you.");
+            } else if count == 1 {
+                queue_text("Please leave immediately.");
+            } else {
+                queue_text("Leave me alone.");
+            }
         }
 
         case; {
+            queue_text("Interaction queue failed!");
+            print("Interaction queue failed!\n");
             return;
         }
     }
     
+    if new_interaction {
+        level.dialogue_data.interaction_count[block.number][block.interaction_id] += 1;
+    }
 
     // Ideas
     #if false {
