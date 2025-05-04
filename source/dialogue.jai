@@ -119,8 +119,11 @@ generate_interaction_queue :: (state: *Dialogue_Player_State, using game_state: 
         }
         case 1; {
             queue_text("I don't know why people even bother with some puzzles.");
-            queue_text("My buddy Eric told me about a puzzle where the solution involved bringing in a block from the previous room!");
-            queue_text("Of course, he must be lying. A puzzle that requires that attention to detail is simply absurd!");
+            queue_text("Solving puzzles is already so dangerous, and some of the solutions I've seen can be kind of... complicated?");
+            queue_text("I mean, not complicated. But like, involved.");
+            queue_text("I saw a friend of mine solve a puzzle once and the puzzle itself was kind of messed up.");
+            queue_text("As in, like, I couldn't tell if it was intentional or not, but to solve it he had to bring a block in from another room.");
+            queue_text("It's always felt a little tricky for me. Too many things to consider. Puzzle solving's just not for me I guess.");
         }
         // Blue boy
         case 2; {
@@ -184,6 +187,9 @@ generate_interaction_queue :: (state: *Dialogue_Player_State, using game_state: 
                     queue_text("The fact you will always be there, stuck, thinking I abandoned you, is one I cannot accept.");
                     queue_text("I will wait a million turns and I'll wait a million more to see you again.");
                 }
+                case 5; {
+                    queue_text("Private residential property - NO LOITERING!");
+                }
             }
         }
         case 7; {
@@ -197,15 +203,36 @@ generate_interaction_queue :: (state: *Dialogue_Player_State, using game_state: 
 
         // Atlas
         case 8; {
-            queue_text("Oh, thank God you found me!");
-            queue_text("I was starting to lose hope. I was exploring the caves, and I went rather deep, and, well, I got stuck.");
-            queue_text("I thought I knew the caves by heart, but I found this passageway I hadn't seen before. Of course I just had to explore it.");
-            queue_text("Usually, you might want to have a buddy explore with you, but I got so excited I just couldn't help myself.");
-            queue_text("There was so many new tunnels to explore...");
-            queue_text("I found a puzzle deep in the cave. I thought nobody explored the mines anymore, so I had no idea how long it had been there unsolved.");
-            queue_text("It felt like it was just calling my name, begging for me to solve it.");
-            queue_text("I spent so long lining it up and figuring it out, but when I finally solved it and was exploring the next area-");
-            queue_text("I realized I had moved a boulder in such a way that it blocked me off from escaping from the way I came!");
+            if block.interaction_id == {
+                case 0; {
+                    if count == 0 {
+                        queue_text("Oh, thank God you found me!");
+                        queue_text("I was starting to lose hope. I was exploring the caves, and I went rather deep, and, well, I got stuck.");
+                        queue_text("I thought I knew the caves by heart, but I found this passageway I hadn't seen before. Of course I just had to explore it.");
+                        queue_text("Usually, you might want to have a buddy explore with you, but I got so excited I just couldn't help myself.");
+                        queue_text("There was so many new tunnels to explore...");
+                        queue_text("I found a puzzle deep in the cave. I thought nobody explored the mines anymore, so I had no idea how long it had been there unsolved.");
+                        queue_text("It felt like it was just calling my name, begging for me to solve it.");
+                        queue_text("I spent so long lining it up and figuring it out, but when I finally solved it and was exploring the next area-");
+                        queue_text("I realized I had moved a boulder in such a way that it blocked me off from escaping from the way I came!");
+                        queue_text("Anyways, I appreciate the help. Guess it's my lucky day.");
+                        queue_text("My name's Atlas, by the way. I haven't seen you around here before.");
+                        queue_text("In fact, I haven't seen anyone around anywhere in a long time... My mom must be worried sick!");
+                        queue_text("I've got to get going, but maybe I'll see you around?");
+                    } else {
+                        queue_text("I've got to get going, but maybe I'll see you around?");
+                    }
+                }
+                case 1; {
+                    queue_text("The town square is down South, but the only path leading into it has some kind of obstruction on the other side.");
+                    queue_text("The mayor told me Jeremy, Tiletown's most legendary puzzle solver, is going to find a way through for us.");
+                    queue_text("I'm willing to be patient, but the path's been blocked for a while already, so I'm getting a little worried.");
+                    queue_text("It's the only path through to my family! What if they can never clear the path?");
+                    queue_text("I'll have to find a new family to take me in!");
+                    queue_text("Well, I mean, I guess I don't have to do that. It's not like I'm a child or anything.");
+                    queue_text("But still! This whole situation has got my britches in a bunch!");
+                }
+            }
         }
 
         // Hiding person
@@ -214,8 +241,27 @@ generate_interaction_queue :: (state: *Dialogue_Player_State, using game_state: 
                 queue_text("Who says you can come to my home? I did not invite you.");
             } else if count == 1 {
                 queue_text("Please leave immediately.");
+            } else if count == 2 {
+                queue_text("If you don't leave right now, I'm going to be forced to go berzerk.");
+                queue_text("You know what happens when you mess with a guy like me? I'll push you around.");
+                queue_text("I'll make you into a salad! Cut you up! Break you down! Huzzah!");
             } else {
                 queue_text("Leave me alone.");
+            }
+        }
+
+        // Mayor
+        case 10; {
+            if block.interaction_id == {
+                case 0; {
+                    queue_text("Greetings!");
+                    queue_text("Welcome to Tiletown. I am the mayor of this town.");
+                    queue_text("I don't think I've seen you before, you must be new around here!");
+                    queue_text("We don't get visitors often.");
+                    queue_text("Actually, we don't get visitors at all!");
+                    queue_text("I haven't seen a single new face around here since my first turn in office!");
+                    queue_text("But don't worry, we don't bite. I hope you enjoy your stay here in Tiletown!");
+                }
             }
         }
 
