@@ -164,8 +164,6 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     shader_uniform(texture_shader, "grayscale", 0);
     shader_uniform(texture_shader, "gold", 0);
     shader_uniform(texture_shader, "colormult", 1.0);
-    shader_uniform(texture_shader, "light_left", 0.0);
-    shader_uniform(texture_shader, "light_right", 0.0);
 
     resource_check_timer += FRAME_TIME;
     if resource_check_timer > 0.25 {
@@ -182,7 +180,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
             level = xx field[x][y].steps;
             level = max(0.0, (level - 1));
             level = min(level, 12);
-            light_levels[x][y] = level;
+            light_levels[x][y] = pow(0.95, level);
         }
     }
 
@@ -223,11 +221,9 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
                 colormult = 0.8;
             }
             if editor.editing_level == false {
-                colormult *= light_levels[x][y];
+                // colormult *= light_levels[x][y];
             }
 
-            shader_uniform(texture_shader, "light_left", light_levels[x - 1][y]);
-            shader_uniform(texture_shader, "light_right", light_levels[x + 1][y]);
             shader_uniform(texture_shader, "colormult", colormult);
 
 

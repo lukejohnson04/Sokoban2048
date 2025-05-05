@@ -9,20 +9,12 @@ uniform sampler2D texture1;
 uniform bool grayscale;
 uniform bool gold;
 uniform float colormult;
-uniform float light_left;
-uniform float light_right;
 
 void main()
 {
     vec4 color = texture(texture1, TexCoord);
 
-    float mult = colormult;
-    if (light_left != 0 && light_right != 0) {
-        float left = pow(0.85, light_left);
-        float right = pow(0.85, light_right);
-        mult *= 1 - mix(left, right, TexCoord.x);
-    }
-    color.rgb *= mult;
+    color.rgb *= colormult;
     
     if (grayscale) {
         float gray = dot(color.rgb, vec3(0.299, 0.587, 0.114));
