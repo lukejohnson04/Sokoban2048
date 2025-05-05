@@ -63,6 +63,8 @@ draw_editor :: (using game_state: *Game_State) {
     source := ImGui.ImVec2.{xx sprites_imgui.width, xx sprites_imgui.height};
     dest := ImGui.ImVec2.{xx (sprites_imgui.width * TILE_SCALE), xx (sprites_imgui.height * TILE_SCALE)};
 
+    loaded := false;
+
     on_new_level_pressed :: (using game_state: *Game_State) {
         if editor.editing_level {
             if level.id != 0 {
@@ -81,7 +83,7 @@ draw_editor :: (using game_state: *Game_State) {
     ImGui.InputText("##load", editor.load_level_field.data, MAX_LEVEL_NAME_LENGTH);
     ImGui.SameLine();
     if ImGui.Button("Load Level") {
-        loaded := load_level(*level, xx editor.load_level_field, *game_state.field);
+        loaded = load_level(*level, xx editor.load_level_field, *game_state.field);
         game_state.move_stack = .{};
         if loaded {
             for 0..editor.load_level_field.count-1 {
@@ -94,7 +96,7 @@ draw_editor :: (using game_state: *Game_State) {
     if editor.editing_level == false {
         if ImGui.Button("Edit Level") {
             editor.editing_level = true;
-            loaded := load_level(*level, xx level.name, *game_state.field);
+            loaded = load_level(*level, xx level.name, *game_state.field);
             if loaded {
                 game_state.move_stack = .{};
             }
@@ -102,7 +104,7 @@ draw_editor :: (using game_state: *Game_State) {
         ImGui.SameLine();
         if level.id != 0 {
             if ImGui.Button("Restart Level") {
-                loaded := load_level(*level, xx level.name, *game_state.field);
+                loaded = load_level(*level, xx level.name, *game_state.field);
                 if loaded {
                     game_state.move_stack = .{};
                 }
@@ -131,7 +133,7 @@ draw_editor :: (using game_state: *Game_State) {
                 print("Save level first!\n");
             } else {
                 save_level(*level, xx level.name);
-                loaded := load_level(*level, xx level.name, *game_state.field);
+                loaded = load_level(*level, xx level.name, *game_state.field);
                 camera.zoom = 1;
                 if loaded {
                     game_state.move_stack = .{};
@@ -329,6 +331,10 @@ draw_editor :: (using game_state: *Game_State) {
             draw_list.AddQuad(draw_list, img_pos + p1, img_pos + p2, img_pos + p3, img_pos + p4, ImGui.GetColorU32(colf), 2);
         }
     }
+    if loaded {
+        vfield_generate_flood_fill(*level, game_state.field);
+        generate_level_mesh(game_state);
+    }
 }
 
 
@@ -351,6 +357,8 @@ update_editor :: (using game_state: *Game_State, input: *Input_State) {
         return;
     }
 
+    changed_map := false;
+
     if editor.tool == {
         case .BRUSH; {
             if input.mouse_pressed || input.rmouse_pressed || input.mwheel_pressed {
@@ -371,6 +379,7 @@ update_editor :: (using game_state: *Game_State, input: *Input_State) {
                             blocks.*[mouse_tile.x][mouse_tile.y].flags |= Block.Flag.VANISH_GOAL;
                         }
                     }
+                    changed_map = true;
                 }
             }
         }
@@ -440,6 +449,7 @@ update_editor :: (using game_state: *Game_State, input: *Input_State) {
             if input.mouse_pressed || input.rmouse_pressed || input.mwheel_pressed {
                 if is_in_bounds(mouse_tile, *level) {
                     editor_paint_fill(*level, *editor, mouse_tile, editor.selected_block);
+                    changed_map = true;
                 }
             }
         }
@@ -506,6 +516,7 @@ update_editor :: (using game_state: *Game_State, input: *Input_State) {
                         editor.move_end = mouse_tile;
                     }
                     if input.mouse_just_released {
+                        changed_map = true;
                         editor.move_state = .NOT_STARTED;
                         // Move all the tiles
                         move_tiles(game_state, *level.grid, editor.move_end - editor.move_start);
@@ -516,6 +527,10 @@ update_editor :: (using game_state: *Game_State, input: *Input_State) {
                 }
             }
         }
+    }
+
+    if changed_map {
+        generate_level_mesh(game_state);
     }
 }
 

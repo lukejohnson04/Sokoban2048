@@ -9,6 +9,25 @@ Mesh :: struct {
     vertices: [..]Vertex;
 }
 
+mesh_init :: (mesh: *Mesh) {
+    glGenBuffers(1, *mesh.vbo);
+    glGenVertexArrays(1, *mesh.vao);
+}
+
+mesh_free :: (mesh: *Mesh) {
+    if mesh.vertices.count > 0 {
+        mesh.vertices.count = 0;
+        glDeleteBuffers(1, *mesh.vbo);
+        glDeleteVertexArrays(1, *mesh.vao);
+    }
+}
+
+mesh_draw :: (mesh: *Mesh) {
+    glBindVertexArray(mesh.vao);
+    glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo);
+    glDrawArrays(GL_TRIANGLES, 0, xx mesh.vertices.count);
+}
+
 mesh_cylinder :: (mesh_body: *Mesh, mesh_ceiling: *Mesh, sides: s64, radius: float32, height: float32) {
     polygon_points : [..]Vector2;
     polygon_points.allocator = temp;

@@ -20,6 +20,7 @@ Game_State :: struct {
     quad_vbo : GLuint;
     color_vao : GLuint;
     color_vbo : GLuint;
+    world_mesh : Level_Mesh;
 
     sprites : Resource(Texture);
     sprites_imgui : Resource(Texture);
@@ -79,6 +80,11 @@ on_startup :: (using game_state: *Game_State) {
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
+    mesh_init(*world_mesh.tiles);
+    mesh_init(*world_mesh.gold);
+    mesh_init(*world_mesh.goal);
+    
+
     glGenVertexArrays(1, *color_vao);
     glGenBuffers(1, *color_vbo);
 
@@ -121,7 +127,9 @@ on_startup :: (using game_state: *Game_State) {
         camera.pos.x = xx (level.player_pos.x * 64);
         camera.pos.y = xx (level.player_pos.y * 64);
     }
+    
     vfield_generate_flood_fill(*level, field);
+    generate_level_mesh(game_state);
 }
 
 

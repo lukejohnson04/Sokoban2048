@@ -83,6 +83,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
 
         if move_number != starting_move_number {
             vfield_generate_flood_fill(*level, field);
+            generate_level_mesh(game_state);
         }
     }
     
@@ -184,69 +185,101 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         }
     }
 
+    mesh_draw(*world_mesh.tiles);
+    
+    shader_uniform(texture_shader, "colormult", 0.8);
+    shader_uniform(texture_shader, "grayscale", 1);
+    mesh_draw(*world_mesh.goal);
+    shader_uniform(texture_shader, "grayscale", 0);
+    shader_uniform(texture_shader, "gold", 1);
+    mesh_draw(*world_mesh.gold);
+    shader_uniform(texture_shader, "gold", 0);
+    shader_uniform(texture_shader, "colormult", 1.0);
+
+    if editor.editing_level == false {
+        source := Rect.{16,0,16,16};
+        dest := Rect.{xx (level.player_pos.x*64), xx (level.player_pos.y*64), 64, 64};
+        draw_texture(source, dest, *sprites, intermediate_vao, intermediate_vbo);
+    }
+    
+
+    if editor.editing_level && (editor.tool == .BRUSH || editor.tool == .FILL) && is_in_bounds(editor.mouse_tile, *level) {
+        block := editor.selected_block;
+        source := get_block_source(block);
+        dest := Rect.{xx (editor.mouse_tile.x * 64), xx (editor.mouse_tile.y * 64), 64, 64};
+        draw_texture(source, dest, *sprites, intermediate_vao, intermediate_vbo);
+    }
+
+    
     // Camera bounds
-    tile_begin, tile_end := get_camera_level_bounds(camera, *level);
-    for x: tile_begin.x..tile_end.x {
-        for y: tile_begin.y..tile_end.y {
-            source, dest : Rect;
-            block := level.grid[x][y];
-            dest = Rect.{xx (x*64), xx (y*64), 64, 64};
+    if false {
+        tile_begin, tile_end := get_camera_level_bounds(camera, *level);
+        for x: tile_begin.x..tile_end.x {
+            for y: tile_begin.y..tile_end.y {
+                source, dest : Rect;
+                block := level.grid[x][y];
+                dest = Rect.{xx (x*64), xx (y*64), 64, 64};
 
-            // Draw blocks that aren't visible
-            if editor.editing_level == false && field[x][y].visible == false {
-                continue;
-            }
+                // Draw blocks that aren't visible
+                if editor.editing_level == false && field[x][y].visible == false {
+                    continue;
+                }
 
-            // Don't draw player in edit mode
-            if editor.editing_level == false && level.player_pos == v2i.{xx x, xx y} {
-                source = Rect.{16,0,16,16};
-            } else {
-                if editor.editing_level && (editor.tool == .BRUSH || editor.tool == .FILL) && editor.mouse_tile == .{x, y} {
-                    block = editor.selected_block;
+                // Don't draw player in edit mode
+                if editor.editing_level == false && level.player_pos == v2i.{xx x, xx y} {
+                    source = Rect.{16,0,16,16};
                 } else {
-                    if block.type == .NONE && block.number == 0 {
-                        block = level.floor[x][y];
+                    if editor.editing_level && (editor.tool == .BRUSH || editor.tool == .FILL) && editor.mouse_tile == .{x, y} {
+                        block = editor.selected_block;
+                    } else {
+                        if block.type == .NONE && block.number == 0 {
+                            block = level.floor[x][y];
+                        }
                     }
+                    source = get_block_source(block);
                 }
-                source = get_block_source(block);
-            }
 
-            colormult : float = 1;
-            if block_is_goal(block) {
-                if block.flags & .GOAL {
-                    shader_uniform(texture_shader, "grayscale", 1);
-                } else {
-                    shader_uniform(texture_shader, "gold", 1);
+                colormult : float = 1;
+                if block_is_goal(block) {
+                    if block.flags & .GOAL {
+                        shader_uniform(texture_shader, "grayscale", 1);
+                    } else {
+                        shader_uniform(texture_shader, "gold", 1);
+                    }
+                    colormult = 0.8;
                 }
-                colormult = 0.8;
-            }
-            if editor.editing_level == false {
-                // colormult *= light_levels[x][y];
-            }
 
-            shader_uniform(texture_shader, "colormult", colormult);
+                shader_uniform(texture_shader, "colormult", colormult);
 
 
-            if block.flags & .FLIPPED_X {
-                dest.x += dest.w;
-                dest.w *= -1;
-            }
-            if block.flags & .FLIPPED_Y {
-                dest.y += dest.h;
-                dest.h *= -1;
-            }
-
-            draw_texture(source, dest, *sprites, intermediate_vao, intermediate_vbo);
-            if block_is_goal(block) {
-                if block.flags & .GOAL {
-                    shader_uniform(texture_shader, "grayscale", 0);
-                } else {
-                    shader_uniform(texture_shader, "gold", 0);
+                if block.flags & .FLIPPED_X {
+                    dest.x += dest.w;
+                    dest.w *= -1;
                 }
-                shader_uniform(texture_shader, "colormult", 1.0);
+                if block.flags & .FLIPPED_Y {
+                    dest.y += dest.h;
+                    dest.h *= -1;
+                }
+
+                draw_texture(source, dest, *sprites, intermediate_vao, intermediate_vbo);
+                if block_is_goal(block) {
+                    if block.flags & .GOAL {
+                        shader_uniform(texture_shader, "grayscale", 0);
+                    } else {
+                        shader_uniform(texture_shader, "gold", 0);
+                    }
+                    shader_uniform(texture_shader, "colormult", 1.0);
+                }
             }
         }
     }
+
+    if editor.editing_level == false {
+        source := Rect.{16,0,16,16};
+        dest := Rect.{xx (level.player_pos.x*64), xx (level.player_pos.y*64), 64, 64};
+        draw_texture(source, dest, *sprites, intermediate_vao, intermediate_vbo);
+    }
+
 
     if editor.enabled && editor.editing_level {
         spawn : Block;
