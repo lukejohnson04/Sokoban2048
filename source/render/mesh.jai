@@ -1,17 +1,22 @@
-Vertex :: struct {
+
+Vertex_Component :: enum_flags {
+    NONE :: 0;
+    LIGHT :: 1;
+}
+
+Vertex :: struct($T: Vertex_Component = .NONE) {
     x, y, z: float32;
     u, v: float32;
+
+    #if T & .LIGHT {
+        light: float32;
+    }
 }
 
-Mesh :: struct {
+Mesh :: struct($T: Vertex_Component = .NONE) {
     vao: GLuint;
     vbo: GLuint;
-    vertices: [..]Vertex;
-}
-
-mesh_init :: (mesh: *Mesh) {
-    glGenBuffers(1, *mesh.vbo);
-    glGenVertexArrays(1, *mesh.vao);
+    vertices: [..]Vertex(T);
 }
 
 mesh_free :: (mesh: *Mesh) {
@@ -21,6 +26,41 @@ mesh_free :: (mesh: *Mesh) {
         glDeleteVertexArrays(1, *mesh.vao);
     }
 }
+
+mesh_init :: (mesh: *Mesh) {
+    glGenBuffers(1, *mesh.vbo);
+    glGenVertexArrays(1, *mesh.vao);
+}
+
+mesh_generate :: (mesh: *Mesh($T)) {
+    glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo);
+    glBufferData(GL_ARRAY_BUFFER, size_of(type_of(mesh.vertices[0])) * mesh.vertices.count, mesh.vertices.data, GL_STATIC_DRAW);
+    
+    param_size : u32 = size_of(float32) * 6;
+
+    attr : u32 = 0;
+
+    glBindVertexArray(mesh.vao);
+    // position attribute
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, param_size, null);
+    glEnableVertexAttribArray(0);
+    attr += 1;
+    // uv attribute
+    glVertexAttribPointer(attr, 2, GL_FLOAT, GL_FALSE, param_size, cast(*void)(size_of(float32) * 3));
+    glEnableVertexAttribArray(attr);
+    attr += 1;
+
+    // light attribute
+    #if mesh.T & .LIGHT {
+        glVertexAttribPointer(attr, 1, GL_FLOAT, GL_FALSE, param_size, cast(*void)(size_of(float32) * 5));
+        glEnableVertexAttribArray(attr);
+        attr += 1;
+    }
+    glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+
 
 mesh_draw :: (mesh: *Mesh) {
     glBindVertexArray(mesh.vao);

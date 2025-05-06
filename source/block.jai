@@ -43,6 +43,10 @@ block_is_goal :: (block: Block) -> bool {
     return (block.flags & (.GOAL | .VANISH_GOAL)) != 0;
 }
 
+block_blocks_light :: (block: Block) -> bool {
+    return block.type == .WALL || block.type == .BOULDER || block.type == .INTERACTABLE;
+}
+
 Block :: struct {
     type: Block_Type;
     number: u8;

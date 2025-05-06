@@ -3,6 +3,7 @@
 out vec4 FragColor;
 
 in vec2 TexCoord;
+in float light;
 
 // texture samplers
 uniform sampler2D texture1;
@@ -15,6 +16,7 @@ void main()
     vec4 color = texture(texture1, TexCoord);
 
     color.rgb *= colormult;
+    color.rgb *= light;
     
     if (grayscale) {
         float gray = dot(color.rgb, vec3(0.299, 0.587, 0.114));

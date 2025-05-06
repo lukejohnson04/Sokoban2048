@@ -53,9 +53,6 @@ vfield_generate_flood_fill :: (level: *Level, field: [][Level.MAX_HEIGHT] Visibi
             if block.type == .WALL || block_is_goal(block) || block.type == .BOULDER {
                 new_node.visible = true;
                 new_node.visited = true;
-                if new_node.steps == 0 || new_node.steps > node.steps + 1 {
-                    new_node.steps = node.steps + 1;
-                }
                 continue;
             }
             

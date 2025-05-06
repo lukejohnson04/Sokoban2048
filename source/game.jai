@@ -174,17 +174,6 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
 
     bind_texture(sprites);
 
-    light_levels: [Level.MAX_WIDTH][Level.MAX_HEIGHT] float;
-    for x: 0..level.dimensions.x {
-        for y: 0..level.dimensions.y {
-            level: float;
-            level = xx field[x][y].steps;
-            level = max(0.0, (level - 1));
-            level = min(level, 12);
-            light_levels[x][y] = pow(0.95, level);
-        }
-    }
-
     mesh_draw(*world_mesh.tiles);
     
     shader_uniform(texture_shader, "colormult", 0.8);
@@ -196,12 +185,12 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     shader_uniform(texture_shader, "gold", 0);
     shader_uniform(texture_shader, "colormult", 1.0);
 
+    
     if editor.editing_level == false {
         source := Rect.{16,0,16,16};
         dest := Rect.{xx (level.player_pos.x*64), xx (level.player_pos.y*64), 64, 64};
         draw_texture(source, dest, *sprites, intermediate_vao, intermediate_vbo);
     }
-    
 
     if editor.editing_level && (editor.tool == .BRUSH || editor.tool == .FILL) && is_in_bounds(editor.mouse_tile, *level) {
         block := editor.selected_block;
@@ -273,13 +262,6 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
             }
         }
     }
-
-    if editor.editing_level == false {
-        source := Rect.{16,0,16,16};
-        dest := Rect.{xx (level.player_pos.x*64), xx (level.player_pos.y*64), 64, 64};
-        draw_texture(source, dest, *sprites, intermediate_vao, intermediate_vbo);
-    }
-
 
     if editor.enabled && editor.editing_level {
         spawn : Block;
@@ -371,11 +353,26 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
                 if tile.type == .NONE {
                     tile = level.floor[editor.mouse_tile.x][editor.mouse_tile.y];
                 }
-                struct_str := sprint("%", tile);
+                struct_str := tprint("%", tile);
                 draw_text(struct_str, .{32, 64}, *font_m5x7, intermediate_vao, intermediate_vbo);
             }
         }
 
+        #if false {
+            shader_uniform(text_shader, "color", .{1, 1, 1, 1});
+            shader_uniform(color_shader, "view", *view, true);
+            tile_begin, tile_end := get_camera_level_bounds(camera, *level);
+            for x: tile_begin.x..tile_end.x {
+                for y: tile_begin.y..tile_end.y {
+                    light := compute_light_value(field, x, y);
+                    struct_str := tprint("%", light);
+                    struct_str.count = min(struct_str.count, 3);
+                    dest := v2i.{xx (x*64) + 8, xx (y*64) + 48};
+                    draw_text(struct_str, dest, *font_m5x7, intermediate_vao, intermediate_vbo);
+                }
+            }
+            shader_uniform(color_shader, "view", *Matrix4_Identity, true);
+        }
         // total_goal_blocks : int;
         // total_secrets : int;
         // for x: 0..level.dimensions.x-1 {

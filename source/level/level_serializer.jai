@@ -43,16 +43,19 @@ Ini_File_Data :: struct {
     camera: Camera2D;
 }
 
+
 save_ini_file :: (using game_state: *Game_State) -> bool {
     last_level := level.name;
     path := INI_FILE_LOCATION;
 
-    ini_data : Ini_File_Data;
+    // Scuffed work around but who cares
+    ini_data := New(Ini_File_Data);
     ini_data.level = level;
     ini_data.editor = editor;
     ini_data.camera = camera;
 
-    success := write_entire_file(path, cast(*void) *ini_data, size_of(Ini_File_Data));
+    success := write_entire_file(path, ini_data, size_of(Ini_File_Data));
+    free(ini_data);
 
     if !success {
         print("Failed to save ini file!\n");
@@ -63,11 +66,7 @@ save_ini_file :: (using game_state: *Game_State) -> bool {
 
 load_ini_file :: (using game_state: *Game_State) -> bool {
     data, success := read_entire_file(INI_FILE_LOCATION);
-    if !success {
-        print("Failed to load ini file!\n");
-        return false;
-    }
-    if data.count != size_of(Ini_File_Data) {
+    if !success || data.count != size_of(Ini_File_Data) {
         print("Failed to load ini file!\n");
         return false;
     }
