@@ -50,12 +50,16 @@ Game_State :: struct {
     rewind_meter : float32;
 
     move_stack : Move_Stack;
+    move_repeat_timer : float32;
+    move_direction : v2i;
     move_number : int;
     checkpoint_stack : Move_Checkpoint_Stack;
 
     resource_check_timer : float32;
 
     frame_number := 0;
+
+    bindings: Bindings;
 
     memory_initialized := false;
 }
@@ -138,6 +142,7 @@ on_startup :: (using game_state: *Game_State) {
 }
 
 REWIND_TIME :: 1.25;
+MOVE_REPEAT_TIME :: 0.4;
 
 Hash :: #import "Hash";
 

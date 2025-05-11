@@ -45,15 +45,41 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     if editor.editing_level == false && just_got_photograph == false && dialogue_state.open == false {
         starting_move_number := move_number;
 
+        // This is a shocking amount of code for how simple this task is
+        target_dir := v2i.{0, 0};
         move := v2i.{0, 0};
-        if input.just_pressed[SDL_SCANCODE_LEFT] || input.just_pressed[SDL_SCANCODE_A] {
-            move.x = -1;
-        } else if input.just_pressed[SDL_SCANCODE_RIGHT] || input.just_pressed[SDL_SCANCODE_D] {
-            move.x = 1;
-        } else if input.just_pressed[SDL_SCANCODE_UP] || input.just_pressed[SDL_SCANCODE_W] {
-            move.y = -1;
-        } else if input.just_pressed[SDL_SCANCODE_DOWN] || input.just_pressed[SDL_SCANCODE_S] {
-            move.y = 1;
+        if input.is_pressed[SDL_SCANCODE_LEFT] || input.is_pressed[SDL_SCANCODE_A] {
+            target_dir.x = -1;
+        } else if input.is_pressed[SDL_SCANCODE_RIGHT] || input.is_pressed[SDL_SCANCODE_D] {
+            target_dir.x = 1;
+        } if input.is_pressed[SDL_SCANCODE_UP] || input.is_pressed[SDL_SCANCODE_W] {
+            target_dir.y = -1;
+        } else if input.is_pressed[SDL_SCANCODE_DOWN] || input.is_pressed[SDL_SCANCODE_S] {
+            target_dir.y = 1;
+        }
+        
+        // In the case multiple are pressed, pick the one more recently pressed
+        if target_dir != move_direction {
+            if target_dir.x != 0 && target_dir.y != 0 {
+                if target_dir.x != move_direction.x && target_dir.y == move_direction.y {
+                    target_dir.y = 0;
+                } else if target_dir.x == move_direction.x && target_dir.y != move_direction.y {
+                    target_dir.x = 0;
+                } else {
+                    target_dir.y = 0;
+                }
+            }
+            if move_direction == .{0, 0} {
+                move = target_dir;
+            }
+            move_direction = target_dir;
+            move_repeat_timer = 0;
+        } else if move_direction != .{0, 0} {
+            move_repeat_timer += FRAME_TIME;
+            if move_repeat_timer > MOVE_REPEAT_TIME {
+                move_repeat_timer -= MOVE_REPEAT_TIME;
+                move = target_dir;
+            }
         }
 
         if input.just_pressed[SDL_SCANCODE_LCTRL] {

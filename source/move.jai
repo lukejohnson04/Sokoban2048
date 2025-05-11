@@ -80,7 +80,7 @@ player_move :: (using game_state: *Game_State, move: v2i) -> bool, bool, bool {
                 break;
             }
 
-            if block.type == .WALL || block.type == .BLOCK_BARRIER {
+            if block.type == .WALL || block.type == .BLOCK_BARRIER || block.type == .INTERACTABLE {
                 success = false;
                 break;
             }
@@ -228,4 +228,56 @@ goto_last_checkpoint :: (using game_state: *Game_State) -> bool {
     move_number = last_checkpoint;
 
     return true;
+}
+
+
+Action :: struct {
+    keys: [2] SDL_Scancode;
+    timer: float;
+    pressed: bool;
+}
+
+Bindings :: struct {
+    actions: [4] Action;
+
+    using Action_Type :: enum s32 #specified {
+        LEFT :: 0;
+        RIGHT :: 1;
+        UP :: 2;
+        DOWN :: 3;
+    }
+
+    actions[LEFT].keys[0] =   SDL_SCANCODE_LEFT;
+    actions[LEFT].keys[1] =   SDL_SCANCODE_A;
+    actions[RIGHT].keys[0] =  SDL_SCANCODE_RIGHT;
+    actions[RIGHT].keys[1] =  SDL_SCANCODE_D;
+    actions[UP].keys[0] =     SDL_SCANCODE_UP;
+    actions[UP].keys[1] =     SDL_SCANCODE_W;
+    actions[DOWN].keys[0] =   SDL_SCANCODE_DOWN;
+    actions[DOWN].keys[1] =   SDL_SCANCODE_S;
+}
+
+controls :: (using game_state: *Game_State, input: *Input_State) {
+    using bindings;
+    for *action: actions {
+        just_pressed := false;
+        for key: action.keys {
+            if input.just_pressed[key] {
+                action.pressed = true;
+                just_pressed = true;
+                action.timer = 0;
+            } if input.just_released[key] {
+                action.pressed = false;
+                just_pressed = false;
+                action.timer = 0;
+            }
+        }
+
+        if action.pressed {
+            if just_pressed || action.timer > MOVE_REPEAT_TIME {
+
+            }
+            action.timer += FRAME_TIME;
+        }
+    }
 }
