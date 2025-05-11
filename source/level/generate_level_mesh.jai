@@ -14,7 +14,7 @@ compute_light_value :: (field: Visibility_Field, x: int, y: int) -> float {
     }
     level = max(0.0, (level - 1));
     level = min(level, 12);
-    return pow(0.92, level);
+    return 1;//pow(0.9, level);
 }
 
 
@@ -76,6 +76,16 @@ generate_level_mesh :: (using game_state: *Game_State) {
                 u2 = (source.x + source.w) / 128.0;
                 v1 = source.y / 128.0;
                 v2 = (source.y + source.h) / 128.0;
+
+                if block.flags & .FLIPPED_X {
+                    dest.x += dest.w;
+                    dest.w *= -1;
+                }
+                if block.flags & .FLIPPED_Y {
+                    dest.y += dest.h;
+                    dest.h *= -1;
+                }
+
 
                 vertices := Vertex(.LIGHT).[
                     .{dest.x,           dest.y,         0, u1, v1, 0},

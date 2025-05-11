@@ -4,7 +4,7 @@ BUILD_TYPE :: enum #specified {
     PROFILE :: 2;
 }
 
-BUILD :: BUILD_TYPE.DEBUG;
+BUILD :: BUILD_TYPE.RELEASE;
 
 
 #program_export
@@ -19,6 +19,10 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     if just_reloaded_dll.* {
         gl_load(*gl);
         ImGui.SetCurrentContext(imgui_context);
+        if editor.editing_level == false {
+            vfield_generate_flood_fill(*level, field);
+        }
+        generate_level_mesh(game_state);
         just_reloaded_dll.* = false;
     }
 
@@ -53,7 +57,21 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         }
 
         if input.just_pressed[SDL_SCANCODE_LCTRL] {
-            goto_last_checkpoint(game_state);
+            rewinding = true;
+            rewind_meter = 0;
+        }
+
+        if rewinding {
+            if input.is_pressed[SDL_SCANCODE_LCTRL] == false {
+                rewinding = false;
+            } else {
+                rewind_meter += FRAME_TIME;
+                if rewind_meter > REWIND_TIME {
+                    rewind_meter = 0;
+                    rewinding = false;
+                    goto_last_checkpoint(game_state);
+                }
+            }
         }
 
         if input.just_pressed[SDL_SCANCODE_R] {
@@ -328,6 +346,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         shader_uniform(texture_shader, "view", *Matrix4_Identity, true);
         bind_texture(dialogue_player_texture);
         draw_texture(.{0, 0, 320, 180}, .{0, 0, WINDOW_WIDTH, WINDOW_HEIGHT}, *dialogue_player_texture, intermediate_vao, intermediate_vbo);
+
         use_shader(text_shader);
         shader_uniform(text_shader, "projection", *projection, false);
         shader_uniform(text_shader, "view", *Matrix4_Identity, true);
@@ -338,6 +357,14 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         str.data = queue_peek(*dialogue_state.nodes).text_buffer.data;
         str.count = dialogue_state.index;
         draw_text(str, .{64, 100}, *font_m5x7, intermediate_vao, intermediate_vbo, WINDOW_WIDTH - 200);
+    }
+
+    if rewinding {
+        use_shader(texture_shader);
+        shader_uniform(texture_shader, "view", *Matrix4_Identity, true);
+        bind_texture(ui_sprites);
+        radius : float32 = 32;
+        draw_radial_texture(.{0, 0, 32, 32}, .{WINDOW_WIDTH - radius*2, radius*2}, radius, rewind_meter / REWIND_TIME, *ui_sprites, intermediate_vao, intermediate_vbo);
     }
 
     #if true {

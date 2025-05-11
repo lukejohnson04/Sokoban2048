@@ -14,12 +14,12 @@ Move_Delta_Data :: struct {
 
 
 
-MAX_UNDO :: 200;
+MAX_UNDO :: 2000;
 Move_Stack :: Stack_Circular(Move_Delta_Data, MAX_UNDO);
 
 
 // Each entry represents how many moves since the last checkpoint;
-MAX_CHECKPOINT_COUNT :: 15;
+MAX_CHECKPOINT_COUNT :: 30;
 Move_Checkpoint_Stack :: Stack_Circular(int, MAX_CHECKPOINT_COUNT);
 
 
@@ -164,7 +164,9 @@ player_move :: (using game_state: *Game_State, move: v2i) -> bool, bool, bool {
 
     if success {
         if activates_goal_block {
+            // Save a checkpoint for the move immediately before solving a block
             stack_push(*checkpoint_stack, move_number);
+            stack_push(*checkpoint_stack, move_number+1);
         }
         delta_data.new_player_pos = new_pos;
         stack_push(*move_stack, delta_data);
@@ -188,28 +190,42 @@ move_undo :: (using game_state: *Game_State) {
         delta := delta_data.deltas[it];
         level.grid[delta.coord.x][delta.coord.y] = delta.old_value;
     }
-
+    
     move_number -= 1;
+
+    // Remove checkpoints if we just undid one
+    while stack_is_empty(*checkpoint_stack) == false &&
+            stack_peek(*checkpoint_stack) > move_number {
+        stack_pop(*checkpoint_stack);
+    }
 }
 
 goto_last_checkpoint :: (using game_state: *Game_State) -> bool {
     if stack_is_empty(*checkpoint_stack) {
+        print("Checkpoint stack empty\n");
         return false;
     }
 
-    last_count := stack_pop(*checkpoint_stack);
-    moves_since_last := move_number - last_count;
+    last_checkpoint := stack_peek(*checkpoint_stack);
+    // Permanently delete a checkpoint if we go back 1 extra checkpoint;
+    if move_number == last_checkpoint {
+        stack_pop(*checkpoint_stack);
+        return goto_last_checkpoint(game_state);
+    }
+
+    moves_since_last := move_number - last_checkpoint;
     if moves_since_last > move_stack.count {
         while (stack_is_empty(*checkpoint_stack) == false) {
             stack_pop(*checkpoint_stack);
         }
+        print("Checkpoint is too far back\n");
         return false;
     }
 
     for 0..moves_since_last-1 {
         move_undo(game_state);
     }
-    move_number = last_count;
+    move_number = last_checkpoint;
 
     return true;
 }

@@ -24,6 +24,7 @@ Game_State :: struct {
 
     sprites : Resource(Texture);
     sprites_imgui : Resource(Texture);
+    ui_sprites : Resource(Texture);
     dialogue_player_texture : Resource(Texture);
 
     photograph_song : *Mix_Chunk;
@@ -44,6 +45,9 @@ Game_State :: struct {
     camera := Camera2D.{.{WINDOW_WIDTH/2, WINDOW_HEIGHT/2}, 1};
     editor : Editor_State;
     dialogue_state : Dialogue_Player_State;
+
+    rewinding : bool;
+    rewind_meter : float32;
 
     move_stack : Move_Stack;
     move_number : int;
@@ -91,6 +95,7 @@ on_startup :: (using game_state: *Game_State) {
     load_resource(*sprites, "data/art/sprites.png");
     load_resource(*sprites_imgui, "data/art/sprites.png");
     load_resource(*dialogue_player_texture, "data/art/dialoguebox.png");
+    load_resource(*ui_sprites, "data/art/ui.png");
 
     create_shader(*texture_shader, "data/shaders/texture.vert", "data/shaders/texture.frag");
     create_shader(*text_shader, "data/shaders/text.vert", "data/shaders/text.frag");
@@ -132,6 +137,7 @@ on_startup :: (using game_state: *Game_State) {
     generate_level_mesh(game_state);
 }
 
+REWIND_TIME :: 1.25;
 
 Hash :: #import "Hash";
 

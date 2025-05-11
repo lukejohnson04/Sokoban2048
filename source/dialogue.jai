@@ -149,11 +149,6 @@ generate_interaction_queue :: (state: *Dialogue_Player_State, using game_state: 
         case 5; {
             if block.interaction_id == {
                 case 0; {
-                    queue_text("Why hello there! My my my, it's not everyday you see a new face around here.");
-                    queue_text("I love exploring but I've always been a little too scared to go in the mines.");
-                    queue_text("I had a friend go in once, but he quickly came back. Said it was underwhelming.");
-                }
-                case 1; {
                     queue_text("I've been going through all the puzzles in the area and I can't help but ask myself...");
                     queue_text("Is it all just puzzles?");
                     queue_text("Are we the ones pushing boxes or is the mere concept of box pushing the one pushing us?");
