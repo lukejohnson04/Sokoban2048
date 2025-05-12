@@ -393,6 +393,25 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         draw_radial_texture(.{0, 0, 32, 32}, .{WINDOW_WIDTH - radius*2, radius*2}, radius, rewind_meter / REWIND_TIME, *ui_sprites, intermediate_vao, intermediate_vbo);
     }
 
+    plight_pos := Vector2.{xx level.player_pos.x, xx level.player_pos.y};
+    plight_pos += .{0.5, 0.5};
+    light := Light.{plight_pos, 3};
+    lights := do_lighting(game_state, light);
+
+    glDisable(GL_DEPTH_TEST);
+    use_shader(color_shader);
+    shader_uniform(color_shader, "projection", *projection, false);
+    shader_uniform(color_shader, "view", *view, true);
+    shader_uniform(color_shader, "model", *model, false);
+    shader_uniform(color_shader, "color", Vector4.{1, 0, 0, 1});
+    draw_line(.{32, 32}, .{256, 256}, intermediate_vao, intermediate_vbo);
+
+    for lights {
+        start_pos := Vector2.{xx (level.player_pos.x * 64), xx (level.player_pos.y * 64)} + .{32, 32};
+        end_pos := Vector2.{xx (it.x * 64), xx (it.y * 64)};
+        draw_line(start_pos, end_pos, intermediate_vao, intermediate_vbo);
+    }
+
     #if true {
         use_shader(text_shader);
         shader_uniform(text_shader, "projection", *projection, false);
@@ -490,3 +509,4 @@ Random :: #import "Random";
 #load "audio/audio.jai";
 #load "dialogue.jai";
 #load "assets/assets.jai";
+#load "lighting.jai";
