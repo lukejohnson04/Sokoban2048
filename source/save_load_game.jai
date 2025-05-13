@@ -4,15 +4,15 @@ GAME_SAVE_PATH :: "saves/gamesave";
 GAME_SAVE_DIRECTORY :: "saves";
 
 
-save_game :: (using game_state: *Game_State) -> bool {
+save_game :: () -> bool {
     make_directory_if_it_does_not_exist(GAME_SAVE_DIRECTORY);
 
     path := GAME_SAVE_PATH;
-    success := write_entire_file(path, cast(*void) *level, size_of(Level));
+    success := write_entire_file(path, cast(*void) *context.game_state.level, size_of(Level));
     return success;
 }
 
-load_save :: (using game_state: *Game_State, log_errors := true) -> bool {
+load_save :: (log_errors := true) -> bool {
     path := GAME_SAVE_PATH;
     
     if File_Utilities.is_directory(GAME_SAVE_DIRECTORY) == false {
@@ -37,7 +37,7 @@ load_save :: (using game_state: *Game_State, log_errors := true) -> bool {
     }
 
     assert(data.count >= size_of(Level));
-    memcpy(*level, data.data, size_of(Level));
+    memcpy(*context.game_state.level, data.data, size_of(Level));
 
     return true;
 }

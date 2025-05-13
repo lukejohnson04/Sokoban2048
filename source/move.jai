@@ -29,7 +29,8 @@ add_move_delta :: (data: *Move_Delta_Data) -> *Move_Delta {
     return *data.deltas[data.count - 1];
 }
 
-player_move :: (using game_state: *Game_State, move: v2i) -> bool, bool, bool {
+player_move :: (move: v2i) -> bool, bool, bool {
+    using context.game_state;
     using level;
     new_pos := player_pos + move;
 
@@ -43,7 +44,7 @@ player_move :: (using game_state: *Game_State, move: v2i) -> bool, bool, bool {
     if new_pos.x < 0 || new_pos.x >= level.dimensions.x || new_pos.y < 0 || new_pos.y >= level.dimensions.y {
         return false, false, false;
     } else if level.grid[new_pos.x][new_pos.y].type == .INTERACTABLE {
-        generate_interaction_queue(*dialogue_state, game_state, level.grid[new_pos.x][new_pos.y]);
+        generate_interaction_queue(*dialogue_state, level.grid[new_pos.x][new_pos.y]);
         return true, false, false;
     } else if level.grid[new_pos.x][new_pos.y].type == .NONE || level.grid[new_pos.x][new_pos.y].type == .BLOCK_BARRIER {
         success = true;
@@ -176,7 +177,8 @@ player_move :: (using game_state: *Game_State, move: v2i) -> bool, bool, bool {
     return success, combines_block, activates_goal_block;
 }
 
-move_undo :: (using game_state: *Game_State) {
+move_undo :: () {
+    using context.game_state;
     if stack_is_empty(*move_stack) return;
 
     delta_data := stack_pop(*move_stack);
@@ -200,7 +202,9 @@ move_undo :: (using game_state: *Game_State) {
     }
 }
 
-goto_last_checkpoint :: (using game_state: *Game_State) -> bool {
+goto_last_checkpoint :: () -> bool {
+    using context.game_state;
+
     if stack_is_empty(*checkpoint_stack) {
         print("Checkpoint stack empty\n");
         return false;
@@ -210,7 +214,7 @@ goto_last_checkpoint :: (using game_state: *Game_State) -> bool {
     // Permanently delete a checkpoint if we go back 1 extra checkpoint;
     if move_number == last_checkpoint {
         stack_pop(*checkpoint_stack);
-        return goto_last_checkpoint(game_state);
+        return goto_last_checkpoint();
     }
 
     moves_since_last := move_number - last_checkpoint;
@@ -223,7 +227,7 @@ goto_last_checkpoint :: (using game_state: *Game_State) -> bool {
     }
 
     for 0..moves_since_last-1 {
-        move_undo(game_state);
+        move_undo();
     }
     move_number = last_checkpoint;
 
@@ -257,8 +261,8 @@ Bindings :: struct {
     actions[DOWN].keys[1] =   SDL_SCANCODE_S;
 }
 
-controls :: (using game_state: *Game_State, input: *Input_State) {
-    using bindings;
+controls :: (input: *Input_State) {
+    using context.game_state.bindings;
     for *action: actions {
         just_pressed := false;
         for key: action.keys {

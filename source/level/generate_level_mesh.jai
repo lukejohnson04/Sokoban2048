@@ -37,7 +37,8 @@ compute_vertex_light :: (blocks: type_of(Level.grid), light_levels: [Level.MAX_W
 }
 
 
-generate_level_mesh :: (using game_state: *Game_State) {
+generate_level_mesh :: () {
+    using context.game_state;
     mesh: *Level_Mesh = *world_mesh;
     mesh_free(*mesh.tiles);
     mesh_free(*mesh.gold);
@@ -47,7 +48,7 @@ generate_level_mesh :: (using game_state: *Game_State) {
     mesh_init(*mesh.gold);
     mesh_init(*mesh.goal);
 
-    lighting_enabled := !game_state.editor.editing_level;
+    lighting_enabled := !context.game_state.editor.editing_level;
 
     light_levels: [Level.MAX_WIDTH][Level.MAX_HEIGHT] float;
     for x: 0..level.dimensions.x {

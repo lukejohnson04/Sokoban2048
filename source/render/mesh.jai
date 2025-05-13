@@ -2,11 +2,14 @@
 Vertex_Component :: enum_flags {
     NONE :: 0;
     LIGHT :: 1;
+    UV_DISABLED :: 2;
 }
 
 Vertex :: struct($T: Vertex_Component = .NONE) {
     x, y, z: float32;
-    u, v: float32;
+    #if (T & .UV_DISABLED) == 0 {
+        u, v: float32;
+    }
 
     #if T & .LIGHT {
         light: float32;

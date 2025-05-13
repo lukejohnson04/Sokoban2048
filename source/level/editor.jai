@@ -53,7 +53,10 @@ Editor_State :: struct {
     }
 }
 
-draw_editor :: (using game_state: *Game_State) {
+draw_editor :: () {
+    using context.game_state;
+    game_state := context.game_state;
+
     draw_list := ImGui.GetWindowDrawList();
     window_pos := ImGui.GetCursorScreenPos();
 
@@ -65,7 +68,8 @@ draw_editor :: (using game_state: *Game_State) {
 
     loaded := false;
 
-    on_new_level_pressed :: (using game_state: *Game_State) {
+    on_new_level_pressed :: () {
+        using context.game_state;
         if editor.editing_level {
             if level.id != 0 {
                 save_level(*level, xx level.name);
@@ -112,7 +116,7 @@ draw_editor :: (using game_state: *Game_State) {
         }
         ImGui.SameLine();
         if ImGui.Button("New level") {
-            on_new_level_pressed(game_state);
+            on_new_level_pressed();
         }
     } else {
         ImGui.InputText("##save", editor.save_level_field.data, MAX_LEVEL_NAME_LENGTH);
@@ -143,7 +147,7 @@ draw_editor :: (using game_state: *Game_State) {
         }
         ImGui.SameLine();
         if ImGui.Button("New level") {
-            on_new_level_pressed(game_state);
+            on_new_level_pressed();
         }
 
         items := string.["Layer1", "Floor"];
@@ -333,12 +337,13 @@ draw_editor :: (using game_state: *Game_State) {
     }
     if loaded {
         vfield_generate_flood_fill(*level, game_state.field);
-        generate_level_mesh(game_state);
+        generate_level_mesh();
     }
 }
 
 
-update_editor :: (using game_state: *Game_State, input: *Input_State) {
+update_editor :: (input: *Input_State) {
+    using context.game_state;
     mouse_world_pos := get_mouse_world_pos(camera);
     editor.mouse_tile = v2i.{xx (mouse_world_pos.x / 64), xx (mouse_world_pos.y / 64)};
     mouse_tile := editor.mouse_tile;
@@ -476,7 +481,8 @@ update_editor :: (using game_state: *Game_State, input: *Input_State) {
             }
         }
         case .MOVE; {
-            move_tiles :: (using game_state: *Game_State, blocks: *type_of(Level.grid), offset: v2i) {
+            move_tiles :: (blocks: *type_of(Level.grid), offset: v2i) {
+                using context.game_state;
                 start, end : v2i;
                 start.x = min(editor.select_end.x, editor.select_start.x);
                 start.y = min(editor.select_end.y, editor.select_start.y);
@@ -519,8 +525,8 @@ update_editor :: (using game_state: *Game_State, input: *Input_State) {
                         changed_map = true;
                         editor.move_state = .NOT_STARTED;
                         // Move all the tiles
-                        move_tiles(game_state, *level.grid, editor.move_end - editor.move_start);
-                        move_tiles(game_state, *level.floor, editor.move_end - editor.move_start);
+                        move_tiles(*level.grid, editor.move_end - editor.move_start);
+                        move_tiles(*level.floor, editor.move_end - editor.move_start);
                         editor.select_start += editor.move_end - editor.move_start;
                         editor.select_end += editor.move_end - editor.move_start;
                     }
@@ -530,7 +536,7 @@ update_editor :: (using game_state: *Game_State, input: *Input_State) {
     }
 
     if changed_map {
-        generate_level_mesh(game_state);
+        generate_level_mesh();
     }
 }
 

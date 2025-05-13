@@ -78,7 +78,8 @@ dialogue_queue_text :: (dialogue_state: *Dialogue_Player_State, text: string) {
     node.text_buffer_size = text.count;
 }
 
-generate_interaction_queue :: (state: *Dialogue_Player_State, using game_state: *Game_State, block: Block) {
+generate_interaction_queue :: (state: *Dialogue_Player_State, block: Block) {
+    using context.game_state;
     assert(block.type == .INTERACTABLE);
 
     new_interaction := false;
@@ -98,7 +99,7 @@ generate_interaction_queue :: (state: *Dialogue_Player_State, using game_state: 
 
     if block.interaction_id == 10_000 {
         queue_text("Game has been saved.");
-        save_game(game_state);
+        save_game();
         stack_clear(*move_stack);
         stack_clear(*checkpoint_stack);
         return;

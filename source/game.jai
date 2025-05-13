@@ -6,14 +6,19 @@ BUILD_TYPE :: enum #specified {
 
 BUILD :: BUILD_TYPE.RELEASE;
 
+#add_context game_state: *Game_State;
 
 #program_export
 update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Window, just_reloaded_dll: *bool, imgui_context: *ImGui.ImGuiContext) -> s32 {
-    using game_state: *Game_State = xx game_memory;
+    game_state := cast(*Game_State) game_memory;
+    Remap_Context();
+    context.game_state = game_state;
+    using context.game_state;
+
     if memory_initialized == false {
         ImGui.SetCurrentContext(imgui_context);
-        on_startup(game_state);
-        game_state.memory_initialized = true;
+        on_startup();
+        memory_initialized = true;
     }
 
     if just_reloaded_dll.* {
@@ -22,7 +27,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         if editor.editing_level == false {
             vfield_generate_flood_fill(*level, field);
         }
-        generate_level_mesh(game_state);
+        generate_level_mesh();
         just_reloaded_dll.* = false;
     }
 
@@ -34,10 +39,10 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
 
     if input.just_closed_window {
         #if BUILD == .DEBUG {
-            save_ini_file(game_state);
+            save_ini_file();
         }
         #if BUILD == .RELEASE {
-            save_game(game_state);
+            save_game();
         }
         return 0;
     }
@@ -95,13 +100,13 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
                 if rewind_meter > REWIND_TIME {
                     rewind_meter = 0;
                     rewinding = false;
-                    goto_last_checkpoint(game_state);
+                    goto_last_checkpoint();
                 }
             }
         }
 
         if input.just_pressed[SDL_SCANCODE_R] {
-            move_undo(game_state);
+            move_undo();
         }
 
         if input.just_pressed[SDL_SCANCODE_GRAVE] {
@@ -109,7 +114,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         }
 
         if move != .{0, 0} {
-            success, combines_block, activates_goal_block := player_move(game_state, move);
+            success, combines_block, activates_goal_block := player_move(move);
             if success {
                 play_sound_effect(footsteps[move_number % footsteps.count]);
                 if combines_block {
@@ -127,7 +132,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
 
         if move_number != starting_move_number {
             vfield_generate_flood_fill(*level, field);
-            generate_level_mesh(game_state);
+            generate_level_mesh();
         }
     }
     
@@ -140,7 +145,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     }
 
     if editor.enabled && editor.editing_level {
-        update_editor(game_state, input);
+        update_editor(input);
     }
 
 
@@ -150,7 +155,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         ImGui.NewFrame();
 
         ImGui.Begin("Window");
-        draw_editor(game_state);
+        draw_editor();
         ImGui.End();
     }
 
@@ -395,9 +400,21 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
 
     plight_pos := Vector2.{xx level.player_pos.x, xx level.player_pos.y};
     plight_pos += .{0.5, 0.5};
-    light := Light.{plight_pos, 3};
-    lights := do_lighting(game_state, light);
+    plight_pos *= 64;
+    light := Light.{plight_pos, 3.5 * 64};
+    corners := do_lighting(light);
 
+    use_shader(texture_shader);
+    bind_texture(spotlight);
+    shader_uniform(texture_shader, "projection", *projection, false);
+    shader_uniform(texture_shader, "view", *view, true);
+    shader_uniform(texture_shader, "model", *model, false);
+
+    light_world_pos := plight_pos;
+    light_pic_size := light.radius * 2;
+    light_dest := Rect.{light_world_pos.x - light_pic_size/2, light_world_pos.y - light_pic_size/2, light_pic_size, light_pic_size};
+    draw_texture(.{0, 0, 256, 256}, light_dest, *spotlight, intermediate_vao, intermediate_vbo);
+    
     glDisable(GL_DEPTH_TEST);
     use_shader(color_shader);
     shader_uniform(color_shader, "projection", *projection, false);
@@ -406,11 +423,102 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     shader_uniform(color_shader, "color", Vector4.{1, 0, 0, 1});
     draw_line(.{32, 32}, .{256, 256}, intermediate_vao, intermediate_vbo);
 
-    for lights {
-        start_pos := Vector2.{xx (level.player_pos.x * 64), xx (level.player_pos.y * 64)} + .{32, 32};
-        end_pos := Vector2.{xx (it.x * 64), xx (it.y * 64)};
-        draw_line(start_pos, end_pos, intermediate_vao, intermediate_vbo);
+    vertices: [..] Vertex(.UV_DISABLED);
+    vertices.allocator = temp;
+    array_add(*vertices, .{plight_pos.x, plight_pos.y, 0});
+
+    angle_func :: (a: Light_Mesh_Node, b: Light_Mesh_Node) -> float {
+        ppos := Vector2.{xx context.game_state.level.player_pos.x, xx context.game_state.level.player_pos.y};
+        ppos += .{0.5, 0.5};
+        ppos *= 64;
+        first := a - ppos;
+        second := b - ppos;
+        angle_a := atan2(first.y, first.x);
+        angle_b := atan2(second.y, second.x);
+        while angle_a < 0 {
+            angle_a += TAU;
+        } while angle_b < 0 {
+            angle_b += TAU;
+        }
+        angle := angle_a - angle_b;
+        return angle;
     }
+
+    if input.just_pressed[SDL_SCANCODE_G] {
+        debug_vert_count -= 1;
+    }
+    if input.just_pressed[SDL_SCANCODE_H] {
+        debug_vert_count += 1;
+    }
+
+    if corners.count > 0 {
+        Sort.quick_sort(corners, angle_func);
+        // extended := corners[corners.count-1].extension;
+        // for 0..corners.count-1 {
+        //     // defer extended = corners[it].extension;
+        //     next_ind := ifx it==corners.count-1 0 else it+1;
+        //     a := corners[it];
+        //     b := corners[next_ind];
+        //     first := a - plight_pos;
+        //     second := b - plight_pos;
+        //     angle_a := atan2(first.y, first.x);
+        //     angle_b := atan2(second.y, second.x);
+
+        //     while angle_a < TAU {
+        //         angle_a += TAU;
+        //     } while angle_b < TAU {
+        //         angle_b += TAU;
+        //     }
+        //     angle := angle_a - angle_b;
+        //     while angle < TAU {
+        //         angle += TAU;
+        //     }
+
+        //     // Same angle
+        //     if angle == 0 {
+        //         if extended != a.extension {
+        //             corners[next_ind], corners[it] = corners[it], corners[next_ind];
+        //             it += 1;
+        //             continue;
+        //         }
+        //     }
+        // }
+
+        point_count := ifx debug_vert_count < 0 corners.count else debug_vert_count;
+        for 0..point_count-1 {
+            corner := corners[it];
+            shader_uniform(color_shader, "color", Vector4.{1, 0, 0, 1});
+            if it == point_count-1 && debug_vert_count >= 0 {
+                shader_uniform(color_shader, "color", Vector4.{0, 0, 1, 1});
+                print("Node: %\n", corners[point_count-1]);
+            }
+            // draw_line(plight_pos, corner, intermediate_vao, intermediate_vbo);
+            array_add(*vertices, .{corner.x, corner.y, 0});
+        }
+        if vertices.count > 1 {
+            array_add(*vertices, vertices[1]);
+        }
+
+        shader_uniform(color_shader, "color", Vector4.{0, 0, 1, 0.25});
+        glBindVertexArray(intermediate_vao);
+        glBindBuffer(GL_ARRAY_BUFFER, intermediate_vbo);
+        glBufferData(GL_ARRAY_BUFFER, size_of(Vertex(.UV_DISABLED)) * (point_count + ifx debug_vert_count == -1 2 else 1), vertices.data, GL_STATIC_DRAW);
+
+        // position
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * size_of(float32), null);
+        glEnableVertexAttribArray(0);
+
+
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glDrawArrays(GL_TRIANGLE_FAN, 0, xx (point_count + ifx debug_vert_count == -1 2 else 1));
+
+        // Draw outer box
+        // draw_line(light_dest.pos, .{light_dest.x + light_dest.w, light_dest.y}, intermediate_vao, intermediate_vbo);
+        // draw_line(light_dest.pos, .{light_dest.x, light_dest.y + light_dest.h}, intermediate_vao, intermediate_vbo);
+        // draw_line(light_dest.pos + .{light_dest.w, 0}, .{light_dest.x + light_dest.w, light_dest.y + light_dest.h}, intermediate_vao, intermediate_vbo);
+        // draw_line(light_dest.pos + .{0, light_dest.h}, .{light_dest.x + light_dest.w, light_dest.y+light_dest.h}, intermediate_vao, intermediate_vbo);
+    }
+
 
     #if true {
         use_shader(text_shader);
@@ -488,6 +596,7 @@ VSYNC :: true;
 
 #import "Windows";
 #import "Basic";
+
 #import "String";
 #import "SDL";
 #import "SDL_ttf";
@@ -497,8 +606,11 @@ VSYNC :: true;
 #import "stb_image";
 #import "freetype-2.12.1";
 
+
 File_Utilities :: #import "File_Utilities";
 Random :: #import "Random";
+Sort :: #import "Sort";
+#import "Remap_Context"(VERBOSE = false);
 
 #load "imgui.jai";
 #load "math.jai";

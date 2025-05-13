@@ -44,7 +44,8 @@ Ini_File_Data :: struct {
 }
 
 
-save_ini_file :: (using game_state: *Game_State) -> bool {
+save_ini_file :: () -> bool {
+    using context.game_state;
     last_level := level.name;
     path := INI_FILE_LOCATION;
 
@@ -64,7 +65,8 @@ save_ini_file :: (using game_state: *Game_State) -> bool {
     return true;
 }
 
-load_ini_file :: (using game_state: *Game_State) -> bool {
+load_ini_file :: () -> bool {
+    using context.game_state;
     data, success := read_entire_file(INI_FILE_LOCATION);
     if !success || data.count != size_of(Ini_File_Data) {
         print("Failed to load ini file!\n");

@@ -34,6 +34,12 @@ Rect :: struct {
     y: float32;
     w: float32;
     h: float32;
+
+    #place x;
+    pos: Vector2 = ---;
+
+    #place w;
+    size: Vector2 = ---;
 }
 
 iRect :: struct {
@@ -54,6 +60,12 @@ rect_contains_point :: (using rect: iRect, px: s64, py: s64) -> bool {
 radians :: (degrees: float32) -> float32 {
     return degrees * (PI / 180.0);
 }
+
+angle_to_point :: (a: Vector2, b: Vector2) -> float {
+    return atan2(a.y - b.y, a.x - b.x);
+}
+
+
 
 // ChatGPT code lol
 make_quaternion_from_axis_angle :: (axis: Vector3, degrees: float32) -> Quaternion {

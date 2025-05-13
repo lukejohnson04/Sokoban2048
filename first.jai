@@ -23,6 +23,7 @@ build :: () {
         options.output_path = ".build";
         options.output_executable_name = "game";
         options.output_type = .DYNAMIC_LIBRARY;
+        options.stack_trace = false;
         set_optimization(*options, .DEBUG);
 
         set_build_options(*options, w);
@@ -33,4 +34,3 @@ build :: () {
 }
 
 #import "Compiler";
-#import "Basic";
