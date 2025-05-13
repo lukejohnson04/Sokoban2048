@@ -20,7 +20,7 @@ void main()
     
     if (grayscale) {
         float gray = dot(color.rgb, vec3(0.299, 0.587, 0.114));
-        FragColor = vec4(vec3(gray), color.a);
+        color = vec4(vec3(gray), color.a);
     } else if (gold) {
         float lum = dot(color.rgb, vec3(0.299, 0.587, 0.114));
 
@@ -33,8 +33,7 @@ void main()
         vec3 goldTint = vec3(1.0, 0.843, 0.0);
         vec3 goldRGB  = goldTint * lum;
         vec3 mixed    = mix(color.rgb, goldRGB, 0.9);
-        FragColor      = vec4(mixed, color.a);
-    } else {
-        FragColor = color;
+        color      = vec4(mixed, color.a);
     }
+    FragColor = color;
 }

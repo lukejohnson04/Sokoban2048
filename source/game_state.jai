@@ -14,6 +14,7 @@ Game_State :: struct {
     texture_shader : Shader;
     text_shader : Shader;
     color_shader : Shader;
+    mask_shader : Shader;
 
     intermediate_vao : GLuint;
     intermediate_vbo : GLuint;
@@ -28,6 +29,11 @@ Game_State :: struct {
     ui_sprites : Resource(Texture);
     spotlight : Resource(Texture);
     dialogue_player_texture : Resource(Texture);
+
+    shadow_texture : Resource(Texture);
+    shadow_framebuffer : Framebuffer;
+    world_texture : Resource(Texture);
+    world_framebuffer : Framebuffer;
 
     photograph_song : *Mix_Chunk;
     
@@ -111,9 +117,19 @@ on_startup :: () {
     create_shader(*texture_shader, "data/shaders/texture.vert", "data/shaders/texture.frag");
     create_shader(*text_shader, "data/shaders/text.vert", "data/shaders/text.frag");
     create_shader(*color_shader, "data/shaders/color.vert", "data/shaders/color.frag");
+    create_shader(*mask_shader, "data/shaders/mask.vert", "data/shaders/mask.frag");
+
+    load_texture_for_framebuffer(*shadow_texture, xx (3.5 * 64 * 2), xx (3.5 * 64 * 2));
+    shadow_framebuffer = create_framebuffer(*shadow_texture);
+    load_texture_for_framebuffer(*world_texture, WINDOW_WIDTH, WINDOW_HEIGHT);
+    world_framebuffer = create_framebuffer(*world_texture);
 
     use_shader(texture_shader);
     shader_uniform(texture_shader, "texture1", 0);
+
+    use_shader(mask_shader);
+    shader_uniform(mask_shader, "texture1", 0);
+    shader_uniform(mask_shader, "mask_texture", 1);
 
     load_font("data/fonts/arial.ttf", *font_arial);
     load_font("data/fonts/m5x7.ttf", *font_m5x7, 60);
@@ -121,6 +137,8 @@ on_startup :: () {
     photograph_song = Mix_LoadWAV("data/audio/photograph_song.ogg");
     note_normal = Mix_LoadWAV("data/audio/note_normal.ogg");
     note_echo = Mix_LoadWAV("data/audio/note_echo.ogg");
+
+
 
     for 0..6 {
         // print("Salad: %\n", 5);

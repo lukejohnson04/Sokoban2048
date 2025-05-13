@@ -163,8 +163,10 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     // check_resource_reload()
 
     // Rendering
+    glBindFramebuffer(GL_FRAMEBUFFER, world_framebuffer.id);
     glClearColor(0, 0, 0, 1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 
     use_shader(texture_shader);
 
@@ -210,7 +212,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     shader_uniform(texture_shader, "projection", *projection, false);
     shader_uniform(texture_shader, "view", *view, true);
     shader_uniform(texture_shader, "model", *model, false);
-    shader_uniform(texture_shader, "texture1", 0);
+    shader_uniform(texture_shader, "texture_mod", 1);
     shader_uniform(texture_shader, "grayscale", 0);
     shader_uniform(texture_shader, "gold", 0);
     shader_uniform(texture_shader, "colormult", 1.0);
@@ -421,7 +423,6 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     shader_uniform(color_shader, "view", *view, true);
     shader_uniform(color_shader, "model", *model, false);
     shader_uniform(color_shader, "color", Vector4.{1, 0, 0, 1});
-    draw_line(.{32, 32}, .{256, 256}, intermediate_vao, intermediate_vbo);
 
     vertices: [..] Vertex(.UV_DISABLED);
     vertices.allocator = temp;
@@ -453,64 +454,72 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
 
     if corners.count > 0 {
         Sort.quick_sort(corners, angle_func);
-        // extended := corners[corners.count-1].extension;
-        // for 0..corners.count-1 {
-        //     // defer extended = corners[it].extension;
-        //     next_ind := ifx it==corners.count-1 0 else it+1;
-        //     a := corners[it];
-        //     b := corners[next_ind];
-        //     first := a - plight_pos;
-        //     second := b - plight_pos;
-        //     angle_a := atan2(first.y, first.x);
-        //     angle_b := atan2(second.y, second.x);
-
-        //     while angle_a < TAU {
-        //         angle_a += TAU;
-        //     } while angle_b < TAU {
-        //         angle_b += TAU;
-        //     }
-        //     angle := angle_a - angle_b;
-        //     while angle < TAU {
-        //         angle += TAU;
-        //     }
-
-        //     // Same angle
-        //     if angle == 0 {
-        //         if extended != a.extension {
-        //             corners[next_ind], corners[it] = corners[it], corners[next_ind];
-        //             it += 1;
-        //             continue;
-        //         }
-        //     }
-        // }
 
         point_count := ifx debug_vert_count < 0 corners.count else debug_vert_count;
         for 0..point_count-1 {
             corner := corners[it];
-            shader_uniform(color_shader, "color", Vector4.{1, 0, 0, 1});
-            if it == point_count-1 && debug_vert_count >= 0 {
-                shader_uniform(color_shader, "color", Vector4.{0, 0, 1, 1});
-                print("Node: %\n", corners[point_count-1]);
-            }
+            // shader_uniform(color_shader, "color", Vector4.{1, 0, 0, 1});
+            // if it == point_count-1 && debug_vert_count >= 0 {
+            //     shader_uniform(color_shader, "color", Vector4.{0, 0, 1, 1});
+            //     print("Node: %\n", corners[point_count-1]);
+            // }
             // draw_line(plight_pos, corner, intermediate_vao, intermediate_vbo);
             array_add(*vertices, .{corner.x, corner.y, 0});
         }
         if vertices.count > 1 {
             array_add(*vertices, vertices[1]);
         }
+        for *vert: vertices {
+            vert.x -= plight_pos.x;
+            vert.x += light.radius;
+            vert.y -= plight_pos.y;
+            vert.y += light.radius;
+        }
 
-        shader_uniform(color_shader, "color", Vector4.{0, 0, 1, 0.25});
+        glBindFramebuffer(GL_FRAMEBUFFER, shadow_framebuffer.id);
+        glClearColor(0.0, 0.0, 0.0, 0.0);
+        glClear(GL_COLOR_BUFFER_BIT);
+        glViewport(0, 0, xx shadow_framebuffer.w, xx shadow_framebuffer.h);
+
+        fb_projection := orthographic_projection_matrix(0, xx shadow_framebuffer.w, xx shadow_framebuffer.h, 0, -1, 1);
+        fb_projection = transpose(fb_projection);
+
+        use_shader(color_shader);
+        shader_uniform(color_shader, "projection", *fb_projection, false);
+        shader_uniform(color_shader, "view", *Matrix4_Identity, true);
+        shader_uniform(color_shader, "model", *model, false);
+        shader_uniform(color_shader, "color", Vector4.{1, 1, 1, 1});
+
         glBindVertexArray(intermediate_vao);
         glBindBuffer(GL_ARRAY_BUFFER, intermediate_vbo);
-        glBufferData(GL_ARRAY_BUFFER, size_of(Vertex(.UV_DISABLED)) * (point_count + ifx debug_vert_count == -1 2 else 1), vertices.data, GL_STATIC_DRAW);
+        true_render_amount := (point_count + ifx debug_vert_count == -1 2 else 1);
+        glBufferData(GL_ARRAY_BUFFER, size_of(Vertex(.UV_DISABLED)) * true_render_amount, vertices.data, GL_STATIC_DRAW);
 
         // position
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * size_of(float32), null);
         glEnableVertexAttribArray(0);
 
-
         glBindBuffer(GL_ARRAY_BUFFER, 0);
-        glDrawArrays(GL_TRIANGLE_FAN, 0, xx (point_count + ifx debug_vert_count == -1 2 else 1));
+        glDrawArrays(GL_TRIANGLE_FAN, 0, xx true_render_amount);
+
+        glViewport(0, 0, xx WINDOW_WIDTH, xx WINDOW_HEIGHT);
+        glBindFramebuffer(GL_FRAMEBUFFER, world_framebuffer.id);
+        use_shader(texture_shader);
+        bind_texture(shadow_texture);
+        shader_uniform(texture_shader, "projection", *projection, false);
+        shader_uniform(texture_shader, "view", *view, true);
+        shader_uniform(texture_shader, "model", *model, false);
+
+        source := Rect.{0, 0, xx shadow_texture.width, xx shadow_texture.height};
+        dest := Rect.{plight_pos.x - light.radius, plight_pos.y - light.radius, xx shadow_texture.width, xx shadow_texture.height};
+        dest.y += dest.h;
+        // dest.w *= -1;
+        dest.h *= -1;
+
+        // source.y += source.h;
+        // source.h *= -1;
+        draw_texture(source, dest,
+            *shadow_texture, intermediate_vao, intermediate_vbo);
 
         // Draw outer box
         // draw_line(light_dest.pos, .{light_dest.x + light_dest.w, light_dest.y}, intermediate_vao, intermediate_vbo);
@@ -518,6 +527,16 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         // draw_line(light_dest.pos + .{light_dest.w, 0}, .{light_dest.x + light_dest.w, light_dest.y + light_dest.h}, intermediate_vao, intermediate_vbo);
         // draw_line(light_dest.pos + .{0, light_dest.h}, .{light_dest.x + light_dest.w, light_dest.y+light_dest.h}, intermediate_vao, intermediate_vbo);
     }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    use_shader(texture_shader);
+    bind_texture(world_texture);
+    shader_uniform(texture_shader, "view", *Matrix4_Identity, true);
+    src := Rect.{0,0,WINDOW_WIDTH,WINDOW_HEIGHT};
+    dest := src;
+    dest.y += dest.h;
+    dest.h *= -1;
+    draw_texture(src, dest, world_texture, intermediate_vao, intermediate_vbo);
 
 
     #if true {
