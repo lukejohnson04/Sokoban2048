@@ -119,7 +119,7 @@ on_startup :: () {
     create_shader(*color_shader, "data/shaders/color.vert", "data/shaders/color.frag");
     create_shader(*mask_shader, "data/shaders/mask.vert", "data/shaders/mask.frag");
 
-    load_texture_for_framebuffer(*shadow_texture, xx (3.5 * 64 * 2), xx (3.5 * 64 * 2));
+    load_texture_for_framebuffer(*shadow_texture, WINDOW_WIDTH, WINDOW_HEIGHT);
     shadow_framebuffer = create_framebuffer(*shadow_texture);
     load_texture_for_framebuffer(*world_texture, WINDOW_WIDTH, WINDOW_HEIGHT);
     world_framebuffer = create_framebuffer(*world_texture);

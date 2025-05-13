@@ -469,15 +469,15 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         if vertices.count > 1 {
             array_add(*vertices, vertices[1]);
         }
-        for *vert: vertices {
-            vert.x -= plight_pos.x;
-            vert.x += light.radius;
-            vert.y -= plight_pos.y;
-            vert.y += light.radius;
-        }
+        // for *vert: vertices {
+        //     vert.x -= plight_pos.x;
+        //     vert.x += shadow_framebuffer.w/2;
+        //     vert.y -= plight_pos.y;
+        //     vert.y += shadow_framebuffer.h/2;
+        // }
 
         glBindFramebuffer(GL_FRAMEBUFFER, shadow_framebuffer.id);
-        glClearColor(0.0, 0.0, 0.0, 0.0);
+        glClearColor(0, 0, 1.0, 0.1);
         glClear(GL_COLOR_BUFFER_BIT);
         glViewport(0, 0, xx shadow_framebuffer.w, xx shadow_framebuffer.h);
 
@@ -485,8 +485,8 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         fb_projection = transpose(fb_projection);
 
         use_shader(color_shader);
-        shader_uniform(color_shader, "projection", *fb_projection, false);
-        shader_uniform(color_shader, "view", *Matrix4_Identity, true);
+        shader_uniform(color_shader, "projection", *projection, false);
+        shader_uniform(color_shader, "view", *view, true);
         shader_uniform(color_shader, "model", *model, false);
         shader_uniform(color_shader, "color", Vector4.{1, 1, 1, 1});
 
@@ -518,8 +518,8 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
 
         // source.y += source.h;
         // source.h *= -1;
-        draw_texture(source, dest,
-            *shadow_texture, intermediate_vao, intermediate_vbo);
+        // draw_texture(source, dest,
+        //     *shadow_texture, intermediate_vao, intermediate_vbo);
 
         // Draw outer box
         // draw_line(light_dest.pos, .{light_dest.x + light_dest.w, light_dest.y}, intermediate_vao, intermediate_vbo);
@@ -538,6 +538,11 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     dest.h *= -1;
     draw_texture(src, dest, world_texture, intermediate_vao, intermediate_vbo);
 
+    bind_texture(shadow_texture);
+    dest = Rect.{0, 0, xx shadow_texture.width, xx shadow_texture.height};
+    dest.y += dest.h;
+    dest.h *= -1;
+    draw_texture(src, dest, shadow_texture, intermediate_vao, intermediate_vbo);
 
     #if true {
         use_shader(text_shader);
