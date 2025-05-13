@@ -32,6 +32,8 @@ Game_State :: struct {
 
     shadow_texture : Resource(Texture);
     shadow_framebuffer : Framebuffer;
+    light_texture : Resource(Texture);
+    light_framebuffer : Framebuffer;
     world_texture : Resource(Texture);
     world_framebuffer : Framebuffer;
 
@@ -121,6 +123,8 @@ on_startup :: () {
 
     load_texture_for_framebuffer(*shadow_texture, WINDOW_WIDTH, WINDOW_HEIGHT);
     shadow_framebuffer = create_framebuffer(*shadow_texture);
+    load_texture_for_framebuffer(*light_texture, WINDOW_WIDTH, WINDOW_HEIGHT);
+    light_framebuffer = create_framebuffer(*light_texture);
     load_texture_for_framebuffer(*world_texture, WINDOW_WIDTH, WINDOW_HEIGHT);
     world_framebuffer = create_framebuffer(*world_texture);
 

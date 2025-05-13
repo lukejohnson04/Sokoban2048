@@ -163,8 +163,9 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     // check_resource_reload()
 
     // Rendering
-    glBindFramebuffer(GL_FRAMEBUFFER, world_framebuffer.id);
     glClearColor(0, 0, 0, 1.0);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glBindFramebuffer(GL_FRAMEBUFFER, world_framebuffer.id);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
@@ -407,7 +408,6 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     corners := do_lighting(light);
 
     use_shader(texture_shader);
-    bind_texture(spotlight);
     shader_uniform(texture_shader, "projection", *projection, false);
     shader_uniform(texture_shader, "view", *view, true);
     shader_uniform(texture_shader, "model", *model, false);
@@ -415,7 +415,8 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     light_world_pos := plight_pos;
     light_pic_size := light.radius * 2;
     light_dest := Rect.{light_world_pos.x - light_pic_size/2, light_world_pos.y - light_pic_size/2, light_pic_size, light_pic_size};
-    draw_texture(.{0, 0, 256, 256}, light_dest, *spotlight, intermediate_vao, intermediate_vbo);
+    // bind_texture(spotlight);
+    // draw_texture(.{0, 0, 256, 256}, light_dest, *spotlight, intermediate_vao, intermediate_vbo);
     
     glDisable(GL_DEPTH_TEST);
     use_shader(color_shader);
@@ -477,7 +478,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         // }
 
         glBindFramebuffer(GL_FRAMEBUFFER, shadow_framebuffer.id);
-        glClearColor(0, 0, 1.0, 0.1);
+        glClearColor(0, 0, 0, 0);
         glClear(GL_COLOR_BUFFER_BIT);
         glViewport(0, 0, xx shadow_framebuffer.w, xx shadow_framebuffer.h);
 
@@ -529,21 +530,61 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     }
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    use_shader(texture_shader);
-    bind_texture(world_texture);
-    shader_uniform(texture_shader, "view", *Matrix4_Identity, true);
-    src := Rect.{0,0,WINDOW_WIDTH,WINDOW_HEIGHT};
-    dest := src;
-    dest.y += dest.h;
-    dest.h *= -1;
-    draw_texture(src, dest, world_texture, intermediate_vao, intermediate_vbo);
+    glViewport(0, 0, xx WINDOW_WIDTH, xx WINDOW_HEIGHT);
+    // use_shader(texture_shader);
+    // bind_texture(world_texture);
+    // shader_uniform(texture_shader, "view", *Matrix4_Identity, true);
+    source := Rect.{0,0,WINDOW_WIDTH,WINDOW_HEIGHT};
+    // dest := source;
+    // dest.y += dest.h;
+    // dest.h *= -1;
+    // draw_texture(source, dest, world_texture, intermediate_vao, intermediate_vbo);
 
-    bind_texture(shadow_texture);
-    dest = Rect.{0, 0, xx shadow_texture.width, xx shadow_texture.height};
-    dest.y += dest.h;
-    dest.h *= -1;
-    draw_texture(src, dest, shadow_texture, intermediate_vao, intermediate_vbo);
+    {
+        use_shader(mask_shader);
+        shader_uniform(mask_shader, "projection", *projection, false);
+        shader_uniform(mask_shader, "view", *Matrix4_Identity, true);
+        shader_uniform(mask_shader, "model", *model, false);
 
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, world_texture.id);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, shadow_texture.id);
+        glActiveTexture(GL_TEXTURE0);
+        
+        dest := Rect.{0, 0, xx shadow_texture.width, xx shadow_texture.height};
+        dest.y += dest.h;
+        dest.h *= -1;
+
+        u1, u2, v1, v2 : float32;
+        u1 = source.x / world_texture.width;
+        u2 = (source.x + source.w) / world_texture.width;
+        v1 = source.y / world_texture.height;
+        v2 = (source.y + source.h) / world_texture.height;
+
+        vertices := float32.[
+            dest.x,         dest.y,         0,  u1, v1,
+            dest.x+dest.w,  dest.y,         0,  u2, v1,
+            dest.x+dest.w,  dest.y+dest.h,  0,  u2, v2,
+            dest.x,         dest.y+dest.h,  0,  u1, v2
+        ];
+
+        glBindVertexArray(intermediate_vao);
+        glBindBuffer(GL_ARRAY_BUFFER, intermediate_vbo);
+        glBufferData(GL_ARRAY_BUFFER, size_of(float32) * 20, *vertices, GL_STATIC_DRAW);
+
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * size_of(float32), null);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * size_of(float32), xx (3 * size_of(float32)));
+        glEnableVertexAttribArray(1);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+        glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+        glBindVertexArray(0);
+    }
+
+
+    bind_texture(sprites, 0);
     #if true {
         use_shader(text_shader);
         shader_uniform(text_shader, "projection", *projection, false);
