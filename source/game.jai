@@ -231,10 +231,17 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
                 corner := world_mesh.light_mesh[it];
                 //shader_uniform(color_shader, "color", Vector4.{1, 0, 0, 1});
                 //draw_line(player_light.pos, corner, intermediate_vao, intermediate_vbo);
+                // Calculate the position of the corner within the texture
                 array_add(*vertices, .{corner.x, corner.y, 0});
             }
             
             array_add(*vertices, vertices[1]);
+            for *corner: vertices {
+                corner.x -= player_light.pos.x;
+                corner.y -= player_light.pos.y;
+                corner.x += player_light.radius;
+                corner.y += player_light.radius;
+            }
 
             glBindFramebuffer(GL_FRAMEBUFFER, shadow_framebuffer.id);
             glClearColor(0, 0, 0, 0);
@@ -246,15 +253,16 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
             use_shader(color_shader);
             shader_uniform(color_shader, "projection", *fb_projection);
             shader_uniform(color_shader, "color", Vector4.{1, 1, 1, 1});
+            shader_uniform(color_shader, "view", Matrix4_Identity);
 
             glBindVertexArray(intermediate_vao);
             glBindBuffer(GL_ARRAY_BUFFER, intermediate_vbo);
             point_count := world_mesh.light_mesh.count + 2;
             glBufferData(GL_ARRAY_BUFFER, size_of(Vertex(.UV_DISABLED)) * point_count, vertices.data, GL_STATIC_DRAW);
-
             // position
             glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * size_of(float32), null);
             glEnableVertexAttribArray(0);
+
 
             glBindBuffer(GL_ARRAY_BUFFER, 0);
             glDrawArrays(GL_TRIANGLE_FAN, 0, xx point_count);
@@ -271,7 +279,18 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
             mask_dest := Rect.{player_light.pos.x - player_light.radius, player_light.pos.y - player_light.radius, player_light.radius * 2, player_light.radius * 2};
             mask_source := Rect.{0, 0, xx shadow_texture.width, xx shadow_texture.height};
 
-            draw_mask_textures(Rect.{0,0,WINDOW_WIDTH,WINDOW_HEIGHT}, dest, mask_source, mask_dest, *world_texture, *shadow_texture);
+            draw_mask_textures(Rect.{0,0,WINDOW_WIDTH,WINDOW_HEIGHT}, dest, mask_source, mask_source, *world_texture, *shadow_texture);
+
+            use_shader(texture_shader);
+            shader_uniform(texture_shader, "view", Matrix4_Identity);
+            bind_texture(shadow_texture);
+            sh_rect := Rect.{0, 0, xx shadow_texture.width, xx shadow_texture.height};
+            sh_dest := sh_rect;
+            // sh_dest.x = player_light.pos.x - player_light.radius;
+            // sh_dest.y = player_light.pos.y - player_light.radius;
+            sh_dest.y += sh_dest.h;
+            sh_dest.h *= -1;
+            draw_texture(sh_rect, sh_dest, *shadow_texture);
         }
     }
 
