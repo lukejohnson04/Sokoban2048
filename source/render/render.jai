@@ -122,10 +122,12 @@ draw_mask_textures :: (
     u4 = (dest.x + dest.w - mask_dest.x) / mask.width;
     v3 = (dest.y - mask_dest.y) / mask.height;
     v4 = (dest.y + dest.h - mask_dest.y) / mask.height;
-    u3 = u1;
-    u4 = u2;
-    v3 = v1;
-    v4 = v2;
+    v3 = 1-v3;
+    v4 = 1-v4;
+    // u3 = u1;
+    // u4 = u2;
+    // v3 = v1;
+    // v4 = v2;
 
     vertices := float32.[
         dest.x,         dest.y,         0,  u1, v1, u3, v3,
@@ -268,6 +270,20 @@ draw_radial_texture :: (source: Rect, center: Vector2, radius: float, progress: 
 Framebuffer :: struct {
     id: GLuint;
     w, h: int;
+}
+
+set_framebuffer :: (buffer: *Framebuffer = null) {
+    glBindFramebuffer(GL_FRAMEBUFFER, ifx buffer == null 0 else buffer.id);
+    if buffer == null {
+        glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
+    } else {
+        glViewport(0, 0, xx buffer.w, xx buffer.h);
+    }
+}
+
+clear_framebuffer :: (r: float, g: float, b: float, a: float) {
+    glClearColor(r, g, b, a);
+    glClear(GL_COLOR_BUFFER_BIT);
 }
 
 create_framebuffer :: (texture: Resource(Texture)) -> Framebuffer {

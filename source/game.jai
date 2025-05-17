@@ -263,31 +263,18 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
             glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * size_of(float32), null);
             glEnableVertexAttribArray(0);
 
-
             glBindBuffer(GL_ARRAY_BUFFER, 0);
             glDrawArrays(GL_TRIANGLE_FAN, 0, xx point_count);
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
-            glViewport(0, 0, xx WINDOW_WIDTH, xx WINDOW_HEIGHT);
-            
-            // Final world mask pass
-            use_shader(mask_shader);
 
-            dest := Rect.{0, 0, WINDOW_WIDTH, WINDOW_HEIGHT};
-            dest.y += dest.h;
-            dest.h *= -1;
+            set_framebuffer(*light_framebuffer);
+            clear_framebuffer(0, 0, 0, 0);
 
-            mask_dest := Rect.{player_light.pos.x - player_light.radius, player_light.pos.y - player_light.radius, player_light.radius * 2, player_light.radius * 2};
-            mask_source := Rect.{0, 0, xx shadow_texture.width, xx shadow_texture.height};
-
-            draw_mask_textures(Rect.{0,0,WINDOW_WIDTH,WINDOW_HEIGHT}, dest, mask_source, mask_source, *world_texture, *shadow_texture);
-
+            set_framebuffer(null);
             use_shader(texture_shader);
             shader_uniform(texture_shader, "view", Matrix4_Identity);
             bind_texture(shadow_texture);
             sh_rect := Rect.{0, 0, xx shadow_texture.width, xx shadow_texture.height};
-            sh_dest := sh_rect;
-            // sh_dest.x = player_light.pos.x - player_light.radius;
-            // sh_dest.y = player_light.pos.y - player_light.radius;
+            sh_dest := Rect.{0, 0, xx shadow_texture.width, xx shadow_texture.height};
             sh_dest.y += sh_dest.h;
             sh_dest.h *= -1;
             draw_texture(sh_rect, sh_dest, *shadow_texture);
