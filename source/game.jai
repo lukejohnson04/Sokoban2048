@@ -159,47 +159,13 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         ImGui.End();
     }
 
-    // Reload
-    // check_resource_reload()
-
     // Rendering
     glClearColor(0, 0, 0, 1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glBindFramebuffer(GL_FRAMEBUFFER, world_framebuffer.id);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    // camera deadzone
-    if editor.enabled == false || editor.editing_level == false {
-        DEADZONE_PERCENT :: 0.05;
-        player_coord : Vector2;
-        player_coord.x = xx (level.player_pos.x * 64);
-        player_coord.y = xx (level.player_pos.y * 64);
-        camera_dest := player_coord + Vector2.{32, 32};
-        if abs(camera.pos.x - camera_dest.x) > WINDOW_WIDTH * DEADZONE_PERCENT {
-            camera.pos.x = lerp(camera.pos.x, camera_dest.x, 0.008);
-        }
-        if abs(camera.pos.y - camera_dest.y) > WINDOW_HEIGHT * DEADZONE_PERCENT {
-            camera.pos.y = lerp(camera.pos.y, camera_dest.y, 0.008);
-        }
-
-    } else if (SDL_GetWindowFlags(window) & SDL_WINDOW_INPUT_FOCUS) != 0 {
-        DEBUG_CAMERA_SPEED := 12 * (1.0 / camera.zoom);
-        DEADZONE_PERCENT :: 0.01;
-
-        mouse_pos := get_mouse_position();
-        if mouse_pos.x >= WINDOW_WIDTH - WINDOW_WIDTH*DEADZONE_PERCENT {
-            camera.pos.x += DEBUG_CAMERA_SPEED;
-        } else if mouse_pos.x < WINDOW_WIDTH*DEADZONE_PERCENT {
-            camera.pos.x -= DEBUG_CAMERA_SPEED;
-        }
-        if mouse_pos.y >= WINDOW_HEIGHT - WINDOW_HEIGHT*DEADZONE_PERCENT {
-            camera.pos.y += DEBUG_CAMERA_SPEED;
-        } else if mouse_pos.y < WINDOW_HEIGHT*DEADZONE_PERCENT {
-            camera.pos.y -= DEBUG_CAMERA_SPEED;
-        }
-    }
-    
-    
+    lerp_player_camera(window);    
 
     view := camera_view_matrix(camera);
     projection := orthographic_projection_matrix(0, WINDOW_WIDTH, WINDOW_HEIGHT, 0, -1, 1);
@@ -243,8 +209,71 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     shader_uniform(texture_shader, "gold", 0);
     shader_uniform(texture_shader, "colormult", 1.0);
 
-    
     editor_draw();
+
+    if lighting_enabled == false {
+        use_shader(texture_shader);
+        bind_texture(world_texture);
+        shader_uniform(texture_shader, "view", Matrix4_Identity);
+        draw_texture(Rect.{0, 0, WINDOW_WIDTH, WINDOW_HEIGHT}, .{0, WINDOW_HEIGHT, WINDOW_WIDTH, -WINDOW_HEIGHT}, world_texture);
+    } else {
+        // Lighting
+        glDisable(GL_DEPTH_TEST);
+        use_shader(color_shader);
+        shader_uniform(color_shader, "color", Vector4.{1, 0, 0, 1});
+
+        vertices: [..] Vertex(.UV_DISABLED);
+        vertices.allocator = temp;
+        array_add(*vertices, .{player_light.pos.x, player_light.pos.y, 0});
+        if world_mesh.light_mesh.count > 0 {
+            // Sort.quick_sort(world_mesh.light_mesh, angle_sort_clockwise);
+            for 0..world_mesh.light_mesh.count-1 {
+                corner := world_mesh.light_mesh[it];
+                //shader_uniform(color_shader, "color", Vector4.{1, 0, 0, 1});
+                //draw_line(player_light.pos, corner, intermediate_vao, intermediate_vbo);
+                array_add(*vertices, .{corner.x, corner.y, 0});
+            }
+            
+            array_add(*vertices, vertices[1]);
+
+            glBindFramebuffer(GL_FRAMEBUFFER, shadow_framebuffer.id);
+            glClearColor(0, 0, 0, 0);
+            glClear(GL_COLOR_BUFFER_BIT);
+            glViewport(0, 0, xx shadow_framebuffer.w, xx shadow_framebuffer.h);
+
+            fb_projection := orthographic_projection_matrix(0, xx shadow_framebuffer.w, xx shadow_framebuffer.h, 0, -1, 1);
+
+            use_shader(color_shader);
+            shader_uniform(color_shader, "projection", *fb_projection);
+            shader_uniform(color_shader, "color", Vector4.{1, 1, 1, 1});
+
+            glBindVertexArray(intermediate_vao);
+            glBindBuffer(GL_ARRAY_BUFFER, intermediate_vbo);
+            point_count := world_mesh.light_mesh.count + 2;
+            glBufferData(GL_ARRAY_BUFFER, size_of(Vertex(.UV_DISABLED)) * point_count, vertices.data, GL_STATIC_DRAW);
+
+            // position
+            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * size_of(float32), null);
+            glEnableVertexAttribArray(0);
+
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+            glDrawArrays(GL_TRIANGLE_FAN, 0, xx point_count);
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            glViewport(0, 0, xx WINDOW_WIDTH, xx WINDOW_HEIGHT);
+            
+            // Final world mask pass
+            use_shader(mask_shader);
+
+            dest := Rect.{0, 0, WINDOW_WIDTH, WINDOW_HEIGHT};
+            dest.y += dest.h;
+            dest.h *= -1;
+
+            mask_dest := Rect.{player_light.pos.x - player_light.radius, player_light.pos.y - player_light.radius, player_light.radius * 2, player_light.radius * 2};
+            mask_source := Rect.{0, 0, xx shadow_texture.width, xx shadow_texture.height};
+
+            draw_mask_textures(Rect.{0,0,WINDOW_WIDTH,WINDOW_HEIGHT}, dest, mask_source, mask_dest, *world_texture, *shadow_texture);
+        }
+    }
 
     // GUI Elements
     // Draw dialogue player
@@ -270,69 +299,6 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         bind_texture(ui_sprites);
         radius : float32 = 32;
         draw_radial_texture(.{0, 0, 32, 32}, .{WINDOW_WIDTH - radius*2, radius*2}, radius, rewind_meter / REWIND_TIME, *ui_sprites, intermediate_vao, intermediate_vbo);
-    }
-
-    // Lighting
-    glDisable(GL_DEPTH_TEST);
-    use_shader(color_shader);
-    shader_uniform(color_shader, "color", Vector4.{1, 0, 0, 1});
-
-    vertices: [..] Vertex(.UV_DISABLED);
-    vertices.allocator = temp;
-    array_add(*vertices, .{player_light.pos.x, player_light.pos.y, 0});
-    if world_mesh.light_mesh.count > 0 {
-        Sort.quick_sort(world_mesh.light_mesh, angle_sort_clockwise);
-        for 0..world_mesh.light_mesh.count-1 {
-            corner := world_mesh.light_mesh[it];
-            shader_uniform(color_shader, "color", Vector4.{1, 0, 0, 1});
-            draw_line(player_light.pos, corner, intermediate_vao, intermediate_vbo);
-            array_add(*vertices, .{corner.x, corner.y, 0});
-        }
-        array_add(*vertices, vertices[1]);
-
-        glBindFramebuffer(GL_FRAMEBUFFER, shadow_framebuffer.id);
-        glClearColor(0, 0, 0, 0);
-        glClear(GL_COLOR_BUFFER_BIT);
-        glViewport(0, 0, xx shadow_framebuffer.w, xx shadow_framebuffer.h);
-
-        fb_projection := orthographic_projection_matrix(0, xx shadow_framebuffer.w, xx shadow_framebuffer.h, 0, -1, 1);
-
-        use_shader(color_shader);
-        shader_uniform(color_shader, "projection", *fb_projection);
-        shader_uniform(color_shader, "color", Vector4.{1, 1, 1, 1});
-
-        glBindVertexArray(intermediate_vao);
-        glBindBuffer(GL_ARRAY_BUFFER, intermediate_vbo);
-        point_count := world_mesh.light_mesh.count + 2;
-        glBufferData(GL_ARRAY_BUFFER, size_of(Vertex(.UV_DISABLED)) * point_count, vertices.data, GL_STATIC_DRAW);
-
-        // position
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * size_of(float32), null);
-        glEnableVertexAttribArray(0);
-
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-        glDrawArrays(GL_TRIANGLE_FAN, 0, xx point_count);
-    }
-
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glViewport(0, 0, xx WINDOW_WIDTH, xx WINDOW_HEIGHT);
-
-    if lighting_enabled == false {
-        use_shader(texture_shader);
-        bind_texture(world_texture);
-        shader_uniform(texture_shader, "view", Matrix4_Identity);
-        draw_texture(Rect.{0, 0, WINDOW_WIDTH, WINDOW_HEIGHT}, .{0, WINDOW_HEIGHT, WINDOW_WIDTH, -WINDOW_HEIGHT}, world_texture);
-    } else {
-        use_shader(mask_shader);
-
-        dest := Rect.{0, 0, WINDOW_WIDTH, WINDOW_HEIGHT};
-        dest.y += dest.h;
-        dest.h *= -1;
-
-        mask_dest := Rect.{player_light.pos.x - player_light.radius, player_light.pos.y - player_light.radius, player_light.radius * 2, player_light.radius * 2};
-        mask_source := Rect.{0, 0, xx shadow_texture.width, xx shadow_texture.height};
-
-        draw_mask_textures(Rect.{0,0,WINDOW_WIDTH,WINDOW_HEIGHT}, dest, mask_source, mask_dest, *world_texture, *shadow_texture);
     }
 
 

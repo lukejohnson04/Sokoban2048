@@ -67,3 +67,38 @@ get_camera_level_bounds :: (camera: Camera2D, level: *Level) -> v2i, v2i {
 
     return tile_begin, tile_end;
 }
+
+
+lerp_player_camera :: (window: *SDL_Window) {
+    using context.game_state;
+    // camera deadzone
+    if editor.enabled == false || editor.editing_level == false {
+        DEADZONE_PERCENT :: 0.05;
+        player_coord : Vector2;
+        player_coord.x = xx (level.player_pos.x * 64);
+        player_coord.y = xx (level.player_pos.y * 64);
+        camera_dest := player_coord + Vector2.{32, 32};
+        if abs(camera.pos.x - camera_dest.x) > WINDOW_WIDTH * DEADZONE_PERCENT {
+            camera.pos.x = lerp(camera.pos.x, camera_dest.x, 0.008);
+        }
+        if abs(camera.pos.y - camera_dest.y) > WINDOW_HEIGHT * DEADZONE_PERCENT {
+            camera.pos.y = lerp(camera.pos.y, camera_dest.y, 0.008);
+        }
+
+    } else if (SDL_GetWindowFlags(window) & SDL_WINDOW_INPUT_FOCUS) != 0 {
+        DEBUG_CAMERA_SPEED := 12 * (1.0 / camera.zoom);
+        DEADZONE_PERCENT :: 0.01;
+
+        mouse_pos := get_mouse_position();
+        if mouse_pos.x >= WINDOW_WIDTH - WINDOW_WIDTH*DEADZONE_PERCENT {
+            camera.pos.x += DEBUG_CAMERA_SPEED;
+        } else if mouse_pos.x < WINDOW_WIDTH*DEADZONE_PERCENT {
+            camera.pos.x -= DEBUG_CAMERA_SPEED;
+        }
+        if mouse_pos.y >= WINDOW_HEIGHT - WINDOW_HEIGHT*DEADZONE_PERCENT {
+            camera.pos.y += DEBUG_CAMERA_SPEED;
+        } else if mouse_pos.y < WINDOW_HEIGHT*DEADZONE_PERCENT {
+            camera.pos.y -= DEBUG_CAMERA_SPEED;
+        }
+    }
+}

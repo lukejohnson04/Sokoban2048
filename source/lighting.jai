@@ -15,8 +15,11 @@ compute_light_points :: (light: Light, light_mesh: *[..] Light_Mesh_Node) {
     corners: [..] Light_Mesh_Node;
     corners.allocator = temp;
 
-    for x: 0..level.dimensions.x-1 {
-        for y: 0..level.dimensions.y-1 {
+    light_top_left := light.pos - .{light.radius, light.radius};
+    light_bot_right := light.pos + .{light.radius, light.radius};
+    min_x, min_y, max_x, max_y := block_range(light_top_left, light_bot_right, *level);
+    for x: min_x..max_x {
+        for y: min_y..max_y {
             if level.grid[x][y].type == .NONE continue;
             for corner: 0..3 {
                 pos := Vector2.{xx x, xx y};
@@ -149,15 +152,7 @@ angle_sort_clockwise :: (a: Light_Mesh_Node, b: Light_Mesh_Node) -> float {
     return angle;
 }
 
-get_collision :: (from: Vector2, to: Vector2, level: *Level) -> Intersection {
-    res: Intersection;
-    closest := -1.0;
-
-    Segment :: struct {
-        p1, p2: Vector2;
-    } 
-
-    // Range of blocks
+block_range :: (from: Vector2, to: Vector2, level: *Level) -> min_x: int, min_y: int, max_x: int, max_y: int {
     min_x :int= xx (min(from.x, to.x)/64.0);
     max_x :int= xx (max(from.x, to.x)/64.0);
     min_y :int= xx (min(from.y, to.y)/64.0);
@@ -167,6 +162,20 @@ get_collision :: (from: Vector2, to: Vector2, level: *Level) -> Intersection {
     min_y = max(min_y - 1, 0);
     max_x = min(max_x + 1, level.dimensions.x);
     max_y = min(max_y + 1, level.dimensions.y);
+
+    return min_x, min_y, max_x, max_y;
+}
+
+get_collision :: (from: Vector2, to: Vector2, level: *Level) -> Intersection {
+    res: Intersection;
+    closest := -1.0;
+
+    Segment :: struct {
+        p1, p2: Vector2;
+    } 
+
+    // Range of blocks
+    min_x, min_y, max_x, max_y := block_range(from, to, level);
 
     for x: min_x..max_x {
         for y: min_y..max_y {
