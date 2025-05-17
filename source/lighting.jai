@@ -9,7 +9,7 @@ Light_Mesh_Node :: struct {
 }
 
 // Returns every point to draw triangle strips of
-compute_light_points :: (light: Light) -> [..] Light_Mesh_Node {
+compute_light_points :: (light: Light, light_mesh: *[..] Light_Mesh_Node) {
     using context.game_state;
     // Get all blocks within radius
     corners: [..] Light_Mesh_Node;
@@ -38,18 +38,15 @@ compute_light_points :: (light: Light) -> [..] Light_Mesh_Node {
     array_add(*corners, .{top_left + .{0, light.radius * 2}, false});
     array_add(*corners, .{top_left + .{light.radius * 2, light.radius * 2}, false});
 
-    results : [..] Light_Mesh_Node;
-    results.allocator = temp;
-
     // Go through all corners and raycast
     for corner: corners {
         col := get_collision(light.pos, corner, *level);
 
         if col.collides == false {
-            array_add(*results, .{corner, true});
+            array_add(light_mesh, .{corner, true});
             continue;
         }
-        defer array_add(*results, .{col.collision_point, false});
+        defer array_add(light_mesh, .{col.collision_point, false});
         
         // Now we check for collision beyond
         v := corner - light.pos;
@@ -74,17 +71,17 @@ compute_light_points :: (light: Light) -> [..] Light_Mesh_Node {
                 if past.collision_point == col.collision_point {
                     continue;
                 }
-                array_add(*results, .{past.collision_point, true});
+                array_add(light_mesh, .{past.collision_point, true});
             } else {
-                array_add(*results, .{past_pos, true});
+                array_add(light_mesh, .{past_pos, true});
             }
         }
     }
 
-    for results {
+    for light_mesh.* {
         found : bool;
-        for second: it_index+1..results.count-1 {
-            if it.pos == results[second].pos && it.extension == results[second].extension {
+        for second: it_index+1..light_mesh.count-1 {
+            if it.pos == light_mesh.*[second].pos && it.extension == light_mesh.*[second].extension {
                 found = true;
                 break;
             }
@@ -93,8 +90,6 @@ compute_light_points :: (light: Light) -> [..] Light_Mesh_Node {
             remove it;
         }
     }
-
-    return results;
 }
 
 

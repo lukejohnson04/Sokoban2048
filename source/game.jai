@@ -273,24 +273,19 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     }
 
     // Lighting
-    light := Light.{(Vector2.{xx level.player_pos.x, xx level.player_pos.y} + Vector2.{0.5, 0.5}) * 64, 3.5 * 64};
-    corners := compute_light_points(light);
-
     glDisable(GL_DEPTH_TEST);
     use_shader(color_shader);
     shader_uniform(color_shader, "color", Vector4.{1, 0, 0, 1});
 
     vertices: [..] Vertex(.UV_DISABLED);
     vertices.allocator = temp;
-    array_add(*vertices, .{light.pos.x, light.pos.y, 0});
-
-    if corners.count > 0 {
-        Sort.quick_sort(corners, angle_sort_clockwise);
-
-        for 0..corners.count-1 {
-            corner := corners[it];
+    array_add(*vertices, .{player_light.pos.x, player_light.pos.y, 0});
+    if world_mesh.light_mesh.count > 0 {
+        Sort.quick_sort(world_mesh.light_mesh, angle_sort_clockwise);
+        for 0..world_mesh.light_mesh.count-1 {
+            corner := world_mesh.light_mesh[it];
             shader_uniform(color_shader, "color", Vector4.{1, 0, 0, 1});
-            draw_line(light.pos, corner, intermediate_vao, intermediate_vbo);
+            draw_line(player_light.pos, corner, intermediate_vao, intermediate_vbo);
             array_add(*vertices, .{corner.x, corner.y, 0});
         }
         array_add(*vertices, vertices[1]);
@@ -308,7 +303,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
 
         glBindVertexArray(intermediate_vao);
         glBindBuffer(GL_ARRAY_BUFFER, intermediate_vbo);
-        point_count := corners.count + 2;
+        point_count := world_mesh.light_mesh.count + 2;
         glBufferData(GL_ARRAY_BUFFER, size_of(Vertex(.UV_DISABLED)) * point_count, vertices.data, GL_STATIC_DRAW);
 
         // position
@@ -334,7 +329,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         dest.y += dest.h;
         dest.h *= -1;
 
-        mask_dest := Rect.{light.pos.x - light.radius, light.pos.y - light.radius, light.radius * 2, light.radius * 2};
+        mask_dest := Rect.{player_light.pos.x - player_light.radius, player_light.pos.y - player_light.radius, player_light.radius * 2, player_light.radius * 2};
         mask_source := Rect.{0, 0, xx shadow_texture.width, xx shadow_texture.height};
 
         draw_mask_textures(Rect.{0,0,WINDOW_WIDTH,WINDOW_HEIGHT}, dest, mask_source, mask_dest, *world_texture, *shadow_texture);

@@ -82,8 +82,6 @@ draw_texture :: (source: Rect, dest: Rect, texture_size: v2i, vao: GLuint, vbo: 
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
     glBufferData(GL_ARRAY_BUFFER, size_of(float32) * 20, *vertices, GL_STATIC_DRAW);
 
-    glDisableVertexAttribArray(2);
-    glVertexAttrib1f(2, 1.0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * size_of(float32), null);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * size_of(float32), xx (3 * size_of(float32)));
@@ -128,8 +126,6 @@ draw_mask_textures :: (
     u4 = u2;
     v3 = v1;
     v4 = v2;
-
-    
 
     vertices := float32.[
         dest.x,         dest.y,         0,  u1, v1, u3, v3,

@@ -39,7 +39,7 @@ mesh_generate :: (mesh: *Mesh($T)) {
     glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo);
     glBufferData(GL_ARRAY_BUFFER, size_of(type_of(mesh.vertices[0])) * mesh.vertices.count, mesh.vertices.data, GL_STATIC_DRAW);
     
-    param_size : u32 = size_of(float32) * 6;
+    param_size : u32 = size_of(Vertex(T));
 
     attr : u32 = 0;
 
