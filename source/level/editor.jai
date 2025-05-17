@@ -540,3 +540,74 @@ update_editor :: (input: *Input_State) {
     }
 }
 
+editor_draw :: () {
+    using context.game_state;
+    
+    if editor.editing_level == false {
+        source := Rect.{16,0,16,16};
+        dest := Rect.{xx (level.player_pos.x*64), xx (level.player_pos.y*64), 64, 64};
+        draw_texture(source, dest, *sprites, intermediate_vao, intermediate_vbo);
+    }
+
+    if editor.editing_level && (editor.tool == .BRUSH || editor.tool == .FILL) && is_in_bounds(editor.mouse_tile, *level) {
+        block := editor.selected_block;
+        source := get_block_source(block);
+        dest := Rect.{xx (editor.mouse_tile.x * 64), xx (editor.mouse_tile.y * 64), 64, 64};
+        draw_texture(source, dest, *sprites, intermediate_vao, intermediate_vbo);
+    }
+
+    if editor.enabled && editor.editing_level {
+        spawn : Block;
+        spawn.type = .PLAYER_SPAWN;
+        source := get_block_source(spawn);
+        dest := Rect.{xx (level.player_spawn_pos.x*64), xx (level.player_spawn_pos.y*64), 64, 64};
+        draw_texture(source, dest, *sprites, intermediate_vao, intermediate_vbo);
+    }
+
+    // Editor draw final pass
+    glDisable(GL_DEPTH_TEST);
+    use_shader(color_shader);
+
+    // Select tool
+    if editor.enabled && editor.editing_level && (editor.tool == .SELECT || editor.tool == .MOVE) && editor.select_state != .NOT_STARTED
+    {
+        color : Vector4;
+        if editor.tool == .SELECT {
+            if editor.select_state == .FINISHED {
+                color = Vector4.{0, 1, 0, 1};
+            } else {
+                color = Vector4.{1, 0, 0, 1};
+            }
+        } else if editor.tool == .MOVE {
+            if editor.move_state == .NOT_STARTED {
+                color = Vector4.{0, 1, 0, 1};
+            } else {
+                color = Vector4.{1, 0, 0, 1};
+            }
+        }
+        shader_uniform(color_shader, "color", color);
+
+        TILE_SIZE :: 16 * 4;
+        start, end : v2i;
+        start.x = min(editor.select_end.x, editor.select_start.x);
+        start.y = min(editor.select_end.y, editor.select_start.y);
+        end.x   = max(editor.select_end.x, editor.select_start.x);
+        end.y   = max(editor.select_end.y, editor.select_start.y);
+        
+        if editor.tool == .MOVE && editor.move_state == .STARTED {
+            offset := editor.move_end - editor.move_start;
+            start += offset;
+            end += offset;
+        }
+
+        selection_size := end - start + .{1, 1};
+
+        rect : Rect;
+        rect.x = xx (start.x * TILE_SIZE);
+        rect.y = xx (start.y * TILE_SIZE);
+        rect.w = xx (selection_size.x * TILE_SIZE);
+        rect.h = xx (selection_size.y * TILE_SIZE);
+        
+        draw_rect_with_outline(rect, 4, color_vao, color_vbo);
+    }
+}

@@ -168,13 +168,6 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     glBindFramebuffer(GL_FRAMEBUFFER, world_framebuffer.id);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-
-    use_shader(texture_shader);
-
-    view := Matrix4_Identity;
-    projection := Matrix4_Identity;
-    model := Matrix4_Identity;
-
     // camera deadzone
     if editor.enabled == false || editor.editing_level == false {
         DEADZONE_PERCENT :: 0.05;
@@ -206,17 +199,30 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         }
     }
     
-    view = camera_view_matrix(camera);
-    projection = orthographic_projection_matrix(0, WINDOW_WIDTH, WINDOW_HEIGHT, 0, -1, 1);
-    projection = transpose(projection);
+    
 
-    shader_uniform(texture_shader, "projection", *projection, false);
-    shader_uniform(texture_shader, "view", *view, true);
-    shader_uniform(texture_shader, "model", *model, false);
-    shader_uniform(texture_shader, "texture_mod", 1);
+    view := camera_view_matrix(camera);
+    projection := orthographic_projection_matrix(0, WINDOW_WIDTH, WINDOW_HEIGHT, 0, -1, 1);
+
+    use_shader(color_shader);
+    shader_uniform(color_shader, "projection", projection);
+    shader_uniform(color_shader, "view", view);
+
+    use_shader(text_shader);
+    shader_uniform(text_shader, "projection", projection);
+    shader_uniform(text_shader, "view", Matrix4_Identity);
+
+    use_shader(mask_shader);
+    shader_uniform(mask_shader, "projection", projection);
+    shader_uniform(mask_shader, "view", Matrix4_Identity);
+
+    use_shader(texture_shader);
+    shader_uniform(texture_shader, "projection", projection);
+    shader_uniform(texture_shader, "view", view);
     shader_uniform(texture_shader, "grayscale", 0);
     shader_uniform(texture_shader, "gold", 0);
     shader_uniform(texture_shader, "colormult", 1.0);
+
 
     resource_check_timer += FRAME_TIME;
     if resource_check_timer > 0.25 {
@@ -238,153 +244,18 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     shader_uniform(texture_shader, "colormult", 1.0);
 
     
-    if editor.editing_level == false {
-        source := Rect.{16,0,16,16};
-        dest := Rect.{xx (level.player_pos.x*64), xx (level.player_pos.y*64), 64, 64};
-        draw_texture(source, dest, *sprites, intermediate_vao, intermediate_vbo);
-    }
-
-    if editor.editing_level && (editor.tool == .BRUSH || editor.tool == .FILL) && is_in_bounds(editor.mouse_tile, *level) {
-        block := editor.selected_block;
-        source := get_block_source(block);
-        dest := Rect.{xx (editor.mouse_tile.x * 64), xx (editor.mouse_tile.y * 64), 64, 64};
-        draw_texture(source, dest, *sprites, intermediate_vao, intermediate_vbo);
-    }
-
-    
-    // Camera bounds
-    if false {
-        tile_begin, tile_end := get_camera_level_bounds(camera, *level);
-        for x: tile_begin.x..tile_end.x {
-            for y: tile_begin.y..tile_end.y {
-                source, dest : Rect;
-                block := level.grid[x][y];
-                dest = Rect.{xx (x*64), xx (y*64), 64, 64};
-
-                // Draw blocks that aren't visible
-                if editor.editing_level == false && field[x][y].visible == false {
-                    continue;
-                }
-
-                // Don't draw player in edit mode
-                if editor.editing_level == false && level.player_pos == v2i.{xx x, xx y} {
-                    source = Rect.{16,0,16,16};
-                } else {
-                    if editor.editing_level && (editor.tool == .BRUSH || editor.tool == .FILL) && editor.mouse_tile == .{x, y} {
-                        block = editor.selected_block;
-                    } else {
-                        if block.type == .NONE && block.number == 0 {
-                            block = level.floor[x][y];
-                        }
-                    }
-                    source = get_block_source(block);
-                }
-
-                colormult : float = 1;
-                if block_is_goal(block) {
-                    if block.flags & .GOAL {
-                        shader_uniform(texture_shader, "grayscale", 1);
-                    } else {
-                        shader_uniform(texture_shader, "gold", 1);
-                    }
-                    colormult = 0.8;
-                }
-
-                shader_uniform(texture_shader, "colormult", colormult);
-
-
-                if block.flags & .FLIPPED_X {
-                    dest.x += dest.w;
-                    dest.w *= -1;
-                }
-                if block.flags & .FLIPPED_Y {
-                    dest.y += dest.h;
-                    dest.h *= -1;
-                }
-
-                draw_texture(source, dest, *sprites, intermediate_vao, intermediate_vbo);
-                if block_is_goal(block) {
-                    if block.flags & .GOAL {
-                        shader_uniform(texture_shader, "grayscale", 0);
-                    } else {
-                        shader_uniform(texture_shader, "gold", 0);
-                    }
-                    shader_uniform(texture_shader, "colormult", 1.0);
-                }
-            }
-        }
-    }
-
-    if editor.enabled && editor.editing_level {
-        spawn : Block;
-        spawn.type = .PLAYER_SPAWN;
-        source := get_block_source(spawn);
-        dest := Rect.{xx (level.player_spawn_pos.x*64), xx (level.player_spawn_pos.y*64), 64, 64};
-        draw_texture(source, dest, *sprites, intermediate_vao, intermediate_vbo);
-    }
-
-    // Editor draw final pass
-    glDisable(GL_DEPTH_TEST);
-    use_shader(color_shader);
-    shader_uniform(color_shader, "projection", *projection, false);
-    shader_uniform(color_shader, "view", *view, true);
-    shader_uniform(color_shader, "model", *model, false);
-
-    // Select tool
-    if editor.enabled && editor.editing_level && (editor.tool == .SELECT || editor.tool == .MOVE) && editor.select_state != .NOT_STARTED
-    {
-        color : Vector4;
-        if editor.tool == .SELECT {
-            if editor.select_state == .FINISHED {
-                color = Vector4.{0, 1, 0, 1};
-            } else {
-                color = Vector4.{1, 0, 0, 1};
-            }
-        } else if editor.tool == .MOVE {
-            if editor.move_state == .NOT_STARTED {
-                color = Vector4.{0, 1, 0, 1};
-            } else {
-                color = Vector4.{1, 0, 0, 1};
-            }
-        }
-        shader_uniform(color_shader, "color", color);
-    
-        TILE_SIZE :: 16 * 4;
-        start, end : v2i;
-        start.x = min(editor.select_end.x, editor.select_start.x);
-        start.y = min(editor.select_end.y, editor.select_start.y);
-        end.x   = max(editor.select_end.x, editor.select_start.x);
-        end.y   = max(editor.select_end.y, editor.select_start.y);
-        
-        if editor.tool == .MOVE && editor.move_state == .STARTED {
-            offset := editor.move_end - editor.move_start;
-            start += offset;
-            end += offset;
-        }
-
-        selection_size := end - start + .{1, 1};
-
-        rect : Rect;
-        rect.x = xx (start.x * TILE_SIZE);
-        rect.y = xx (start.y * TILE_SIZE);
-        rect.w = xx (selection_size.x * TILE_SIZE);
-        rect.h = xx (selection_size.y * TILE_SIZE);
-        
-        draw_rect_with_outline(rect, 4, color_vao, color_vbo);
-    }
+    editor_draw();
 
     // GUI Elements
     // Draw dialogue player
     if dialogue_state.open {
         use_shader(texture_shader);
-        shader_uniform(texture_shader, "view", *Matrix4_Identity, true);
+        shader_uniform(texture_shader, "view", Matrix4_Identity);
         bind_texture(dialogue_player_texture);
         draw_texture(.{0, 0, 320, 180}, .{0, 0, WINDOW_WIDTH, WINDOW_HEIGHT}, *dialogue_player_texture, intermediate_vao, intermediate_vbo);
 
         use_shader(text_shader);
-        shader_uniform(text_shader, "projection", *projection, false);
-        shader_uniform(text_shader, "view", *Matrix4_Identity, true);
-        shader_uniform(text_shader, "model", *model, false);
+        shader_uniform(text_shader, "view", Matrix4_Identity);
         shader_uniform(text_shader, "color", .{1, 1, 1, 1});
         
         str: string;
@@ -395,87 +266,34 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
 
     if rewinding {
         use_shader(texture_shader);
-        shader_uniform(texture_shader, "view", *Matrix4_Identity, true);
+        shader_uniform(texture_shader, "view", Matrix4_Identity);
         bind_texture(ui_sprites);
         radius : float32 = 32;
         draw_radial_texture(.{0, 0, 32, 32}, .{WINDOW_WIDTH - radius*2, radius*2}, radius, rewind_meter / REWIND_TIME, *ui_sprites, intermediate_vao, intermediate_vbo);
     }
 
-    plight_pos := Vector2.{xx level.player_pos.x, xx level.player_pos.y};
-    plight_pos += .{0.5, 0.5};
-    plight_pos *= 64;
-    light := Light.{plight_pos, 3.5 * 64};
-    corners := do_lighting(light);
+    // Lighting
+    light := Light.{(Vector2.{xx level.player_pos.x, xx level.player_pos.y} + Vector2.{0.5, 0.5}) * 64, 3.5 * 64};
+    corners := compute_light_points(light);
 
-    use_shader(texture_shader);
-    shader_uniform(texture_shader, "projection", *projection, false);
-    shader_uniform(texture_shader, "view", *view, true);
-    shader_uniform(texture_shader, "model", *model, false);
-
-    light_world_pos := plight_pos;
-    light_pic_size := light.radius * 2;
-    light_dest := Rect.{light_world_pos.x - light_pic_size/2, light_world_pos.y - light_pic_size/2, light_pic_size, light_pic_size};
-    // bind_texture(spotlight);
-    // draw_texture(.{0, 0, 256, 256}, light_dest, *spotlight, intermediate_vao, intermediate_vbo);
-    
     glDisable(GL_DEPTH_TEST);
     use_shader(color_shader);
-    shader_uniform(color_shader, "projection", *projection, false);
-    shader_uniform(color_shader, "view", *view, true);
-    shader_uniform(color_shader, "model", *model, false);
     shader_uniform(color_shader, "color", Vector4.{1, 0, 0, 1});
 
     vertices: [..] Vertex(.UV_DISABLED);
     vertices.allocator = temp;
-    array_add(*vertices, .{plight_pos.x, plight_pos.y, 0});
-
-    angle_func :: (a: Light_Mesh_Node, b: Light_Mesh_Node) -> float {
-        ppos := Vector2.{xx context.game_state.level.player_pos.x, xx context.game_state.level.player_pos.y};
-        ppos += .{0.5, 0.5};
-        ppos *= 64;
-        first := a - ppos;
-        second := b - ppos;
-        angle_a := atan2(first.y, first.x);
-        angle_b := atan2(second.y, second.x);
-        while angle_a < 0 {
-            angle_a += TAU;
-        } while angle_b < 0 {
-            angle_b += TAU;
-        }
-        angle := angle_a - angle_b;
-        return angle;
-    }
-
-    if input.just_pressed[SDL_SCANCODE_G] {
-        debug_vert_count -= 1;
-    }
-    if input.just_pressed[SDL_SCANCODE_H] {
-        debug_vert_count += 1;
-    }
+    array_add(*vertices, .{light.pos.x, light.pos.y, 0});
 
     if corners.count > 0 {
-        Sort.quick_sort(corners, angle_func);
+        Sort.quick_sort(corners, angle_sort_clockwise);
 
-        point_count := ifx debug_vert_count < 0 corners.count else debug_vert_count;
-        for 0..point_count-1 {
+        for 0..corners.count-1 {
             corner := corners[it];
-            // shader_uniform(color_shader, "color", Vector4.{1, 0, 0, 1});
-            // if it == point_count-1 && debug_vert_count >= 0 {
-            //     shader_uniform(color_shader, "color", Vector4.{0, 0, 1, 1});
-            //     print("Node: %\n", corners[point_count-1]);
-            // }
-            // draw_line(plight_pos, corner, intermediate_vao, intermediate_vbo);
+            shader_uniform(color_shader, "color", Vector4.{1, 0, 0, 1});
+            draw_line(light.pos, corner, intermediate_vao, intermediate_vbo);
             array_add(*vertices, .{corner.x, corner.y, 0});
         }
-        if vertices.count > 1 {
-            array_add(*vertices, vertices[1]);
-        }
-        // for *vert: vertices {
-        //     vert.x -= plight_pos.x;
-        //     vert.x += shadow_framebuffer.w/2;
-        //     vert.y -= plight_pos.y;
-        //     vert.y += shadow_framebuffer.h/2;
-        // }
+        array_add(*vertices, vertices[1]);
 
         glBindFramebuffer(GL_FRAMEBUFFER, shadow_framebuffer.id);
         glClearColor(0, 0, 0, 0);
@@ -483,113 +301,48 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         glViewport(0, 0, xx shadow_framebuffer.w, xx shadow_framebuffer.h);
 
         fb_projection := orthographic_projection_matrix(0, xx shadow_framebuffer.w, xx shadow_framebuffer.h, 0, -1, 1);
-        fb_projection = transpose(fb_projection);
 
         use_shader(color_shader);
-        shader_uniform(color_shader, "projection", *projection, false);
-        shader_uniform(color_shader, "view", *view, true);
-        shader_uniform(color_shader, "model", *model, false);
+        shader_uniform(color_shader, "projection", *fb_projection);
         shader_uniform(color_shader, "color", Vector4.{1, 1, 1, 1});
 
         glBindVertexArray(intermediate_vao);
         glBindBuffer(GL_ARRAY_BUFFER, intermediate_vbo);
-        true_render_amount := (point_count + ifx debug_vert_count == -1 2 else 1);
-        glBufferData(GL_ARRAY_BUFFER, size_of(Vertex(.UV_DISABLED)) * true_render_amount, vertices.data, GL_STATIC_DRAW);
+        point_count := corners.count + 2;
+        glBufferData(GL_ARRAY_BUFFER, size_of(Vertex(.UV_DISABLED)) * point_count, vertices.data, GL_STATIC_DRAW);
 
         // position
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * size_of(float32), null);
         glEnableVertexAttribArray(0);
 
         glBindBuffer(GL_ARRAY_BUFFER, 0);
-        glDrawArrays(GL_TRIANGLE_FAN, 0, xx true_render_amount);
-
-        glViewport(0, 0, xx WINDOW_WIDTH, xx WINDOW_HEIGHT);
-        glBindFramebuffer(GL_FRAMEBUFFER, world_framebuffer.id);
-        use_shader(texture_shader);
-        bind_texture(shadow_texture);
-        shader_uniform(texture_shader, "projection", *projection, false);
-        shader_uniform(texture_shader, "view", *view, true);
-        shader_uniform(texture_shader, "model", *model, false);
-
-        source := Rect.{0, 0, xx shadow_texture.width, xx shadow_texture.height};
-        dest := Rect.{plight_pos.x - light.radius, plight_pos.y - light.radius, xx shadow_texture.width, xx shadow_texture.height};
-        dest.y += dest.h;
-        // dest.w *= -1;
-        dest.h *= -1;
-
-        // source.y += source.h;
-        // source.h *= -1;
-        // draw_texture(source, dest,
-        //     *shadow_texture, intermediate_vao, intermediate_vbo);
-
-        // Draw outer box
-        // draw_line(light_dest.pos, .{light_dest.x + light_dest.w, light_dest.y}, intermediate_vao, intermediate_vbo);
-        // draw_line(light_dest.pos, .{light_dest.x, light_dest.y + light_dest.h}, intermediate_vao, intermediate_vbo);
-        // draw_line(light_dest.pos + .{light_dest.w, 0}, .{light_dest.x + light_dest.w, light_dest.y + light_dest.h}, intermediate_vao, intermediate_vbo);
-        // draw_line(light_dest.pos + .{0, light_dest.h}, .{light_dest.x + light_dest.w, light_dest.y+light_dest.h}, intermediate_vao, intermediate_vbo);
+        glDrawArrays(GL_TRIANGLE_FAN, 0, xx point_count);
     }
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glViewport(0, 0, xx WINDOW_WIDTH, xx WINDOW_HEIGHT);
-    // use_shader(texture_shader);
-    // bind_texture(world_texture);
-    // shader_uniform(texture_shader, "view", *Matrix4_Identity, true);
-    source := Rect.{0,0,WINDOW_WIDTH,WINDOW_HEIGHT};
-    // dest := source;
-    // dest.y += dest.h;
-    // dest.h *= -1;
-    // draw_texture(source, dest, world_texture, intermediate_vao, intermediate_vbo);
 
-    {
+    if lighting_enabled == false {
+        use_shader(texture_shader);
+        bind_texture(world_texture);
+        shader_uniform(texture_shader, "view", Matrix4_Identity);
+        draw_texture(Rect.{0, 0, WINDOW_WIDTH, WINDOW_HEIGHT}, .{0, WINDOW_HEIGHT, WINDOW_WIDTH, -WINDOW_HEIGHT}, world_texture);
+    } else {
         use_shader(mask_shader);
-        shader_uniform(mask_shader, "projection", *projection, false);
-        shader_uniform(mask_shader, "view", *Matrix4_Identity, true);
-        shader_uniform(mask_shader, "model", *model, false);
 
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, world_texture.id);
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, shadow_texture.id);
-        glActiveTexture(GL_TEXTURE0);
-        
-        dest := Rect.{0, 0, xx shadow_texture.width, xx shadow_texture.height};
+        dest := Rect.{0, 0, WINDOW_WIDTH, WINDOW_HEIGHT};
         dest.y += dest.h;
         dest.h *= -1;
 
-        u1, u2, v1, v2 : float32;
-        u1 = source.x / world_texture.width;
-        u2 = (source.x + source.w) / world_texture.width;
-        v1 = source.y / world_texture.height;
-        v2 = (source.y + source.h) / world_texture.height;
+        mask_dest := Rect.{light.pos.x - light.radius, light.pos.y - light.radius, light.radius * 2, light.radius * 2};
+        mask_source := Rect.{0, 0, xx shadow_texture.width, xx shadow_texture.height};
 
-        vertices := float32.[
-            dest.x,         dest.y,         0,  u1, v1,
-            dest.x+dest.w,  dest.y,         0,  u2, v1,
-            dest.x+dest.w,  dest.y+dest.h,  0,  u2, v2,
-            dest.x,         dest.y+dest.h,  0,  u1, v2
-        ];
-
-        glBindVertexArray(intermediate_vao);
-        glBindBuffer(GL_ARRAY_BUFFER, intermediate_vbo);
-        glBufferData(GL_ARRAY_BUFFER, size_of(float32) * 20, *vertices, GL_STATIC_DRAW);
-
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * size_of(float32), null);
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * size_of(float32), xx (3 * size_of(float32)));
-        glEnableVertexAttribArray(1);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-        glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-        glBindVertexArray(0);
+        draw_mask_textures(Rect.{0,0,WINDOW_WIDTH,WINDOW_HEIGHT}, dest, mask_source, mask_dest, *world_texture, *shadow_texture);
     }
 
 
-    bind_texture(sprites, 0);
     #if true {
         use_shader(text_shader);
-        shader_uniform(text_shader, "projection", *projection, false);
-        shader_uniform(text_shader, "view", *Matrix4_Identity, true);
-        shader_uniform(text_shader, "model", *model, false);
         shader_uniform(text_shader, "color", .{1, 0, 0, 1});
 
         if editor.editing_level {
@@ -602,37 +355,6 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
                 draw_text(struct_str, .{32, 64}, *font_m5x7, intermediate_vao, intermediate_vbo);
             }
         }
-
-        #if false {
-            shader_uniform(text_shader, "color", .{1, 1, 1, 1});
-            shader_uniform(color_shader, "view", *view, true);
-            tile_begin, tile_end := get_camera_level_bounds(camera, *level);
-            for x: tile_begin.x..tile_end.x {
-                for y: tile_begin.y..tile_end.y {
-                    light := compute_light_value(field, x, y);
-                    struct_str := tprint("%", light);
-                    struct_str.count = min(struct_str.count, 3);
-                    dest := v2i.{xx (x*64) + 8, xx (y*64) + 48};
-                    draw_text(struct_str, dest, *font_m5x7, intermediate_vao, intermediate_vbo);
-                }
-            }
-            shader_uniform(color_shader, "view", *Matrix4_Identity, true);
-        }
-        // total_goal_blocks : int;
-        // total_secrets : int;
-        // for x: 0..level.dimensions.x-1 {
-        //     for y: 0..level.dimensions.y-1 {
-        //         if block_is_goal(level.grid[x][y]) {
-        //             total_goal_blocks += 1;
-        //         } else if level.grid[x][y].type == .SIGNED_PHOTOGRAPH {
-        //             total_secrets += 1;
-        //         }
-        //     }
-        // }
-
-        // score_string := sprint("%", total_secrets);
-        // draw_text(score_string, .{32, 64}, *font_arial, intermediate_vao, intermediate_vbo);
-        // draw_text(score_string, .{32, 128}, *font_arial, intermediate_vao, intermediate_vbo);
     }
     
     if editor.enabled {

@@ -67,10 +67,10 @@ Game_State :: struct {
 
     resource_check_timer : float32;
 
+    lighting_enabled := true;
+
     frame_number := 0;
 
-
-    debug_vert_count := -1;
     bindings: Bindings;
 
     memory_initialized := false;

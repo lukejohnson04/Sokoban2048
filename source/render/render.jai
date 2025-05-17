@@ -56,6 +56,10 @@ draw_line :: (p1: Vector2, p2: Vector2, vao: GLuint, vbo: GLuint) {
     glBindVertexArray(0);
 }
 
+draw_texture :: (source: Rect, dest: Rect, tex: *Texture) {
+    draw_texture(source, dest, .{xx tex.width, xx tex.height}, context.game_state.intermediate_vao, context.game_state.intermediate_vbo);
+}
+
 draw_texture :: (source: Rect, dest: Rect, tex: *Texture, vao: GLuint, vbo: GLuint) {
     draw_texture(source, dest, .{xx tex.width, xx tex.height}, vao, vbo);
 }
@@ -84,6 +88,66 @@ draw_texture :: (source: Rect, dest: Rect, texture_size: v2i, vao: GLuint, vbo: 
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * size_of(float32), xx (3 * size_of(float32)));
     glEnableVertexAttribArray(1);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+    glBindVertexArray(0);
+}
+
+draw_mask_textures :: (source: Rect, dest: Rect, mask_source: Rect, mask_dest: Rect, texture: *Texture, mask: *Texture) {
+    draw_mask_textures(source, dest, mask_source, mask_dest, texture, mask, context.game_state.intermediate_vao, context.game_state.intermediate_vbo);
+}
+
+// Texture and mask must be same dimensions?
+draw_mask_textures :: (
+        source: Rect, dest: Rect,
+        mask_source: Rect, mask_dest: Rect,
+        texture: *Texture,
+        mask: *Texture,
+        vao: GLuint, vbo: GLuint)
+{
+    
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture.id);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, mask.id);
+    glActiveTexture(GL_TEXTURE0);
+
+    u1, u2, v1, v2 : float32;
+    u1 = source.x / texture.width;
+    u2 = (source.x + source.w) / texture.width;
+    v1 = source.y / texture.height;
+    v2 = (source.y + source.h) / texture.height;
+
+    u3, u4, v3, v4 : float32;
+    u3 = (dest.x - mask_dest.x) / mask.width;
+    u4 = (dest.x + dest.w - mask_dest.x) / mask.width;
+    v3 = (dest.y - mask_dest.y) / mask.height;
+    v4 = (dest.y + dest.h - mask_dest.y) / mask.height;
+    u3 = u1;
+    u4 = u2;
+    v3 = v1;
+    v4 = v2;
+
+    
+
+    vertices := float32.[
+        dest.x,         dest.y,         0,  u1, v1, u3, v3,
+        dest.x+dest.w,  dest.y,         0,  u2, v1, u4, v3,
+        dest.x+dest.w,  dest.y+dest.h,  0,  u2, v2, u4, v4,
+        dest.x,         dest.y+dest.h,  0,  u1, v2, u3, v4
+    ];
+
+    glBindVertexArray(vao);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, size_of(float32) * 28, *vertices, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 7 * size_of(float32), null);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 7 * size_of(float32), xx (3 * size_of(float32)));
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 7 * size_of(float32), xx (5 * size_of(float32)));
+    glEnableVertexAttribArray(2);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     glDrawArrays(GL_TRIANGLE_FAN, 0, 4);

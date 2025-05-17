@@ -9,7 +9,7 @@ Light_Mesh_Node :: struct {
 }
 
 // Returns every point to draw triangle strips of
-do_lighting :: (light: Light) -> [..] Light_Mesh_Node {
+compute_light_points :: (light: Light) -> [..] Light_Mesh_Node {
     using context.game_state;
     // Get all blocks within radius
     corners: [..] Light_Mesh_Node;
@@ -25,7 +25,7 @@ do_lighting :: (light: Light) -> [..] Light_Mesh_Node {
                 pos *= 64;
 
                 // We add 1 to the radius to get everything within the box, then we can crop it out later
-                if distance(pos, light.pos) <= light.radius + 128 {
+                if distance(pos, light.pos) <= light.radius + 64 {
                     array_add(*corners, .{pos, false});
                 }
             }
@@ -47,15 +47,6 @@ do_lighting :: (light: Light) -> [..] Light_Mesh_Node {
 
         if col.collides == false {
             array_add(*results, .{corner, true});
-            continue;
-        }
-        if col.collision_point != corner {
-            if it_index >= corners.count - 4 {
-                array_add(*results, .{col.collision_point, true});
-            }
-            continue;
-        }
-        if it_index >= corners.count - 4 {
             continue;
         }
         defer array_add(*results, .{col.collision_point, false});
@@ -150,6 +141,18 @@ get_intersection :: (ray_start: Vector2, ray_end: Vector2, seg_start: Vector2, s
     return result;
 }
 
+angle_sort_clockwise :: (a: Light_Mesh_Node, b: Light_Mesh_Node) -> float {
+    ppos := Vector2.{xx context.game_state.level.player_pos.x, xx context.game_state.level.player_pos.y};
+    ppos += .{0.5, 0.5};
+    ppos *= 64;
+    first := a - ppos;
+    second := b - ppos;
+    angle_a := atan2(first.y, first.x);
+    angle_b := atan2(second.y, second.x);
+    
+    angle := angle_a - angle_b;
+    return angle;
+}
 
 get_collision :: (from: Vector2, to: Vector2, level: *Level) -> Intersection {
     res: Intersection;
@@ -165,10 +168,10 @@ get_collision :: (from: Vector2, to: Vector2, level: *Level) -> Intersection {
     min_y :int= xx (min(from.y, to.y)/64.0);
     max_y :int= xx (max(from.y, to.y)/64.0);
 
-    min_x -= 1;
-    min_y -= 1;
-    max_x += 1;
-    max_y += 1;
+    min_x = max(min_x - 1, 0);
+    min_y = max(min_y - 1, 0);
+    max_x = min(max_x + 1, level.dimensions.x);
+    max_y = min(max_y + 1, level.dimensions.y);
 
     for x: min_x..max_x {
         for y: min_y..max_y {

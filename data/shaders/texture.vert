@@ -7,13 +7,12 @@ layout (location = 2) in float light_in;
 out vec2 TexCoord;
 out float light;
 
-uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 
 void main()
 {
 	TexCoord = vec2(aTexCoord.x, aTexCoord.y);
-	gl_Position = projection * view * model * vec4(aPos, 1.0);
+	gl_Position = projection * view * vec4(aPos, 1.0);
 	light = light_in;
 }

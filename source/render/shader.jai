@@ -7,20 +7,31 @@ use_shader :: (shader: Shader) {
     glUseProgram(shader.id);
 }
 
-shader_uniform :: (using shader: Shader, name: *u8, a: *Matrix4, transpose := true) {
-    glUniformMatrix4fv(glGetUniformLocation(id, name), 1, xx transpose, xx a);
+shader_uniform :: (shader: Shader, name: *u8, a: Matrix4, transpose := true) {
+    loc := glGetUniformLocation(shader.id, name);
+    if loc < 0 print("Unknown parameter: '%'\n", to_string(name));
+    if loc >= 0 glUniformMatrix4fv(loc, 1, xx transpose, *a._11);
 }
 
 shader_uniform :: (using shader: Shader, name: *u8, a: s32) {
-    glUniform1i(glGetUniformLocation(id, name), a);
+    loc := glGetUniformLocation(id, name);
+    if loc < 0 print("Unknown parameter: '%'\n", to_string(name));
+    if loc >= 0
+        glUniform1i(loc, a);
 }
 
 shader_uniform :: (using shader: Shader, name: *u8, a: float32) {
-    glUniform1f(glGetUniformLocation(id, name), a);
+    loc := glGetUniformLocation(id, name);
+    if loc < 0 print("Unknown parameter: '%'\n", to_string(name));
+    if loc >= 0
+        glUniform1f(loc, a);
 }
 
 shader_uniform :: (using shader: Shader, name: *u8, a: Vector4) {
-    glUniform4f(glGetUniformLocation(id, name), a.x, a.y, a.z, a.w);
+    loc := glGetUniformLocation(id, name);
+    if loc < 0 print("Unknown parameter: '%'\n", to_string(name));
+    if loc >= 0
+        glUniform4f(loc, a.x, a.y, a.z, a.w);
 }
 
 
@@ -74,7 +85,7 @@ create_shader_program :: (vert_path: string, frag_path: string) -> GLuint {
     success : s32;
     glGetProgramiv(shader_program, GL_LINK_STATUS, *success);
     if !success {
-        print("Failed to link shader program!\n");
+        print("Failed to link shader program %\n", vert_path);
     }
 
     glDeleteShader(vert_shader);
