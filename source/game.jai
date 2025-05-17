@@ -268,16 +268,37 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
 
             set_framebuffer(*light_framebuffer);
             clear_framebuffer(0, 0, 0, 0);
+            use_shader(mask_shader);
+            shader_uniform(mask_shader, "projection", fb_projection);
+            shader_uniform(mask_shader, "view", Matrix4_Identity);
+            sh_rect := Rect.{0, 0, xx light_texture.width, xx light_texture.height};
+            sh_dest := Rect.{0, 0, xx light_texture.width, xx light_texture.height};
+            sh_dest.y += sh_dest.h;
+            sh_dest.h *= -1;
+
+            draw_mask_textures(sh_rect, sh_dest, sh_rect, sh_dest, *shadow_texture, *spotlight);
 
             set_framebuffer(null);
             use_shader(texture_shader);
             shader_uniform(texture_shader, "view", Matrix4_Identity);
-            bind_texture(shadow_texture);
-            sh_rect := Rect.{0, 0, xx shadow_texture.width, xx shadow_texture.height};
-            sh_dest := Rect.{0, 0, xx shadow_texture.width, xx shadow_texture.height};
+            bind_texture(light_texture);
+            sh_rect = Rect.{0, 0, xx light_texture.width, xx light_texture.height};
+            sh_dest = Rect.{0, 0, xx light_texture.width, xx light_texture.height};
             sh_dest.y += sh_dest.h;
             sh_dest.h *= -1;
-            draw_texture(sh_rect, sh_dest, *shadow_texture);
+            draw_texture(sh_rect, sh_dest, *light_texture);
+
+            // use_shader(mask_shader);
+            // shader_uniform(mask_shader, "projection", projection);
+            // // rect := Rect.{0, 0, WINDOW_WIDTH, WINDOW_HEIGHT};
+            // // dest := rect;
+            // // dest.y += dest.h;
+            // // dest.h *= -1;
+            // // draw_mask_textures(rect, )
+            // mask_dest := Rect.{player_light.pos.x - player_light.radius, player_light.pos.y - player_light.radius, player_light.radius * 2, player_light.radius * 2};
+            // mask_source := Rect.{0, 0, xx shadow_texture.width, xx shadow_texture.height};
+
+            // draw_mask_textures(Rect.{0,0,WINDOW_WIDTH,WINDOW_HEIGHT}, dest, mask_source, mask_dest, *world_texture, *shadow_texture);
         }
     }
 
