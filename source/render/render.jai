@@ -17,12 +17,15 @@ load_texture :: (path: string, log_errors := false) -> Texture, bool {
     glGenTextures(1, *tex.id);
     glBindTexture(GL_TEXTURE_2D, tex.id);
     
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, xx tex.width, xx tex.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
 
     //glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, xx tex.width, xx tex.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-    glGenerateMipmap(GL_TEXTURE_2D);
+    // glGenerateMipmap(GL_TEXTURE_2D);
 
     stbi_image_free(data);
     glBindTexture(GL_TEXTURE_2D, 0);
@@ -92,8 +95,8 @@ draw_texture :: (source: Rect, dest: Rect, texture_size: v2i, vao: GLuint, vbo: 
     glBindVertexArray(0);
 }
 
-draw_mask_textures :: (source: Rect, dest: Rect, mask_source: Rect, mask_dest: Rect, texture: *Texture, mask: *Texture) {
-    draw_mask_textures(source, dest, mask_source, mask_dest, texture, mask, context.game_state.intermediate_vao, context.game_state.intermediate_vbo);
+draw_mask_textures :: (source: Rect, dest: Rect, mask_source: Rect, mask_dest: Rect, texture: *Texture, mask: *Texture, goofy: bool=false) {
+    draw_mask_textures(source, dest, mask_source, mask_dest, texture, mask, context.game_state.intermediate_vao, context.game_state.intermediate_vbo, goofy);
 }
 
 // Texture and mask must be same dimensions?
@@ -102,7 +105,7 @@ draw_mask_textures :: (
         mask_source: Rect, mask_dest: Rect,
         texture: *Texture,
         mask: *Texture,
-        vao: GLuint, vbo: GLuint)
+        vao: GLuint, vbo: GLuint, goofy: bool)
 {
     
     glActiveTexture(GL_TEXTURE0);
@@ -111,29 +114,47 @@ draw_mask_textures :: (
     glBindTexture(GL_TEXTURE_2D, mask.id);
     glActiveTexture(GL_TEXTURE0);
 
-    u1, u2, v1, v2 : float32;
-    u1 = source.x / texture.width;
-    u2 = (source.x + source.w) / texture.width;
-    v1 = source.y / texture.height;
-    v2 = (source.y + source.h) / texture.height;
+    //--------------------------------------------------------------------
+    // 1.  MAIN-TEXTURE UVs   (only depend on `source`)
+    u1 :=  source.x              / texture.width;
+    u2 := (source.x + source.w)  / texture.width;
+    v1 :=  source.y              / texture.height;
+    v2 := (source.y + source.h)  / texture.height;
 
-    u3, u4, v3, v4 : float32;
-    u3 = (dest.x - mask_dest.x) / mask.width;
-    u4 = (dest.x + dest.w - mask_dest.x) / mask.width;
-    v3 = (dest.y - mask_dest.y) / mask.height;
-    v4 = (dest.y + dest.h - mask_dest.y) / mask.height;
-    v3 = 1-v3;
-    v4 = 1-v4;
-    // u3 = u1;
-    // u4 = u2;
-    // v3 = v1;
-    // v4 = v2;
+    //--------------------------------------------------------------------
+    // 2.  MASK-SOURCE endpoints, already in [0-1] of the mask texture
+    mu1 :=  mask_source.x               / mask.width;
+    mu2 := (mask_source.x + mask_source.w) / mask.width;
+    mv1 :=  mask_source.y               / mask.height;
+    mv2 := (mask_source.y + mask_source.h) / mask.height;
+    // If your mask image is “top-left := (0,0)”, flip the V later or swap mv1/mv2.
 
+    //--------------------------------------------------------------------
+    // 3.  Handy reciprocals for “percent inside mask_dest”
+    inv_w := 1.0 / mask_dest.w;
+    inv_h := 1.0 / mask_dest.h;
+
+    // Four screen-space corners of the quad we are drawing
+    sx0 := dest.x;
+    sx1 := dest.x + dest.w;
+    sy0 := dest.y;
+    sy1 := dest.y + dest.h;
+
+    //--------------------------------------------------------------------
+    // 4.  MASK UVs for the four vertices
+    mask_u0 := mu1 + (sx0 - mask_dest.x) * inv_w * (mu2 - mu1);   // left  vertices
+    mask_u1 := mu1 + (sx1 - mask_dest.x) * inv_w * (mu2 - mu1);   // right vertices
+
+    mask_v0 := mv1 + (sy0 - mask_dest.y) * inv_h * (mv2 - mv1);   // bottom vertices
+    mask_v1 := mv1 + (sy1 - mask_dest.y) * inv_h * (mv2 - mv1);   // top    vertices
+
+    //--------------------------------------------------------------------
+    // 5.  Interleaved vertex array  (pos.xyz | mainUV | maskUV)
     vertices := float32.[
-        dest.x,         dest.y,         0,  u1, v1, u3, v3,
-        dest.x+dest.w,  dest.y,         0,  u2, v1, u4, v3,
-        dest.x+dest.w,  dest.y+dest.h,  0,  u2, v2, u4, v4,
-        dest.x,         dest.y+dest.h,  0,  u1, v2, u3, v4
+        sx0, sy0, 0,   u1, v1,   mask_u0, mask_v0,   // bottom-left
+        sx1, sy0, 0,   u2, v1,   mask_u1, mask_v0,   // bottom-right
+        sx1, sy1, 0,   u2, v2,   mask_u1, mask_v1,   //   top-right
+        sx0, sy1, 0,   u1, v2,   mask_u0, mask_v1    //   top-left
     ];
 
     glBindVertexArray(vao);

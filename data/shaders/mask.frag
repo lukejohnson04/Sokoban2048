@@ -8,10 +8,10 @@ in vec2 MaskCoord;
 // texture samplers
 uniform sampler2D texture1;
 uniform sampler2D mask_texture;
+uniform float dim_level;
 
 void main()
 {
-    float dim_level = 0.25;
     vec4 tex = texture(texture1, TexCoord);
 
     float brightness = dim_level;

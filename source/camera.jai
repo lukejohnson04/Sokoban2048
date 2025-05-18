@@ -19,8 +19,7 @@ Camera2D :: struct {
 
 camera_view_matrix :: (using camera: Camera2D) -> Matrix4 {
     view := Matrix4_Identity;
-    // view = translate(view, .{WINDOW_WIDTH * 0.5, WINDOW_HEIGHT * 0.5, 0});
-    mult := 1.0 / camera.zoom;
+    mult := 1.0 / zoom;
     CAMERA_SIZE := Vector2.{WINDOW_WIDTH * mult, WINDOW_HEIGHT * mult};
     view = scale(view, .{zoom, zoom, 1});
     view = translate(view, .{-pos.x, -pos.y, 0});
@@ -86,7 +85,7 @@ lerp_player_camera :: (window: *SDL_Window) {
         }
 
     } else if (SDL_GetWindowFlags(window) & SDL_WINDOW_INPUT_FOCUS) != 0 {
-        DEBUG_CAMERA_SPEED := 12 * (1.0 / camera.zoom);
+        DEBUG_CAMERA_SPEED := 12.0 * (1.0 / camera.zoom);
         DEADZONE_PERCENT :: 0.01;
 
         mouse_pos := get_mouse_position();

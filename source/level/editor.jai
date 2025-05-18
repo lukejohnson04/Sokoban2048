@@ -18,6 +18,7 @@ Editor_State :: struct {
     block_flip_x: bool;
     block_flip_y: bool;
     fill_all_layers: bool;
+    show_both_layers: bool = true;
 
     select_state := Editor_Select_State.NOT_STARTED;
     select_start : v2i;
@@ -164,6 +165,9 @@ draw_editor :: () {
             }
             ImGui.EndCombo();
         }
+        ImGui.SameLine();
+        ImGui.Checkbox("Show all layers", *editor.show_both_layers);
+
 
         if ImGui.Button("Brush") {
             editor.tool = .BRUSH;

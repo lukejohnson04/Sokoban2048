@@ -160,10 +160,10 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     }
 
     // Rendering
-    glClearColor(0, 0, 0, 1.0);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glBindFramebuffer(GL_FRAMEBUFFER, world_framebuffer.id);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    set_framebuffer(null);
+    clear_framebuffer(0, 0, 0, 1);
+    set_framebuffer(*world_framebuffer);
+    clear_framebuffer(0, 0, 0, 1);
 
     lerp_player_camera(window);    
 
@@ -198,24 +198,43 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
 
     bind_texture(sprites);
 
-    mesh_draw(*world_mesh.tiles);
+    draw_extra_mesh_layers :: () #expand {
+        shader_uniform(texture_shader, "colormult", 0.8);
+        shader_uniform(texture_shader, "grayscale", 1);
+        mesh_draw(*world_mesh.goal);
+        shader_uniform(texture_shader, "grayscale", 0);
+        shader_uniform(texture_shader, "gold", 1);
+        mesh_draw(*world_mesh.gold);
+        shader_uniform(texture_shader, "gold", 0);
+        shader_uniform(texture_shader, "colormult", 1.0);
+    }
     
-    shader_uniform(texture_shader, "colormult", 0.8);
-    shader_uniform(texture_shader, "grayscale", 1);
-    mesh_draw(*world_mesh.goal);
-    shader_uniform(texture_shader, "grayscale", 0);
-    shader_uniform(texture_shader, "gold", 1);
-    mesh_draw(*world_mesh.gold);
-    shader_uniform(texture_shader, "gold", 0);
-    shader_uniform(texture_shader, "colormult", 1.0);
+    if editor.enabled == false || editor.show_both_layers {
+        mesh_draw(*world_mesh.floor);
+        mesh_draw(*world_mesh.tiles);
+        draw_extra_mesh_layers();
+    } else {
+        if editor.layer == 0 {
+            mesh_draw(*world_mesh.tiles);
+            draw_extra_mesh_layers();
+        } else {
+            mesh_draw(*world_mesh.floor);
+        }
+    }
+
 
     editor_draw();
 
-    if lighting_enabled == false {
+    print("%, pos: %\n", camera.zoom, camera.pos);
+
+    if lighting_enabled == false || true {
+        set_framebuffer(null);
+        
         use_shader(texture_shader);
         bind_texture(world_texture);
         shader_uniform(texture_shader, "view", Matrix4_Identity);
         draw_texture(Rect.{0, 0, WINDOW_WIDTH, WINDOW_HEIGHT}, .{0, WINDOW_HEIGHT, WINDOW_WIDTH, -WINDOW_HEIGHT}, world_texture);
+
     } else {
         // Lighting
         glDisable(GL_DEPTH_TEST);
@@ -243,10 +262,8 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
                 corner.y += player_light.radius;
             }
 
-            glBindFramebuffer(GL_FRAMEBUFFER, shadow_framebuffer.id);
-            glClearColor(0, 0, 0, 0);
-            glClear(GL_COLOR_BUFFER_BIT);
-            glViewport(0, 0, xx shadow_framebuffer.w, xx shadow_framebuffer.h);
+            set_framebuffer(*shadow_framebuffer);
+            clear_framebuffer(0, 0, 0, 0);
 
             fb_projection := orthographic_projection_matrix(0, xx shadow_framebuffer.w, xx shadow_framebuffer.h, 0, -1, 1);
 
@@ -271,6 +288,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
             use_shader(mask_shader);
             shader_uniform(mask_shader, "projection", fb_projection);
             shader_uniform(mask_shader, "view", Matrix4_Identity);
+            shader_uniform(mask_shader, "dim_level", 0);
             sh_rect := Rect.{0, 0, xx light_texture.width, xx light_texture.height};
             sh_dest := Rect.{0, 0, xx light_texture.width, xx light_texture.height};
             sh_dest.y += sh_dest.h;
@@ -288,17 +306,41 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
             sh_dest.h *= -1;
             draw_texture(sh_rect, sh_dest, *light_texture);
 
-            // use_shader(mask_shader);
-            // shader_uniform(mask_shader, "projection", projection);
-            // // rect := Rect.{0, 0, WINDOW_WIDTH, WINDOW_HEIGHT};
-            // // dest := rect;
-            // // dest.y += dest.h;
-            // // dest.h *= -1;
-            // // draw_mask_textures(rect, )
-            // mask_dest := Rect.{player_light.pos.x - player_light.radius, player_light.pos.y - player_light.radius, player_light.radius * 2, player_light.radius * 2};
-            // mask_source := Rect.{0, 0, xx shadow_texture.width, xx shadow_texture.height};
+            // Final world mask pass
+            use_shader(mask_shader);
+            shader_uniform(mask_shader, "projection", projection);
+            shader_uniform(mask_shader, "view", Matrix4_Identity);
+            shader_uniform(mask_shader, "dim_level", 0.25);
 
-            // draw_mask_textures(Rect.{0,0,WINDOW_WIDTH,WINDOW_HEIGHT}, dest, mask_source, mask_dest, *world_texture, *shadow_texture);
+            source := Rect.{0, 0, WINDOW_WIDTH, WINDOW_HEIGHT};
+            dest := Rect.{0, 0, WINDOW_WIDTH, WINDOW_HEIGHT};
+            dest.y += dest.h;
+            dest.h *= -1;
+
+            mask_dest := Rect.{player_light.pos.x - player_light.radius, player_light.pos.y - player_light.radius, player_light.radius * 2, player_light.radius * 2};
+            mask_source := Rect.{0, 0, xx light_texture.width, xx light_texture.height};
+
+            draw_mask_textures(source, dest, mask_source, mask_dest, *world_texture, *light_texture, true);
+
+            /*
+            
+                Our goal is to take the full screen resolution output render of the entire world.
+                Then, we want to draw a low brightness version of that render. When drawing this
+                version, we want to use a mask layer as well. For all values that are white in the
+                mask, we want to draw the world layer at full brightness. Otherwise, we want to use
+                a dim brightness.
+
+                To do this, we draw the entire world. We also pass the mask and the uv of the mask
+                to the shader. For all the pixels within the mask portion, we multiply it with the uv.
+                Otherwise, the default value is the dim light, which is a uniform.
+
+                So in short, we have a uniform for the texture, a uniform for the mask, a uv for the
+                texture, a uv for the mask, and finally a uniform for the dim light.
+
+                To generate the light mask texture, we first start with the full texture of the shadow
+                layer. Then, we go onto a new framebuffer texture, and render the spotlight with the
+                shadow layer as a mask.
+            */
         }
     }
 
@@ -327,7 +369,6 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         radius : float32 = 32;
         draw_radial_texture(.{0, 0, 32, 32}, .{WINDOW_WIDTH - radius*2, radius*2}, radius, rewind_meter / REWIND_TIME, *ui_sprites, intermediate_vao, intermediate_vbo);
     }
-
 
     #if true {
         use_shader(text_shader);

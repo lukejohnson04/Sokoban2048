@@ -1,5 +1,6 @@
 
 Level_Mesh :: struct {
+    floor: Mesh;
     tiles: Mesh;
     goal: Mesh;
     gold: Mesh;
@@ -10,15 +11,17 @@ Level_Mesh :: struct {
 generate_level_mesh :: () {
     using context.game_state;
     mesh: *Level_Mesh = *world_mesh;
+    mesh_free(*mesh.floor);
     mesh_free(*mesh.tiles);
     mesh_free(*mesh.gold);
     mesh_free(*mesh.goal);
     
+    mesh_init(*mesh.floor);
     mesh_init(*mesh.tiles);
     mesh_init(*mesh.gold);
     mesh_init(*mesh.goal);
 
-    generate_mesh_of_layer :: (blocks: *type_of(Level.grid)) #expand {
+    generate_mesh_of_layer :: (blocks: *type_of(Level.grid), mesh_layer: *Mesh) #expand {
         for x: 0..level.dimensions.x {
             for y: 0..level.dimensions.y {
                 block := blocks.*[x][y];
@@ -68,15 +71,16 @@ generate_level_mesh :: () {
                             array_add(*mesh.gold.vertices, it);
                         }
                     } else {
-                        array_add(*mesh.tiles.vertices, it);
+                        array_add(*mesh_layer.vertices, it);
                     }
                 }
             }
         }
     }
-    generate_mesh_of_layer(*level.floor);
-    generate_mesh_of_layer(*level.grid);
+    generate_mesh_of_layer(*level.floor, *mesh.floor);
+    generate_mesh_of_layer(*level.grid, *mesh.tiles);
 
+    mesh_generate(*mesh.floor);
     mesh_generate(*mesh.tiles);
     mesh_generate(*mesh.gold);
     mesh_generate(*mesh.goal);
