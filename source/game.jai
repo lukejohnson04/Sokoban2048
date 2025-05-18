@@ -225,8 +225,6 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
 
     editor_draw();
 
-    print("%, pos: %\n", camera.zoom, camera.pos);
-
     if lighting_enabled == false || true {
         set_framebuffer(null);
         
