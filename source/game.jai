@@ -224,6 +224,11 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
 
 
     editor_draw();
+    
+    use_shader(color_shader);
+    shader_uniform(color_shader, "color", Vector4.{1, 0, 0, 1});
+    shader_uniform(color_shader, "view", view);
+    draw_rect_with_outline(Rect.{0, 0, xx (level.dimensions.x * 64), xx (level.dimensions.y * 64)}, 4);
 
     if lighting_enabled == false || true {
         set_framebuffer(null);

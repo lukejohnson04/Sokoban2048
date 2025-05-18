@@ -41,11 +41,56 @@ An NPC who is convinced that there is a world that is not on a grid, and that a 
 
 
 
-
-You were put in puzzle jail, a place where only legendary puzzle masters can escape each puzzle. After escaping, you realize you must use your puzzle solving powers to put a stop to the tyrannical block-pushing-puzzle-obsessed empire.
-
-
 You can undo text options and dialogue
 
 
 Character who's stuck in corner but doesn't realize that the block behind him is actually a boulder that can be pushed.
+
+
+
+Who can push blocks? Who can move on their own? Can anyone destroy or create blocks?
+
+What if the laws of blocks moving are not understood, and at any moment you could lose the ability to move?
+
+The player has been alive so long and still has not lost their ability to move
+
+
+
+Puzzle where the player has to solve several puzzles and then open a one way exit for others (e.g. there's a road closure and someone needs to go around and fix it)
+
+Puzzle where the prop block is another tile, and not a 1 block.
+
+
+
+Part where someone tries to trap the player, for example by telling them to exit through a doorway, but upon entering the room they are immediately trapped. The player learns this and rewinds, and then needs to keep making excuses for why they don't want to go through the doorway
+
+
+
+
+What is there in tiletown? What is there to do? Do people work? What do people do for fun?
+
+
+
+Laboratory
+Mines
+Pushville - Residential suburb
+Block buying plaza - Shopping district
+Jumble Junction - Junkyard of old blocks where people go for fun to push them around
+Town tile/Town square (they call it a town tile bc they're quirky even tho it's actually like, less clear what it is than just calling it town square)
+- The town square has a big open space and a stage area for performances and announcements from the mayor
+- It's surrounded by some shops and a few small houses
+- All the areas of the town branch out from the town square
+Outskirts
+
+
+Player goes from Laboratory to the Mines, then to the town square.
+The player then can either go to Pushville, Block buying plaza, or Jumble Junction
+
+
+Puzzles that have to do with the visibility - there is something on the other side of the wall that is visible, but wasn't visible before you opened a section. This reveals to the player there must be a path in that section that directly leads to the area.
+
+
+News articles
+
+Headline that says "Hedgehog predicts six more weeks of winter"
+Followed by "Just kidding. There is no sun here so there is no such thing as seasons."

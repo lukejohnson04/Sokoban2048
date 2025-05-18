@@ -186,6 +186,11 @@ generate_interaction_queue :: (state: *Dialogue_Player_State, block: Block) {
                 case 5; {
                     queue_text("Private residential property - NO LOITERING!");
                 }
+                case 6; {
+                    queue_text("Welcome to the Danger-Free Puzzle Zone!");
+                    queue_text("All of our puzzles are ethically sourced, and developed cruelty-free!");
+                    queue_text("Test your luck with our puzzles, designed so that there is no risk of getting stuck! Win a prize if you can solve one!");
+                }
             }
         }
         case 7; {

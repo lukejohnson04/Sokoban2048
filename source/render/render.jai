@@ -32,6 +32,10 @@ load_texture :: (path: string, log_errors := false) -> Texture, bool {
     return tex, true;
 }
 
+draw_rect_with_outline :: (rect: Rect, thickness: int) {
+    draw_rect_with_outline(rect, thickness, context.game_state.intermediate_vao, context.game_state.intermediate_vbo);
+}
+
 draw_rect_with_outline :: (rect: Rect, thickness: int, vao: GLuint, vbo: GLuint) {
     for 0..thickness-1 {
         draw_line(.{rect.x+it, rect.y+it}, .{rect.x+rect.w-it, rect.y+it}, vao, vbo);
