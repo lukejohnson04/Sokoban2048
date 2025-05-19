@@ -184,22 +184,22 @@ draw_radial_texture :: (source: Rect, center: Vector2, radius: float, progress: 
 draw_radial_texture :: (source: Rect, center: Vector2, radius: float, progress: float, texture_size: v2i, vao: GLuint, vbo: GLuint) {
     if progress > 1 then progress = 1;
     if progress >= 0.25 {
-        top_right_dest := Rect.{center.x, center.y - radius, xx radius, xx radius};
+        top_right_dest := Rect.{center.x, center.y - radius, radius, radius};
         top_right_source := Rect.{source.x + source.w / 2, source.y, xx (source.w/2), xx (source.h/2)};
         draw_texture(top_right_source, top_right_dest, texture_size, vao, vbo);
     }
     if progress >= 0.50 {
-        bot_right_dest := Rect.{center.x, center.y, xx radius, xx radius};
+        bot_right_dest := Rect.{center.x, center.y, radius, radius};
         bot_right_source := Rect.{source.x + source.w / 2, source.y + source.h / 2, xx (source.w/2), xx (source.h/2)};
         draw_texture(bot_right_source, bot_right_dest, texture_size, vao, vbo);
     }
     if progress >= 0.75 {
-        bot_left_dest := Rect.{xx (center.x - radius), center.y, xx radius, xx radius};
+        bot_left_dest := Rect.{xx (center.x - radius), center.y, radius, radius};
         bot_left_source := Rect.{source.x, source.y + source.h / 2, xx (source.w/2), xx (source.h/2)};
         draw_texture(bot_left_source, bot_left_dest, texture_size, vao, vbo);
     }
     if progress == 1 {
-        top_left_dest := Rect.{xx (center.x - radius), xx (center.y - radius), xx radius, xx radius};
+        top_left_dest := Rect.{xx (center.x - radius), xx (center.y - radius), radius, radius};
         top_left_source := Rect.{source.x, source.y, xx (source.w/2), xx (source.h/2)};
         draw_texture(top_left_source, top_left_dest, texture_size, vao, vbo);
         return;
@@ -286,9 +286,9 @@ draw_radial_texture :: (source: Rect, center: Vector2, radius: float, progress: 
     glEnableVertexAttribArray(1);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-    draw_type : u32 = xx ifx is_bonus_point then GL_TRIANGLE_FAN else GL_TRIANGLES;
-    point_count : u32 = xx ifx is_bonus_point then 4 else 3;
-    glDrawArrays(draw_type, 0, point_count);
+    draw_type := ifx is_bonus_point then GL_TRIANGLE_FAN else GL_TRIANGLES;
+    point_count := ifx is_bonus_point then 4 else 3;
+    glDrawArrays(xx draw_type, 0, xx point_count);
     glBindVertexArray(0);
 }
 

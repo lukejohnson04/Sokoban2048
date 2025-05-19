@@ -1,6 +1,3 @@
-2 modes to test
-Generic sokoban mode.
-Sokoban 2048 but moving left moves every block including the player left. So the player is like a crushing mechanism to crush blocks together.
 
 Goal blocks you can push around?
 Solving a goal block makes it disappear?
@@ -12,6 +9,7 @@ Timer blocks
 	Block that only exists for a certain amount of moves before it disappears
 	Block that toggles on or off every turn
 	Waste a move button mechanic?
+	Sokoban 2048 but moving left moves every block including the player left. So the player is like a crushing mechanism to crush blocks together.
 
 What is every possible way a player could waste a move?
 

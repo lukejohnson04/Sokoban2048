@@ -3,6 +3,14 @@ MAX_TEXT_LENGTH :: 1024;
 Dialogue_Node :: struct {
     text_buffer: [MAX_TEXT_LENGTH] u8;
     text_buffer_size := 0;
+
+    data_delta: Dialogue_Data_Delta;
+    type := Node_Type.DIALOGUE;
+
+    Node_Type :: enum #specified {
+        DIALOGUE :: 0;
+        DATA_DELTA :: 1;
+    }
 }
 
 Dialogue_Player_State :: struct {
@@ -18,8 +26,22 @@ Dialogue_Player_State :: struct {
 // All data for dialogue that's transient throughout the game is stored here
 Dialogue_Data :: struct {
     interaction_count: [256] [256] u16;
+    talked_to_mayor: s32;
 }
 
+Dialogue_Data_Delta :: struct {
+    variable: *s32;
+    old_value: s32;
+    new_value: s32;
+}
+
+queue_data_delta :: (variable: *s32, value: s32) {
+    node := queue_add(*context.game_state.dialogue_state.nodes);
+    node.type = .DATA_DELTA;
+    node.data_delta.variable = variable;
+    node.data_delta.old_value = variable.*;
+    node.data_delta.new_value = value;
+}
 
 // Frontend
 // Interactable blocks have a texture id and a dialogue trigger id
@@ -38,6 +60,14 @@ dialogue_update :: (using dialogue_state: *Dialogue_Player_State, input: *Input_
     }
 
     node := queue_peek(*dialogue_state.nodes);
+    while queue_is_empty(*nodes) == false && node.type == .DATA_DELTA {
+        node = queue_remove(*nodes);
+        node.data_delta.variable.* = node.data_delta.new_value;
+    }
+    if queue_is_empty(*nodes) {
+        return;
+    }
+
     if nodes.count != 0 && dialogue_state.open == false {
         dialogue_state.open = true;
         dialogue_state.timer = 0;
@@ -76,6 +106,7 @@ dialogue_queue_text :: (dialogue_state: *Dialogue_Player_State, text: string) {
     node := queue_add(*dialogue_state.nodes);
     memcpy(node.text_buffer.data, text.data, text.count);
     node.text_buffer_size = text.count;
+    node.type = .DIALOGUE;
 }
 
 generate_interaction_queue :: (state: *Dialogue_Player_State, block: Block) {
@@ -175,8 +206,6 @@ generate_interaction_queue :: (state: *Dialogue_Player_State, block: Block) {
                 }
                 case 4; {
                     queue_text("*It's a small stone tablet with writing engraved on it*");
-                    // queue_text("My love, I'm so so sorry things had to happen like this.");
-                    // queue_text("I would have gladly offered myself in your place, if I had known you would get stuck the way you did.");
                     queue_text("I know you can't see or hear me, but I am always thinking about you, and I hope you're thinking about me too.");
                     queue_text("If I had known this would have happened of course I would have done things differently.");
                     queue_text("I beg you for forgiveness and I beg God.");
@@ -190,6 +219,13 @@ generate_interaction_queue :: (state: *Dialogue_Player_State, block: Block) {
                     queue_text("Welcome to the Danger-Free Puzzle Zone!");
                     queue_text("All of our puzzles are ethically sourced, and developed cruelty-free!");
                     queue_text("Test your luck with our puzzles, designed so that there is no risk of getting stuck! Win a prize if you can solve one!");
+                }
+                case 7; {
+                    if !level.dialogue_data.talked_to_mayor {
+                        queue_text("Yowza!");
+                    } else {
+                        queue_text("Wow! You talked to the mayor?!?!");
+                    }
                 }
             }
         }
@@ -262,6 +298,7 @@ generate_interaction_queue :: (state: *Dialogue_Player_State, block: Block) {
                     queue_text("Actually, we don't get visitors at all!");
                     queue_text("I haven't seen a single new face around here since my first turn in office!");
                     queue_text("But don't worry, we don't bite. I hope you enjoy your stay here in Tiletown!");
+                    queue_data_delta(*level.dialogue_data.talked_to_mayor, 1);
                 }
             }
         }
