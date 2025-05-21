@@ -36,7 +36,7 @@ load_save :: (log_errors := true) -> bool {
         return false;
     }
 
-    assert(data.count >= size_of(Level));
+    assert(data.count <= size_of(Level));
     memcpy(*context.game_state.level, data.data, size_of(Level));
 
     return true;

@@ -16,6 +16,7 @@ Dialogue_Node :: struct {
 Text_Buffer :: struct {
     memory: [MAX_TEXT_LENGTH] u8;
     size := 0;
+    flip_open := false;
 }
 
 DIALOGUE_TIMER_INTERVAL_REGULAR :: 0.05;
@@ -32,7 +33,7 @@ Dialogue_Player_State :: struct {
 
 // All data for dialogue that's transient throughout the game is stored here
 Dialogue_Data :: struct {
-    interaction_count: [256] [256] u16;
+    interaction_count: [256] [256] s32;
     talked_to_mayor: s32;
 }
 
@@ -40,14 +41,6 @@ Dialogue_Data_Delta :: struct {
     variable: *s32;
     old_value: s32;
     new_value: s32;
-}
-
-queue_data_delta :: (variable: *s32, value: s32) {
-    // node := queue_add(*context.game_state.dialogue_state.nodes);
-    // node.type = .DATA_DELTA;
-    // node.data_delta.variable = variable;
-    // node.data_delta.old_value = variable.*;
-    // node.data_delta.new_value = value;
 }
 
 
@@ -106,6 +99,10 @@ generate_interaction_queue :: (state: *Dialogue_Player_State, block: Block) {
     top := turn_memory.curr;
 
     queue_text :: (text: string) #expand {
+        if new_interaction == false || text.count == 0 {
+            top.text.flip_open = true;
+        }
+
         if new_interaction == false {
             new_interaction = true;
         }
@@ -115,6 +112,25 @@ generate_interaction_queue :: (state: *Dialogue_Player_State, block: Block) {
         assert(text.count < MAX_TEXT_LENGTH);
         memcpy(top.text.memory.data, text.data, text.count);
         top.text.size = text.count;
+
+        top += 1;
+        top.next = null;
+        top.prev = top - 1;
+    }
+
+    queue_dialogue_data_change :: (addr: *s32, value: s32) #expand {
+        if new_interaction == false {
+            new_interaction = true;
+        }
+        top.type = .DIALOGUE_CHANGE;
+        top.next = top + 1;
+        top.prev = top - 1;
+
+        delta : Dialogue_Data_Delta;
+        delta.variable = addr;
+        delta.old_value = addr.*;
+        delta.new_value = value;
+        top.dialogue_delta = delta;
 
         top += 1;
         top.next = null;
@@ -298,7 +314,7 @@ generate_interaction_queue :: (state: *Dialogue_Player_State, block: Block) {
                     queue_text("Actually, we don't get visitors at all!");
                     queue_text("I haven't seen a single new face around here since my first turn in office!");
                     queue_text("But don't worry, we don't bite. I hope you enjoy your stay here in Tiletown!");
-                    queue_data_delta(*level.dialogue_data.talked_to_mayor, 1);
+                    queue_dialogue_data_change(*level.dialogue_data.talked_to_mayor, 1);
                 }
             }
         }
@@ -311,7 +327,8 @@ generate_interaction_queue :: (state: *Dialogue_Player_State, block: Block) {
     }
     
     if new_interaction {
-        level.dialogue_data.interaction_count[block.number][block.interaction_id] += 1;
+        addr := *level.dialogue_data.interaction_count[block.number][block.interaction_id];
+        queue_dialogue_data_change(addr, addr.* + 1);
         queue_text("");
     }
 

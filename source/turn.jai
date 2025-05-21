@@ -7,12 +7,14 @@ Turn_Data :: struct {
     union {
         move_delta: Move_Delta_Data;
         text: Text_Buffer;
+        dialogue_delta: Dialogue_Data_Delta;
     }
 
     Turn_Type :: enum {
         NONE;
         MOVE;
         DIALOGUE;
+        DIALOGUE_CHANGE;
     }
 }
 
@@ -42,14 +44,21 @@ apply_turn :: () {
         }
     } else if turn_memory.curr.type == .DIALOGUE {
         // Dialogue
-        if turn_memory.curr.text.size == 0 {
+        if turn_memory.curr.text.flip_open {
             dialogue_state.open = !dialogue_state.open;
-        } else {
+        }
+
+        if turn_memory.curr.text.size > 0 {
             dialogue_state.buffer = *turn_memory.curr.text;
-            dialogue_state.open = true;
             dialogue_state.index = 0;
             dialogue_state.timer = 0;
         }
+    } else if turn_memory.curr.type == .DIALOGUE_CHANGE {
+        delta := turn_memory.curr.dialogue_delta;
+        delta.variable.* = delta.new_value;
+        turn_memory.curr += 1;
+        apply_turn();
+        return;
     }
     turn_memory.curr += 1;
 }
@@ -60,6 +69,7 @@ undo_turn :: () {
         print("Can't go back any further!\n");
         return;
     }
+    print("Prev: %, Curr: %, Next: %\n", turn_memory.curr.prev.type, turn_memory.curr.type, turn_memory.curr.next.type);
     turn_memory.curr -= 1;
     if turn_memory.curr.type == .MOVE {
         level.player_pos = turn_memory.curr.move_delta.old_player_pos;
@@ -72,17 +82,29 @@ undo_turn :: () {
             level.grid[delta.coord.x][delta.coord.y] = delta.old_value;
         }
     } else if turn_memory.curr.type == .DIALOGUE {
-        // Dialogue
-        if turn_memory.curr.text.size == 0 {
+
+        // NOTE: This could be error prone to have it compare with .MOVE if we add other move types later
+        // A solution would be to add a "flip open" flag in the text buffer or somewhere in the Turn_Data struct
+        if turn_memory.curr.text.flip_open {
             dialogue_state.open = !dialogue_state.open;
         }
-        if turn_memory.curr.prev.type != .DIALOGUE {
-            dialogue_state.open = false;
-        } else {
-            dialogue_state.buffer = *turn_memory.curr.prev.text;
-            dialogue_state.open = true;
+
+        if dialogue_state.open {
+            // Find last buffer
+            iter := turn_memory.curr;
+            while iter != null {
+                iter = iter.prev;
+                if iter.type == .DIALOGUE {
+                    dialogue_state.buffer = *iter.text;
+                    break;
+                }
+            }
             dialogue_state.index = dialogue_state.buffer.size;
         }
+    } else if turn_memory.curr.type == .DIALOGUE_CHANGE {
+        delta := turn_memory.curr.dialogue_delta;
+        delta.variable.* = delta.old_value;
+        undo_turn();
     }
 }
 

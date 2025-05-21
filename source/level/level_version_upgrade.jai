@@ -1,4 +1,9 @@
 
+Old_Dialogue_Data :: struct {
+    interaction_count: [256] [256] u16;
+    talked_to_mayor: s32;
+}
+
 Old_Level :: struct {
     MAX_WIDTH :: 256;
     MAX_HEIGHT :: 256;
@@ -11,6 +16,8 @@ Old_Level :: struct {
 
     name : [MAX_LEVEL_NAME_LENGTH]u8;
     id : u32 = 0;
+
+    dialogue_data: Old_Dialogue_Data;
 }
 
 
@@ -28,6 +35,7 @@ one_time_conversion :: (level_name: string) {
 level_format_converter :: (level: *Level, old_level: *Old_Level) {
     level.* = .{};
     memcpy(level, old_level, size_of(Old_Level));
+    level.dialogue_data = .{};
 
     // level.player_pos = old_level.player_pos;
     // level.player_spawn_pos = old_level.player_spawn_pos;
