@@ -33,7 +33,6 @@ clear_turn_memory :: (mem: *Turn_Memory) {
 apply_turn :: () {
     using context.game_state;
     if turn_memory.curr.next == null {
-        print("Can't go forward any further!\n");
         return;
     }
     if turn_memory.curr.type == .MOVE {
@@ -66,10 +65,8 @@ apply_turn :: () {
 undo_turn :: () {
     using context.game_state;
     if turn_memory.curr.prev == null {
-        print("Can't go back any further!\n");
         return;
     }
-    print("Prev: %, Curr: %, Next: %\n", turn_memory.curr.prev.type, turn_memory.curr.type, turn_memory.curr.next.type);
     turn_memory.curr -= 1;
     if turn_memory.curr.type == .MOVE {
         level.player_pos = turn_memory.curr.move_delta.old_player_pos;

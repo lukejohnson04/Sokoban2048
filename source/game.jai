@@ -52,8 +52,9 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     }
 
     moved_this_turn := false;
+    controls(input);
 
-    if input.just_pressed[SDL_SCANCODE_R] {
+    if do_action(.UNDO) {
         moved_this_turn = true;
         undo_turn();
     }
@@ -62,13 +63,13 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         // This is a shocking amount of code for how simple this task is
         target_dir := v2i.{0, 0};
         move := v2i.{0, 0};
-        if input.is_pressed[SDL_SCANCODE_LEFT] || input.is_pressed[SDL_SCANCODE_A] {
+        if do_action(.LEFT) {
             target_dir.x = -1;
-        } else if input.is_pressed[SDL_SCANCODE_RIGHT] || input.is_pressed[SDL_SCANCODE_D] {
+        } else if do_action(.RIGHT) {
             target_dir.x = 1;
-        } if input.is_pressed[SDL_SCANCODE_UP] || input.is_pressed[SDL_SCANCODE_W] {
+        } if do_action(.UP) {
             target_dir.y = -1;
-        } else if input.is_pressed[SDL_SCANCODE_DOWN] || input.is_pressed[SDL_SCANCODE_S] {
+        } else if do_action(.DOWN) {
             target_dir.y = 1;
         }
         
@@ -115,7 +116,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
             }
         }
 
-        if input.just_pressed[SDL_SCANCODE_Z] {
+        if do_action(.REDO) {
             moved_this_turn = true;
             apply_turn();
         }
@@ -420,6 +421,7 @@ VSYNC :: true;
 #load "camera.jai";
 #load "intrinsics.jai";
 #load "game_state.jai";
+#load "controls.jai";
 
 #import "Windows";
 #import "Basic";

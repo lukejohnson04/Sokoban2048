@@ -64,7 +64,7 @@ dialogue_update :: (dialogue_state: *Dialogue_Player_State, input: *Input_State)
     }
 
     line_finished := dialogue_state.index == dialogue_state.buffer.size;
-    if input.just_pressed[SDL_SCANCODE_Z] {
+    if do_action(.REDO) {
         if line_finished {
             apply_turn();
         } else {
