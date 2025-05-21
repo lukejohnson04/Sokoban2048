@@ -47,9 +47,18 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         return 0;
     }
 
-    if editor.editing_level == false && just_got_photograph == false && dialogue_state.open == false {
-        moved := false;
+    if input.just_pressed[SDL_SCANCODE_GRAVE] {
+        editor.enabled = !editor.enabled;
+    }
 
+    moved_this_turn := false;
+
+    if input.just_pressed[SDL_SCANCODE_R] {
+        moved_this_turn = true;
+        undo_turn();
+    }
+
+    if !moved_this_turn && editor.editing_level == false && just_got_photograph == false && dialogue_state.open == false {
         // This is a shocking amount of code for how simple this task is
         target_dir := v2i.{0, 0};
         move := v2i.{0, 0};
@@ -98,7 +107,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
             } else {
                 rewind_meter += FRAME_TIME;
                 if rewind_meter > REWIND_TIME {
-                    moved = true;
+                    moved_this_turn = true;
                     rewind_meter = 0;
                     rewinding = false;
                     goto_last_checkpoint();
@@ -106,23 +115,15 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
             }
         }
 
-        if input.just_pressed[SDL_SCANCODE_R] {
-            moved = true;
-            undo_turn();
-        }
         if input.just_pressed[SDL_SCANCODE_Z] {
-            moved = true;
+            moved_this_turn = true;
             apply_turn();
-        }
-
-        if input.just_pressed[SDL_SCANCODE_GRAVE] {
-            editor.enabled = !editor.enabled;
         }
 
         if move != .{0, 0} {
             success, combines_block, activates_goal_block := move_player(move);
             if success {
-                moved = true;
+                moved_this_turn = true;
                 //play_sound_effect(footsteps[move_number % footsteps.count]);
                 if combines_block {
                     if activates_goal_block {
@@ -136,15 +137,15 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
                 }
             }
         }
-
-        if moved {
-            vfield_generate_flood_fill(*level, field);
-            generate_level_mesh();
-        }
     }
     
-    if dialogue_state.open || dialogue_state.nodes.count > 0 {
+    if dialogue_state.open {
         dialogue_update(*dialogue_state, input);
+    }
+
+    if moved_this_turn {
+        vfield_generate_flood_fill(*level, field);
+        generate_level_mesh();
     }
 
     if just_got_photograph && Mix_Playing(0) == 0 {
@@ -367,7 +368,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         shader_uniform(text_shader, "color", .{1, 1, 1, 1});
         
         str: string;
-        str.data = queue_peek(*dialogue_state.nodes).text_buffer.data;
+        str.data = dialogue_state.buffer.memory.data;
         str.count = dialogue_state.index;
         draw_text(str, .{64, 100}, *font_m5x7, intermediate_vao, intermediate_vbo, WINDOW_WIDTH - 200);
     }

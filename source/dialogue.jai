@@ -13,12 +13,19 @@ Dialogue_Node :: struct {
     }
 }
 
+Text_Buffer :: struct {
+    memory: [MAX_TEXT_LENGTH] u8;
+    size := 0;
+}
+
+DIALOGUE_TIMER_INTERVAL_REGULAR :: 0.05;
+DIALOGUE_TIMER_INTERVAL_FAST :: 0.02;
+
 Dialogue_Player_State :: struct {
-    nodes : Queue(Dialogue_Node, 1000);
-    history : Stack(Dialogue_Node, 1000);
+    buffer: *Text_Buffer;
     index := 0;
     timer : float32;
-    timer_interval : float32 = 0.05;
+    timer_interval : float32 = DIALOGUE_TIMER_INTERVAL_REGULAR;
 
     open := false;
 }
@@ -36,11 +43,11 @@ Dialogue_Data_Delta :: struct {
 }
 
 queue_data_delta :: (variable: *s32, value: s32) {
-    node := queue_add(*context.game_state.dialogue_state.nodes);
-    node.type = .DATA_DELTA;
-    node.data_delta.variable = variable;
-    node.data_delta.old_value = variable.*;
-    node.data_delta.new_value = value;
+    // node := queue_add(*context.game_state.dialogue_state.nodes);
+    // node.type = .DATA_DELTA;
+    // node.data_delta.variable = variable;
+    // node.data_delta.old_value = variable.*;
+    // node.data_delta.new_value = value;
 }
 
 
@@ -49,23 +56,13 @@ queue_data_delta :: (variable: *s32, value: s32) {
 // When you interact with a tile, the counter for the specific block and interaction id
 // is incremented. For example a tile with number 5 and interaction id 3 would be incremented.
 // To do this, we need a way to hash both numbers together with zero collisions.
-dialogue_update :: (using dialogue_state: *Dialogue_Player_State, input: *Input_State) {
-    if queue_is_empty(*nodes) {
-        open = false;
+dialogue_update :: (dialogue_state: *Dialogue_Player_State, input: *Input_State) {
+    if dialogue_state.buffer == null {
+        dialogue_state.open = false;
         return;
     }
 
-    node := queue_peek(*dialogue_state.nodes);
-    while queue_is_empty(*nodes) == false && node.type == .DATA_DELTA {
-        node = queue_remove(*nodes);
-        stack_push(*history, node);
-        node.data_delta.variable.* = node.data_delta.new_value;
-    }
-    if queue_is_empty(*nodes) {
-        return;
-    }
-
-    if nodes.count != 0 && dialogue_state.open == false {
+    if dialogue_state.buffer.size != 0 && dialogue_state.open == false {
         dialogue_state.open = true;
         dialogue_state.timer = 0;
         dialogue_state.index = 0;
@@ -73,39 +70,32 @@ dialogue_update :: (using dialogue_state: *Dialogue_Player_State, input: *Input_
         return;
     }
 
-    line_finished := dialogue_state.index == node.text_buffer_size;
+    line_finished := dialogue_state.index == dialogue_state.buffer.size;
     if input.just_pressed[SDL_SCANCODE_Z] {
         if line_finished {
-            top := queue_remove(*nodes);
-            stack_push(*history, top);
-        
-            if queue_is_empty(*nodes) {
-                open = false;
-                return;                
-            } else {
-                dialogue_state.timer = 0;
-                dialogue_state.index = 0;
-            }
+            apply_turn();
         } else {
-            dialogue_state.index = node.text_buffer_size;
+            dialogue_state.index = dialogue_state.buffer.size;
             return;
         }
     }
 
-    if dialogue_state.index < node.text_buffer_size {
+    if dialogue_state.index < dialogue_state.buffer.size {
+        using dialogue_state;
         timer += FRAME_TIME;
         if timer > timer_interval {
             timer -= timer_interval;
-            dialogue_state.index += 1;
+            index += 1;
         }
     }
 }
 
 dialogue_queue_text :: (dialogue_state: *Dialogue_Player_State, text: string) {
-    node := queue_add(*dialogue_state.nodes);
-    memcpy(node.text_buffer.data, text.data, text.count);
-    node.text_buffer_size = text.count;
-    node.type = .DIALOGUE;
+
+    // node := queue_add(*dialogue_state.nodes);
+    // memcpy(node.text_buffer.data, text.data, text.count);
+    // node.text_buffer_size = text.count;
+    // node.type = .DIALOGUE;
 }
 
 generate_interaction_queue :: (state: *Dialogue_Player_State, block: Block) {
@@ -113,10 +103,22 @@ generate_interaction_queue :: (state: *Dialogue_Player_State, block: Block) {
     assert(block.type == .INTERACTABLE);
 
     new_interaction := false;
+    top := turn_memory.curr;
 
     queue_text :: (text: string) #expand {
-        dialogue_queue_text(state, text);
-        new_interaction = true;
+        if new_interaction == false {
+            new_interaction = true;
+        }
+        top.type = .DIALOGUE;
+        top.next = top + 1;
+
+        assert(text.count < MAX_TEXT_LENGTH);
+        memcpy(top.text.memory.data, text.data, text.count);
+        top.text.size = text.count;
+
+        top += 1;
+        top.next = null;
+        top.prev = top - 1;
     }
 
     Tile_Name :: enum u8 #specified {
@@ -310,6 +312,7 @@ generate_interaction_queue :: (state: *Dialogue_Player_State, block: Block) {
     
     if new_interaction {
         level.dialogue_data.interaction_count[block.number][block.interaction_id] += 1;
+        queue_text("");
     }
 
     // Ideas

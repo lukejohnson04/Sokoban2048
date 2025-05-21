@@ -35,8 +35,8 @@ move_player :: (move: v2i) -> success: bool, combines_block: bool, activates_goa
     if new_pos.x < 0 || new_pos.x >= level.dimensions.x || new_pos.y < 0 || new_pos.y >= level.dimensions.y {
         return false, false, false;
     } else if level.grid[new_pos.x][new_pos.y].type == .INTERACTABLE {
-        queue_size := dialogue_state.nodes.count;
         generate_interaction_queue(*dialogue_state, level.grid[new_pos.x][new_pos.y]);
+        apply_turn();
         return true, false, false;
     } else if level.grid[new_pos.x][new_pos.y].type == .NONE || level.grid[new_pos.x][new_pos.y].type == .BLOCK_BARRIER {
         success = true;

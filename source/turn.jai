@@ -1,26 +1,23 @@
 
 Turn_Data :: struct {
-    type: Turn_Type;
+    type: Turn_Type = .NONE;
     prev: *Turn_Data;
     next: *Turn_Data;
 
     union {
         move_delta: Move_Delta_Data;
-        // text: Text_Buffer;
-    }
-
-    Text_Buffer :: struct {
-        text_buffer: [MAX_TEXT_LENGTH] u8;
-        text_buffer_size := 0;
+        text: Text_Buffer;
     }
 
     Turn_Type :: enum {
+        NONE;
         MOVE;
-        // DIALOGUE;
+        DIALOGUE;
     }
 }
 
 MAX_TURN_UNDO :: 5000;
+
 Turn_Memory :: struct {
     turns: [MAX_TURN_UNDO] Turn_Data;
     curr: *Turn_Data;
@@ -43,6 +40,16 @@ apply_turn :: () {
             delta := turn_memory.curr.move_delta.deltas[it];
             level.grid[delta.coord.x][delta.coord.y] = delta.new_value;
         }
+    } else if turn_memory.curr.type == .DIALOGUE {
+        // Dialogue
+        if turn_memory.curr.text.size == 0 {
+            dialogue_state.open = !dialogue_state.open;
+        } else {
+            dialogue_state.buffer = *turn_memory.curr.text;
+            dialogue_state.open = true;
+            dialogue_state.index = 0;
+            dialogue_state.timer = 0;
+        }
     }
     turn_memory.curr += 1;
 }
@@ -63,6 +70,18 @@ undo_turn :: () {
         for #v2 < 0..turn_memory.curr.move_delta.count-1 {
             delta := turn_memory.curr.move_delta.deltas[it];
             level.grid[delta.coord.x][delta.coord.y] = delta.old_value;
+        }
+    } else if turn_memory.curr.type == .DIALOGUE {
+        // Dialogue
+        if turn_memory.curr.text.size == 0 {
+            dialogue_state.open = !dialogue_state.open;
+        }
+        if turn_memory.curr.prev.type != .DIALOGUE {
+            dialogue_state.open = false;
+        } else {
+            dialogue_state.buffer = *turn_memory.curr.prev.text;
+            dialogue_state.open = true;
+            dialogue_state.index = dialogue_state.buffer.size;
         }
     }
 }
