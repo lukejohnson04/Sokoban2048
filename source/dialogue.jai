@@ -1,4 +1,4 @@
-MAX_TEXT_LENGTH :: 1024;
+MAX_TEXT_LENGTH :: 256;
 
 Dialogue_Node :: struct {
     text_buffer: [MAX_TEXT_LENGTH] u8;
@@ -43,16 +43,12 @@ queue_data_delta :: (variable: *s32, value: s32) {
     node.data_delta.new_value = value;
 }
 
+
 // Frontend
 // Interactable blocks have a texture id and a dialogue trigger id
-// block.type = .INTERACTABLE;
-// block.number = 5;
-// block.interaction_id := hash_string("Guy");
-
 // When you interact with a tile, the counter for the specific block and interaction id
 // is incremented. For example a tile with number 5 and interaction id 3 would be incremented.
 // To do this, we need a way to hash both numbers together with zero collisions.
-
 dialogue_update :: (using dialogue_state: *Dialogue_Player_State, input: *Input_State) {
     if queue_is_empty(*nodes) {
         open = false;
@@ -134,8 +130,7 @@ generate_interaction_queue :: (state: *Dialogue_Player_State, block: Block) {
     if block.interaction_id == 10_000 {
         queue_text("Game has been saved.");
         save_game();
-        stack_clear(*move_stack);
-        stack_clear(*checkpoint_stack);
+        clear_turn_memory(*turn_memory);
         return;
     }
     assert(block.interaction_id < 256);

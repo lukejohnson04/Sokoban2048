@@ -48,7 +48,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     }
 
     if editor.editing_level == false && just_got_photograph == false && dialogue_state.open == false {
-        starting_move_number := move_number;
+        moved := false;
 
         // This is a shocking amount of code for how simple this task is
         target_dir := v2i.{0, 0};
@@ -98,6 +98,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
             } else {
                 rewind_meter += FRAME_TIME;
                 if rewind_meter > REWIND_TIME {
+                    moved = true;
                     rewind_meter = 0;
                     rewinding = false;
                     goto_last_checkpoint();
@@ -106,7 +107,12 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         }
 
         if input.just_pressed[SDL_SCANCODE_R] {
-            move_undo();
+            moved = true;
+            undo_turn();
+        }
+        if input.just_pressed[SDL_SCANCODE_Z] {
+            moved = true;
+            apply_turn();
         }
 
         if input.just_pressed[SDL_SCANCODE_GRAVE] {
@@ -114,9 +120,10 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         }
 
         if move != .{0, 0} {
-            success, combines_block, activates_goal_block := player_move(move);
+            success, combines_block, activates_goal_block := move_player(move);
             if success {
-                play_sound_effect(footsteps[move_number % footsteps.count]);
+                moved = true;
+                //play_sound_effect(footsteps[move_number % footsteps.count]);
                 if combines_block {
                     if activates_goal_block {
                         play_sound_effect(note_echo);
@@ -130,7 +137,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
             }
         }
 
-        if move_number != starting_move_number {
+        if moved {
             vfield_generate_flood_fill(*level, field);
             generate_level_mesh();
         }

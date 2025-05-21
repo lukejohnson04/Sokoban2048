@@ -59,11 +59,10 @@ Game_State :: struct {
     rewinding : bool;
     rewind_meter : float32;
 
-    move_stack : Move_Stack;
     move_repeat_timer : float32;
     move_direction : v2i;
-    move_number : int;
-    checkpoint_stack : Move_Checkpoint_Stack;
+    turn_memory: Turn_Memory;
+
 
     resource_check_timer : float32;
 
@@ -144,7 +143,7 @@ on_startup :: () {
     note_normal = Mix_LoadWAV("data/audio/note_normal.ogg");
     note_echo = Mix_LoadWAV("data/audio/note_echo.ogg");
 
-
+    turn_memory.curr = *turn_memory.turns[0];
 
     for 0..6 {
         // print("Salad: %\n", 5);

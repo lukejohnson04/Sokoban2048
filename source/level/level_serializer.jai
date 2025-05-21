@@ -79,7 +79,7 @@ load_ini_file :: () -> bool {
     editor = ini_data.editor;
     camera = ini_data.camera;
 
-    move_stack = .{};
+    clear_turn_memory(*turn_memory);
     return true;
 }
 

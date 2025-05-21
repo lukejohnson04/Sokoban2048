@@ -89,7 +89,7 @@ draw_editor :: () {
     ImGui.SameLine();
     if ImGui.Button("Load Level") {
         loaded = load_level(*level, xx editor.load_level_field, *game_state.field);
-        game_state.move_stack = .{};
+        clear_turn_memory(*turn_memory);
         if loaded {
             for 0..editor.load_level_field.count-1 {
                 editor.load_level_field[it] = 0;
@@ -103,7 +103,7 @@ draw_editor :: () {
             editor.editing_level = true;
             loaded = load_level(*level, xx level.name, *game_state.field);
             if loaded {
-                game_state.move_stack = .{};
+                clear_turn_memory(*turn_memory);
             }
         }
         ImGui.SameLine();
@@ -111,7 +111,7 @@ draw_editor :: () {
             if ImGui.Button("Restart Level") {
                 loaded = load_level(*level, xx level.name, *game_state.field);
                 if loaded {
-                    game_state.move_stack = .{};
+                    clear_turn_memory(*turn_memory);
                 }
             }
         }
@@ -141,7 +141,7 @@ draw_editor :: () {
                 loaded = load_level(*level, xx level.name, *game_state.field);
                 camera.zoom = 1;
                 if loaded {
-                    game_state.move_stack = .{};
+                    clear_turn_memory(*turn_memory);
                 }
                 editor.editing_level = false;
             }

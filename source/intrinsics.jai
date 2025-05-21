@@ -97,6 +97,12 @@ Queue :: struct($T: Type, $MAX_SIZE: s64 = 50) {
     back: s64;
 }
 
+queue_clear :: (queue: *Queue($T, $MAX_SIZE)) {
+    queue.count = 0;
+    queue.front = 0;
+    queue.back = 0;
+}
+
 queue_add :: (using queue: *Queue($T, $MAX_SIZE), value: T) {
     assert(count < MAX_SIZE);
     memory[back] = value;

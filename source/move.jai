@@ -1,3 +1,4 @@
+
 Move_Delta :: struct {
     coord: v2i;
     old_value: Block;
@@ -10,18 +11,7 @@ Move_Delta_Data :: struct {
     deltas: [MAX_MOVE_DELTAS] Move_Delta;
     old_player_pos: v2i;
     new_player_pos: v2i;
-    added_text: s32 = -1;
-    text_advanced: s32 = -1;
 }
-
-MAX_UNDO :: 2000;
-Move_Stack :: Stack_Circular(Move_Delta_Data, MAX_UNDO);
-
-
-// Each entry represents how many moves since the last checkpoint;
-MAX_CHECKPOINT_COUNT :: 30;
-Move_Checkpoint_Stack :: Stack_Circular(int, MAX_CHECKPOINT_COUNT);
-
 
 add_move_delta :: (data: *Move_Delta_Data) -> *Move_Delta {
     assert(data.count < MAX_MOVE_DELTAS);
@@ -29,7 +19,8 @@ add_move_delta :: (data: *Move_Delta_Data) -> *Move_Delta {
     return *data.deltas[data.count - 1];
 }
 
-player_move :: (move: v2i) -> success: bool, combines_block: bool, activates_goal_block: bool {
+
+move_player :: (move: v2i) -> success: bool, combines_block: bool, activates_goal_block: bool {
     using context.game_state;
     using level;
     new_pos := player_pos + move;
@@ -46,8 +37,6 @@ player_move :: (move: v2i) -> success: bool, combines_block: bool, activates_goa
     } else if level.grid[new_pos.x][new_pos.y].type == .INTERACTABLE {
         queue_size := dialogue_state.nodes.count;
         generate_interaction_queue(*dialogue_state, level.grid[new_pos.x][new_pos.y]);
-        delta_data.added_text += xx (dialogue_state.nodes.count - queue_size);
-        add_move_delta(*delta_data);
         return true, false, false;
     } else if level.grid[new_pos.x][new_pos.y].type == .NONE || level.grid[new_pos.x][new_pos.y].type == .BLOCK_BARRIER {
         success = true;
@@ -167,81 +156,22 @@ player_move :: (move: v2i) -> success: bool, combines_block: bool, activates_goa
     }
 
     if success {
-        if activates_goal_block {
-            // Save a checkpoint for the move immediately before solving a block
-            stack_push(*checkpoint_stack, move_number);
-            stack_push(*checkpoint_stack, move_number+1);
-        }
         delta_data.new_player_pos = new_pos;
-        stack_push(*move_stack, delta_data);
-        move_number += 1;
+
+        turn_memory.curr.type = .MOVE;
+        turn_memory.curr.move_delta = delta_data;
+        turn_memory.curr.next = turn_memory.curr + 1;
+        turn_memory.curr += 1;
+        turn_memory.curr.prev = turn_memory.curr - 1;
+        turn_memory.curr.next = null;
     }
 
     return success, combines_block, activates_goal_block;
 }
 
-move_undo :: () {
-    using context.game_state;
-    // Check if it's simple text undo
-
-    if stack_is_empty(*move_stack) return;
-
-    delta_data := stack_pop(*move_stack);
-    level.player_pos = delta_data.old_player_pos;
-    
-    // Since each move delta represents a single tile change, the order they're implemented matters.
-    // For example, we could change a block to air, and then later change that same block to another block.
-    // We could calculate a simplified delta list when making a move, but we can also just reverse the
-    // Order we undo them, which works just fine.
-    for #v2 < 0..delta_data.count-1 {
-        delta := delta_data.deltas[it];
-        level.grid[delta.coord.x][delta.coord.y] = delta.old_value;
-    }
-
-    // Check if it undoes text enqueue
-    // if delta_data.added_text != -1 {
-        
-    // }
-    
-    move_number -= 1;
-
-    // Remove checkpoints if we just undid one
-    while stack_is_empty(*checkpoint_stack) == false &&
-            stack_peek(*checkpoint_stack) > move_number {
-        stack_pop(*checkpoint_stack);
-    }
-}
-
 goto_last_checkpoint :: () -> bool {
     using context.game_state;
-
-    if stack_is_empty(*checkpoint_stack) {
-        print("Checkpoint stack empty\n");
-        return false;
-    }
-
-    last_checkpoint := stack_peek(*checkpoint_stack);
-    // Permanently delete a checkpoint if we go back 1 extra checkpoint;
-    if move_number == last_checkpoint {
-        stack_pop(*checkpoint_stack);
-        return goto_last_checkpoint();
-    }
-
-    moves_since_last := move_number - last_checkpoint;
-    if moves_since_last > move_stack.count {
-        while (stack_is_empty(*checkpoint_stack) == false) {
-            stack_pop(*checkpoint_stack);
-        }
-        print("Checkpoint is too far back\n");
-        return false;
-    }
-
-    for 0..moves_since_last-1 {
-        move_undo();
-    }
-    move_number = last_checkpoint;
-
-    return true;
+    return false;
 }
 
 
@@ -295,3 +225,5 @@ controls :: (input: *Input_State) {
         }
     }
 }
+
+#load "turn.jai";
