@@ -10,6 +10,8 @@ Move_Delta_Data :: struct {
     deltas: [MAX_MOVE_DELTAS] Move_Delta;
     old_player_pos: v2i;
     new_player_pos: v2i;
+    added_text: s32 = -1;
+    text_advanced: s32 = -1;
 }
 
 MAX_UNDO :: 2000;
@@ -27,14 +29,14 @@ add_move_delta :: (data: *Move_Delta_Data) -> *Move_Delta {
     return *data.deltas[data.count - 1];
 }
 
-player_move :: (move: v2i) -> bool, bool, bool {
+player_move :: (move: v2i) -> success: bool, combines_block: bool, activates_goal_block: bool {
     using context.game_state;
     using level;
     new_pos := player_pos + move;
 
-    activates_goal_block := false;
-    combines_block := false;
     success := false;
+    combines_block := false;
+    activates_goal_block := false;
 
     delta_data : Move_Delta_Data;
     delta_data.old_player_pos = player_pos;
@@ -42,7 +44,10 @@ player_move :: (move: v2i) -> bool, bool, bool {
     if new_pos.x < 0 || new_pos.x >= level.dimensions.x || new_pos.y < 0 || new_pos.y >= level.dimensions.y {
         return false, false, false;
     } else if level.grid[new_pos.x][new_pos.y].type == .INTERACTABLE {
+        queue_size := dialogue_state.nodes.count;
         generate_interaction_queue(*dialogue_state, level.grid[new_pos.x][new_pos.y]);
+        delta_data.added_text += xx (dialogue_state.nodes.count - queue_size);
+        add_move_delta(*delta_data);
         return true, false, false;
     } else if level.grid[new_pos.x][new_pos.y].type == .NONE || level.grid[new_pos.x][new_pos.y].type == .BLOCK_BARRIER {
         success = true;
@@ -177,6 +182,8 @@ player_move :: (move: v2i) -> bool, bool, bool {
 
 move_undo :: () {
     using context.game_state;
+    // Check if it's simple text undo
+
     if stack_is_empty(*move_stack) return;
 
     delta_data := stack_pop(*move_stack);
@@ -190,6 +197,11 @@ move_undo :: () {
         delta := delta_data.deltas[it];
         level.grid[delta.coord.x][delta.coord.y] = delta.old_value;
     }
+
+    // Check if it undoes text enqueue
+    // if delta_data.added_text != -1 {
+        
+    // }
     
     move_number -= 1;
 

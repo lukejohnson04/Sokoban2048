@@ -14,14 +14,14 @@ Dialogue_Node :: struct {
 }
 
 Dialogue_Player_State :: struct {
-    nodes : Queue(Dialogue_Node, 64);
+    nodes : Queue(Dialogue_Node, 1000);
+    history : Stack(Dialogue_Node, 1000);
     index := 0;
     timer : float32;
     timer_interval : float32 = 0.05;
 
     open := false;
 }
-
 
 // All data for dialogue that's transient throughout the game is stored here
 Dialogue_Data :: struct {
@@ -62,6 +62,7 @@ dialogue_update :: (using dialogue_state: *Dialogue_Player_State, input: *Input_
     node := queue_peek(*dialogue_state.nodes);
     while queue_is_empty(*nodes) == false && node.type == .DATA_DELTA {
         node = queue_remove(*nodes);
+        stack_push(*history, node);
         node.data_delta.variable.* = node.data_delta.new_value;
     }
     if queue_is_empty(*nodes) {
@@ -79,7 +80,9 @@ dialogue_update :: (using dialogue_state: *Dialogue_Player_State, input: *Input_
     line_finished := dialogue_state.index == node.text_buffer_size;
     if input.just_pressed[SDL_SCANCODE_Z] {
         if line_finished {
-            queue_remove(*nodes);
+            top := queue_remove(*nodes);
+            stack_push(*history, top);
+        
             if queue_is_empty(*nodes) {
                 open = false;
                 return;                
