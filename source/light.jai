@@ -4,6 +4,7 @@ Light :: struct {
 
     shadow_buffer: Framebuffer;
     light_buffer: Framebuffer;
+
     initialized := false;
 }
 
@@ -17,6 +18,15 @@ init_light :: (light: *Light, pos: Vector2, radius: float) {
         light.shadow_buffer = create_framebuffer(xx size, xx size);
         light.light_buffer = create_framebuffer(xx size, xx size);
     }    
+}
+
+get_light_rect :: (light: Light) -> Rect {
+    rect: Rect;
+    rect.x = light.pos.x - light.radius;
+    rect.y = light.pos.y - light.radius;
+    rect.w = light.radius * 2;
+    rect.h = light.radius * 2;
+    return rect;
 }
 
 // Returns every point to draw triangle strips of

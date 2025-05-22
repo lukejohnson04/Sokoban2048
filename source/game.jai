@@ -266,7 +266,6 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
 
     } else {
         // Lighting
-
         vertices: [..] Vertex(.UV_DISABLED);
         vertices.allocator = temp;
         array_add(*vertices, .{player_light.pos.x, player_light.pos.y, 0});
@@ -316,48 +315,57 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
             glBindBuffer(GL_ARRAY_BUFFER, 0);
             glDrawArrays(GL_TRIANGLE_FAN, 0, xx point_count);
 
-            set_framebuffer(*player_light.light_buffer);
+            set_framebuffer(*world_mesh.light_buffer);
             clear_framebuffer(0, 0, 0, 0);
+
+            use_shader(texture_shader);
+            shader_uniform(texture_shader, "view", view);
             use_shader(mask_shader);
             shader_uniform(mask_shader, "projection", fb_projection);
             shader_uniform(mask_shader, "view", Matrix4_Identity);
             shader_uniform(mask_shader, "dim_level", 0);
             shader_uniform(mask_shader, "blend_alpha", 1);
-            sh_rect := Rect.{0, 0, xx player_light.light_buffer.tex.width, xx player_light.light_buffer.tex.height};
-            sh_dest := Rect.{0, 0, xx player_light.light_buffer.tex.width, xx player_light.light_buffer.tex.height};
 
-            draw_mask_textures(sh_rect, sh_dest, sh_rect, sh_dest, *player_light.shadow_buffer.tex, *spotlight);
+            // Light specific drawing
+            for 0..0 {//light_count-1 {
+                light := *lights[it];
+                set_framebuffer(*light.light_buffer);
+                clear_framebuffer(0, 0, 0, 0);
+                sh_rect := Rect.{0, 0, xx light.light_buffer.tex.width, xx light.light_buffer.tex.height};
+                sh_dest := Rect.{0, 0, xx light.light_buffer.tex.width, xx light.light_buffer.tex.height};
+                draw_mask_textures(sh_rect, sh_dest, sh_rect, sh_dest, *light.shadow_buffer.tex, *spotlight);
+
+                use_shader(texture_shader);
+                set_framebuffer(*world_mesh.light_buffer);
+                light_src := buffer_rect(player_light.light_buffer);
+                light_rect := get_light_rect(player_light);
+                draw_texture(light_src, light_rect, player_light.light_buffer.tex);
+            }
 
             set_framebuffer(null);
-            use_shader(texture_shader);
-            // Note to self:
-            // Try rounding camera coords but ONLY in the matrix generation function
+            clear_framebuffer(0,0,0,1);
+            final_buffer_src := buffer_rect(world_mesh.light_buffer);
+            final_buffer_dest := final_buffer_src;
+            screen_source := buffer_rect(floor_buffer);
+            screen_dest := final_buffer_dest;
+            flip_rect(*screen_dest);
+            flip_rect(*final_buffer_dest);
             use_shader(mask_shader);
-            shader_uniform(mask_shader, "projection", projection);
-            shader_uniform(mask_shader, "view", view);
             dim_level := 0.7;
+            shader_uniform(mask_shader, "projection", projection);
             shader_uniform(mask_shader, "dim_level", dim_level);
             shader_uniform(mask_shader, "blend_alpha", 0);
-            // Slightly awkward work around. Since the world texture is drawn as a simple
-            // flat texture that isn't translated by the view (since everything drawn to the
-            // texture was drawn with it already so it's not necessary to do it for the texture),
-            // we need this awkward work around so the mask can use the view, but it's factored
-            // out for the regular world texture by moving its destination by the camera position.
-            screen_source := Rect.{0, 0, WINDOW_WIDTH, WINDOW_HEIGHT};
-            screen_dest := get_camera_rect(camera);
-            screen_dest.y += screen_dest.h;
-            screen_dest.h *= -1;
-            mask_source := Rect.{0, 0, xx player_light.light_buffer.tex.width, xx player_light.light_buffer.tex.height};
-            mask_dest := Rect.{0, 0, xx player_light.light_buffer.tex.width, xx player_light.light_buffer.tex.height};
-            mask_dest.x = player_light.pos.x - mask_dest.w/2;
-            mask_dest.y = player_light.pos.y - mask_dest.h/2;
-            draw_mask_textures(screen_source, screen_dest, mask_source, mask_dest, *floor_buffer.tex, *player_light.light_buffer.tex, true);
+            shader_uniform(mask_shader, "view", Matrix4_Identity);
+
+            draw_mask_textures(screen_source, screen_dest, final_buffer_src, final_buffer_dest, *floor_buffer.tex, *world_mesh.light_buffer.tex);
 
             use_shader(texture_shader);
+            shader_uniform(texture_shader, "view", Matrix4_Identity);
             shader_uniform(texture_shader, "colormult", 1.0);
             bind_texture(world_buffer.tex);
             draw_texture(screen_source, screen_dest, world_buffer.tex);
             shader_uniform(texture_shader, "colormult", 1.0);
+
 
             /*
             

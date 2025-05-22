@@ -66,7 +66,9 @@ Game_State :: struct {
 
     lighting_enabled := true;
 
-    player_light: Light;
+    lights: [64] Light;
+    light_count: int;
+    player_light: *Light;
 
     frame_number := 0;
 

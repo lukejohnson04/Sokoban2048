@@ -6,12 +6,8 @@ Level_Mesh :: struct {
     gold: Mesh;
 
     light_mesh: [..] Vector2;
-    // shadow_texture: Resource(Texture);
-    // shadow_buffer: Framebuffer;
-    // load_texture_for_framebuffer(*shadow_texture, xx (3.5 * 64 * 2), xx (3.5 * 64 * 2));
-    // shadow_framebuffer = create_framebuffer(*shadow_texture);
-    // load_texture_for_framebuffer(*light_texture, xx (3.5 * 64 * 2), xx (3.5 * 64 * 2));
-    // light_framebuffer = create_framebuffer(*light_texture);
+    // Overall buffer for combined render of every light mask 
+    light_buffer: Framebuffer;
 }
 
 generate_level_mesh :: () {
@@ -92,7 +88,12 @@ generate_level_mesh :: () {
     mesh_generate(*mesh.goal);
 
     mesh.light_mesh.count = 0;
-    init_light(*player_light, (Vector2.{xx level.player_pos.x, xx level.player_pos.y} + Vector2.{0.5, 0.5}) * 64, 5.5 * 64);
+    player_light = *lights[0];
+    init_light(player_light, (Vector2.{xx level.player_pos.x, xx level.player_pos.y} + Vector2.{0.5, 0.5}) * 64, 5.5 * 64);
     compute_light_points(player_light, *mesh.light_mesh);
     Sort.quick_sort(mesh.light_mesh, angle_sort_clockwise);
+
+    if mesh.light_buffer.id == 0 {
+        mesh.light_buffer = create_framebuffer(WINDOW_WIDTH, WINDOW_HEIGHT);
+    }
 }

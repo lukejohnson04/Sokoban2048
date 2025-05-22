@@ -64,10 +64,11 @@ draw_line :: (p1: Vector2, p2: Vector2, vao: GLuint, vbo: GLuint) {
 }
 
 draw_texture :: (source: Rect, dest: Rect, tex: *Texture) {
-    draw_texture(source, dest, .{xx tex.width, xx tex.height}, context.game_state.intermediate_vao, context.game_state.intermediate_vbo);
+    draw_texture(source, dest, tex, context.game_state.intermediate_vao, context.game_state.intermediate_vbo);
 }
 
 draw_texture :: (source: Rect, dest: Rect, tex: *Texture, vao: GLuint, vbo: GLuint) {
+    bind_texture(tex.id);
     draw_texture(source, dest, .{xx tex.width, xx tex.height}, vao, vbo);
 }
 
@@ -99,8 +100,8 @@ draw_texture :: (source: Rect, dest: Rect, texture_size: v2i, vao: GLuint, vbo: 
     glBindVertexArray(0);
 }
 
-draw_mask_textures :: (source: Rect, dest: Rect, mask_source: Rect, mask_dest: Rect, texture: *Texture, mask: *Texture, goofy: bool=false) {
-    draw_mask_textures(source, dest, mask_source, mask_dest, texture, mask, context.game_state.intermediate_vao, context.game_state.intermediate_vbo, goofy);
+draw_mask_textures :: (source: Rect, dest: Rect, mask_source: Rect, mask_dest: Rect, texture: *Texture, mask: *Texture) {
+    draw_mask_textures(source, dest, mask_source, mask_dest, texture, mask, context.game_state.intermediate_vao, context.game_state.intermediate_vbo);
 }
 
 // Texture and mask must be same dimensions?
@@ -109,7 +110,7 @@ draw_mask_textures :: (
         mask_source: Rect, mask_dest: Rect,
         texture: *Texture,
         mask: *Texture,
-        vao: GLuint, vbo: GLuint, goofy: bool)
+        vao: GLuint, vbo: GLuint)
 {
     
     glActiveTexture(GL_TEXTURE0);
@@ -296,6 +297,29 @@ Framebuffer :: struct {
     tex: Resource(Texture);
     id: GLuint;
     w, h: int;
+}
+
+texture_rect :: (texture: Texture) -> Rect {
+    rect: Rect;
+    rect.x = 0;
+    rect.y = 0;
+    rect.w = xx texture.width;
+    rect.h = xx texture.height;
+    return rect;
+}
+
+buffer_rect :: (buffer: Framebuffer) -> Rect {
+    rect: Rect;
+    rect.x = 0;
+    rect.y = 0;
+    rect.w = xx buffer.w;
+    rect.h = xx buffer.h;
+    return rect;
+}
+
+flip_rect :: (rect: *Rect) {
+    rect.y += rect.h;
+    rect.h *= -1;
 }
 
 set_framebuffer :: (buffer: *Framebuffer = null) {
