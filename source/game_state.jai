@@ -68,7 +68,8 @@ Game_State :: struct {
 
     lights: [64] Light;
     light_count: int;
-    player_light: *Light;
+    // This is just for the light angle sorting code
+    _light_iter: *Light;
 
     frame_number := 0;
 

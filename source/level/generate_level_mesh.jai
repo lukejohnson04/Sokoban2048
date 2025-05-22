@@ -22,6 +22,8 @@ generate_level_mesh :: () {
     mesh_init(*mesh.gold);
     mesh_init(*mesh.goal);
 
+    light_count = 0;
+
     generate_mesh_of_layer :: (blocks: *type_of(Level.grid), mesh_layer: *Mesh) #expand {
         for x: 0..level.dimensions.x {
             for y: 0..level.dimensions.y {
@@ -75,6 +77,19 @@ generate_level_mesh :: () {
                         array_add(*mesh_layer.vertices, it);
                     }
                 }
+
+                is_player := level.player_pos.x == xx x && level.player_pos.y == xx y;
+                if is_player || (block.type == .WALL && block.number == 7) {
+                    light := *lights[light_count];
+                    light.mesh.count = 0;
+
+                    light_pos := (Vector2.{xx x, xx y} + Vector2.{0.5, 0.5}) * 64;
+                    init_light(light, light_pos, 5.5 * 64);
+                    compute_light_points(light);
+                    _light_iter = light;
+                    Sort.quick_sort(light.mesh, angle_sort_clockwise);
+                    light_count += 1;
+                }
             }
         }
     }
@@ -85,12 +100,6 @@ generate_level_mesh :: () {
     mesh_generate(*mesh.tiles);
     mesh_generate(*mesh.gold);
     mesh_generate(*mesh.goal);
-
-    player_light = *lights[0];
-    player_light.mesh.count = 0;
-    init_light(player_light, (Vector2.{xx level.player_pos.x, xx level.player_pos.y} + Vector2.{0.5, 0.5}) * 64, 5.5 * 64);
-    compute_light_points(player_light);
-    Sort.quick_sort(player_light.mesh, angle_sort_clockwise);
 
     if mesh.light_buffer.id == 0 {
         mesh.light_buffer = create_framebuffer(WINDOW_WIDTH, WINDOW_HEIGHT);

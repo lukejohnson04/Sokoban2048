@@ -265,39 +265,53 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         draw_texture(Rect.{0, 0, WINDOW_WIDTH, WINDOW_HEIGHT}, .{0, WINDOW_HEIGHT, WINDOW_WIDTH, -WINDOW_HEIGHT}, world_buffer.tex);
 
     } else {
+        /*
+        
+            Our goal is to take the full screen resolution output render of the entire world.
+            Then, we want to draw a low brightness version of that render. When drawing this
+            version, we want to use a mask layer as well. For all values that are white in the
+            mask, we want to draw the world layer at full brightness. Otherwise, we want to use
+            a dim brightness.
+
+            To do this, we draw the entire world. We also pass the mask and the uv of the mask
+            to the shader. For all the pixels within the mask portion, we multiply it with the uv.
+            Otherwise, the default value is the dim light, which is a uniform.
+
+            So in short, we have a uniform for the texture, a uniform for the mask, a uv for the
+            texture, a uv for the mask, and finally a uniform for the dim light.
+
+            To generate the light mask texture, we first start with the full texture of the shadow
+            layer. Then, we go onto a new framebuffer texture, and render the spotlight with the
+            shadow layer as a mask.
+        */
         // Lighting
         vertices: [..] Vertex(.UV_DISABLED);
         vertices.allocator = temp;
-        array_add(*vertices, .{player_light.pos.x, player_light.pos.y, 0});
-        if player_light.mesh.count > 0 {
-            // Sort.quick_sort(player_light.mesh, angle_sort_clockwise);
-            wiremesh_lighting := false;
-            if wiremesh_lighting {
-                use_shader(color_shader);
-                shader_uniform(color_shader, "color", Vector4.{1, 0, 0, 1});
-            }
-            for 0..player_light.mesh.count-1 {
-                corner := player_light.mesh[it];
-                //shader_uniform(color_shader, "color", Vector4.{1, 0, 0, 1});
-                if wiremesh_lighting {
-                    draw_line(player_light.pos, corner, intermediate_vao, intermediate_vbo);
-                }
-                // Calculate the position of the corner within the texture
+
+        glDisable(GL_DEPTH_TEST);
+        set_framebuffer(*world_mesh.light_buffer);
+        clear_framebuffer(0, 0, 0, 0);
+
+        for index: 0..light_count-1 {
+            light := *lights[index];
+            vertices.count = 0;
+            array_add(*vertices, .{light.pos.x, light.pos.y, 0});
+            for corner: light.mesh {
                 array_add(*vertices, .{corner.x, corner.y, 0});
             }
-            
             array_add(*vertices, vertices[1]);
+            
             for *corner: vertices {
-                corner.x -= player_light.pos.x;
-                corner.y -= player_light.pos.y;
-                corner.x += player_light.radius;
-                corner.y += player_light.radius;
+                corner.x -= light.pos.x;
+                corner.y -= light.pos.y;
+                corner.x += light.radius;
+                corner.y += light.radius;
             }
 
-            set_framebuffer(*player_light.shadow_buffer);
+            set_framebuffer(*light.shadow_buffer);
             clear_framebuffer(0, 0, 0, 0);
 
-            fb_projection := orthographic_projection_matrix(0, xx player_light.shadow_buffer.w, xx player_light.shadow_buffer.h, 0, -1, 1);
+            fb_projection := orthographic_projection_matrix(0, xx light.shadow_buffer.w, xx light.shadow_buffer.h, 0, -1, 1);
 
             use_shader(color_shader);
             shader_uniform(color_shader, "projection", *fb_projection);
@@ -306,17 +320,13 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
 
             glBindVertexArray(intermediate_vao);
             glBindBuffer(GL_ARRAY_BUFFER, intermediate_vbo);
-            point_count := player_light.mesh.count + 2;
-            glBufferData(GL_ARRAY_BUFFER, size_of(Vertex(.UV_DISABLED)) * point_count, vertices.data, GL_STATIC_DRAW);
+            glBufferData(GL_ARRAY_BUFFER, size_of(Vertex(.UV_DISABLED)) * vertices.count, vertices.data, GL_STATIC_DRAW);
             // position
             glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * size_of(float32), null);
             glEnableVertexAttribArray(0);
 
             glBindBuffer(GL_ARRAY_BUFFER, 0);
-            glDrawArrays(GL_TRIANGLE_FAN, 0, xx point_count);
-
-            set_framebuffer(*world_mesh.light_buffer);
-            clear_framebuffer(0, 0, 0, 0);
+            glDrawArrays(GL_TRIANGLE_FAN, 0, xx vertices.count);
 
             use_shader(texture_shader);
             shader_uniform(texture_shader, "view", view);
@@ -326,67 +336,48 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
             shader_uniform(mask_shader, "dim_level", 0);
             shader_uniform(mask_shader, "blend_alpha", 1);
 
-            // Light specific drawing
-            for 0..0 {//light_count-1 {
-                light := *lights[it];
-                set_framebuffer(*light.light_buffer);
-                clear_framebuffer(0, 0, 0, 0);
-                sh_rect := Rect.{0, 0, xx light.light_buffer.tex.width, xx light.light_buffer.tex.height};
-                sh_dest := Rect.{0, 0, xx light.light_buffer.tex.width, xx light.light_buffer.tex.height};
-                draw_mask_textures(sh_rect, sh_dest, sh_rect, sh_dest, *light.shadow_buffer.tex, *spotlight);
-
-                use_shader(texture_shader);
-                set_framebuffer(*world_mesh.light_buffer);
-                light_src := buffer_rect(player_light.light_buffer);
-                light_rect := get_light_rect(player_light);
-                draw_texture(light_src, light_rect, player_light.light_buffer.tex);
-            }
-
-            set_framebuffer(null);
-            clear_framebuffer(0,0,0,1);
-            final_buffer_src := buffer_rect(world_mesh.light_buffer);
-            final_buffer_dest := final_buffer_src;
-            screen_source := buffer_rect(floor_buffer);
-            screen_dest := final_buffer_dest;
-            flip_rect(*screen_dest);
-            flip_rect(*final_buffer_dest);
-            use_shader(mask_shader);
-            dim_level := 0.7;
-            shader_uniform(mask_shader, "projection", projection);
-            shader_uniform(mask_shader, "dim_level", dim_level);
-            shader_uniform(mask_shader, "blend_alpha", 0);
-            shader_uniform(mask_shader, "view", Matrix4_Identity);
-
-            draw_mask_textures(screen_source, screen_dest, final_buffer_src, final_buffer_dest, *floor_buffer.tex, *world_mesh.light_buffer.tex);
+            set_framebuffer(*light.light_buffer);
+            clear_framebuffer(0, 0, 0, 0);
+            sh_rect := Rect.{0, 0, xx light.light_buffer.tex.width, xx light.light_buffer.tex.height};
+            sh_dest := Rect.{0, 0, xx light.light_buffer.tex.width, xx light.light_buffer.tex.height};
+            draw_mask_textures(sh_rect, sh_dest, sh_rect, sh_dest, *light.shadow_buffer.tex, *spotlight);
 
             use_shader(texture_shader);
-            shader_uniform(texture_shader, "view", Matrix4_Identity);
-            shader_uniform(texture_shader, "colormult", 1.0);
-            bind_texture(world_buffer.tex);
-            draw_texture(screen_source, screen_dest, world_buffer.tex);
-            shader_uniform(texture_shader, "colormult", 1.0);
-
-
-            /*
-            
-                Our goal is to take the full screen resolution output render of the entire world.
-                Then, we want to draw a low brightness version of that render. When drawing this
-                version, we want to use a mask layer as well. For all values that are white in the
-                mask, we want to draw the world layer at full brightness. Otherwise, we want to use
-                a dim brightness.
-
-                To do this, we draw the entire world. We also pass the mask and the uv of the mask
-                to the shader. For all the pixels within the mask portion, we multiply it with the uv.
-                Otherwise, the default value is the dim light, which is a uniform.
-
-                So in short, we have a uniform for the texture, a uniform for the mask, a uv for the
-                texture, a uv for the mask, and finally a uniform for the dim light.
-
-                To generate the light mask texture, we first start with the full texture of the shadow
-                layer. Then, we go onto a new framebuffer texture, and render the spotlight with the
-                shadow layer as a mask.
-            */
+            set_framebuffer(*world_mesh.light_buffer);
+            light_src := buffer_rect(light.light_buffer);
+            light_rect := get_light_rect(light);
+            draw_texture(light_src, light_rect, light.light_buffer.tex);
         }
+
+        set_framebuffer(null);
+        clear_framebuffer(0,0,0,1);
+        final_buffer_src := buffer_rect(world_mesh.light_buffer);
+        final_buffer_dest := final_buffer_src;
+        screen_source := buffer_rect(floor_buffer);
+        screen_dest := final_buffer_dest;
+        flip_rect(*screen_dest);
+        flip_rect(*final_buffer_dest);
+        use_shader(mask_shader);
+        dim_level := 0.4;
+        shader_uniform(mask_shader, "projection", projection);
+        shader_uniform(mask_shader, "dim_level", dim_level);
+        shader_uniform(mask_shader, "blend_alpha", 0);
+        shader_uniform(mask_shader, "view", Matrix4_Identity);
+
+        draw_mask_textures(screen_source, screen_dest, final_buffer_src, final_buffer_dest, *floor_buffer.tex, *world_mesh.light_buffer.tex);
+
+        use_shader(texture_shader);
+        shader_uniform(texture_shader, "view", Matrix4_Identity);
+        shader_uniform(texture_shader, "colormult", 1.0);
+        bind_texture(world_buffer.tex);
+        draw_texture(screen_source, screen_dest, world_buffer.tex);
+        shader_uniform(texture_shader, "colormult", 1.0);
+
+        // use_shader(texture_shader);
+        // shader_uniform(texture_shader, "view", Matrix4_Identity);
+        // shader_uniform(texture_shader, "colormult", 1.0);
+        // draw_texture(screen_source, screen_dest, world_mesh.light_buffer.tex);
+        // shader_uniform(texture_shader, "colormult", 1.0);
     }
 
     // GUI Elements

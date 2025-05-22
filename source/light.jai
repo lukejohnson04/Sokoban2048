@@ -12,6 +12,7 @@ Light :: struct {
 init_light :: (light: *Light, pos: Vector2, radius: float) {
     light.pos = pos;
     light.radius = radius;
+    light.mesh.count = 0;
 
     if light.initialized == false {
         light.initialized = true;
@@ -43,6 +44,10 @@ compute_light_points :: (light: *Light) {
     for x: min_x..max_x {
         for y: min_y..max_y {
             if level.grid[x][y].type == .NONE continue;
+            if x == xx floor(light.pos.x / 64.0) && y == xx floor(light.pos.y / 64.0) {
+                continue;
+            }
+            // Don't raycast to corners that are part of the light block itself
             for corner: 0..3 {
                 pos := Vector2.{xx x, xx y};
                 pos.x += corner % 2;
@@ -162,13 +167,13 @@ get_intersection :: (ray_start: Vector2, ray_end: Vector2, seg_start: Vector2, s
 }
 
 angle_sort_clockwise :: (a: Vector2, b: Vector2) -> float {
-    ppos := Vector2.{xx context.game_state.level.player_pos.x, xx context.game_state.level.player_pos.y};
-    ppos += .{0.5, 0.5};
-    ppos *= 64;
+    ppos := context.game_state._light_iter.pos;
     first := a - ppos;
     second := b - ppos;
     angle_a := atan2(first.y, first.x);
     angle_b := atan2(second.y, second.x);
+    angle_a += TAU;
+    angle_b += TAU;
     
     angle := angle_a - angle_b;
     return angle;
@@ -203,11 +208,14 @@ get_collision :: (from: Vector2, to: Vector2, level: *Level) -> Intersection {
         for y: min_y..max_y {
             block := level.grid[x][y];
             if block.type == .NONE continue;
-            segments : [4] Segment;
+            if x == xx floor(from.x / 64.0) && y == xx floor(from.y / 64.0) {
+                continue;
+            }
 
             p1 := Vector2.{xx x, xx y};
             p1 *= 64;
-
+            
+            segments : [4] Segment;
             segments[0] =   .{p1, p1 + .{64, 0}};
             segments[1] =   .{p1, p1 + .{0, 64}};
             segments[2] =   .{p1 + .{0, 64}, p1 + .{64, 64}};
