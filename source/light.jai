@@ -4,7 +4,7 @@ Light :: struct {
 
     shadow_buffer: Framebuffer;
     light_buffer: Framebuffer;
-    mesh: [..] Vector2;
+    mesh: [..] Vertex(.UV_DISABLED);
 
     initialized := false;
 }
@@ -62,21 +62,27 @@ compute_light_points :: (light: *Light) {
         }
     }
 
+    mesh_add :: (thing: Vector2) #expand {
+        array_add(*light.mesh, .{thing.x, thing.y, 0});
+    }
+
     top_left := light.pos - .{light.radius, light.radius};
     array_add(*corners, top_left);
     array_add(*corners, top_left + .{light.radius * 2, 0});
     array_add(*corners, top_left + .{0, light.radius * 2});
     array_add(*corners, top_left + .{light.radius * 2, light.radius * 2});
 
+    light.mesh.count = 0;
+    mesh_add(light.pos);
     // Go through all corners and raycast
     for corner: corners {
         col := get_collision(light.pos, corner, *level);
 
         if col.collides == false {
-            array_add(*light.mesh, corner);
+            mesh_add(corner);
             continue;
         }
-        defer array_add(*light.mesh, col.collision_point);
+        defer mesh_add(col.collision_point);
         
         // Now we check for collision beyond
         v := corner - light.pos;
@@ -101,9 +107,9 @@ compute_light_points :: (light: *Light) {
                 if past.collision_point == col.collision_point {
                     continue;
                 }
-                array_add(*light.mesh, past.collision_point);
+                mesh_add(past.collision_point);
             } else {
-                array_add(*light.mesh, past_pos);
+                mesh_add(past_pos);
             }
         }
     }
@@ -111,7 +117,7 @@ compute_light_points :: (light: *Light) {
     for light.mesh {
         found : bool;
         for second: it_index+1..light.mesh.count-1 {
-            if it == light.mesh[second] {
+            if it.x == light.mesh[second].x && it.y == light.mesh[second].y {
                 found = true;
                 break;
             }
@@ -166,8 +172,10 @@ get_intersection :: (ray_start: Vector2, ray_end: Vector2, seg_start: Vector2, s
     return result;
 }
 
-angle_sort_clockwise :: (a: Vector2, b: Vector2) -> float {
+angle_sort_clockwise :: (va: Vertex(.UV_DISABLED), vb: Vertex(.UV_DISABLED)) -> float {
     ppos := context.game_state._light_iter.pos;
+    a := Vector2.{va.x, va.y};
+    b := Vector2.{vb.x, vb.y};
     first := a - ppos;
     second := b - ppos;
     angle_a := atan2(first.y, first.x);

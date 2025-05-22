@@ -81,13 +81,23 @@ generate_level_mesh :: () {
                 is_player := level.player_pos.x == xx x && level.player_pos.y == xx y;
                 if is_player || (block.type == .WALL && block.number == 7) {
                     light := *lights[light_count];
-                    light.mesh.count = 0;
-
+ 
                     light_pos := (Vector2.{xx x, xx y} + Vector2.{0.5, 0.5}) * 64;
                     init_light(light, light_pos, 5.5 * 64);
                     compute_light_points(light);
                     _light_iter = light;
-                    Sort.quick_sort(light.mesh, angle_sort_clockwise);
+                    sort_view : [] Vertex(.UV_DISABLED);
+                    sort_view.count = light.mesh.count - 1;
+                    sort_view.data = light.mesh.data + 1;
+                    Sort.quick_sort(sort_view, angle_sort_clockwise);
+                    array_add(*light.mesh, light.mesh[1]);
+                    for *corner: light.mesh {
+                        corner.x -= light.pos.x;
+                        corner.y -= light.pos.y;
+                        corner.x += light.radius;
+                        corner.y += light.radius;
+                    }
+
                     light_count += 1;
                 }
             }

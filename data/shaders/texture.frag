@@ -9,6 +9,7 @@ uniform sampler2D texture1;
 uniform bool grayscale;
 uniform bool gold;
 uniform float colormult;
+uniform vec4 color_pass;
 
 void main()
 {
@@ -33,5 +34,6 @@ void main()
         vec3 mixed    = mix(color.rgb, goldRGB, 0.9);
         color      = vec4(mixed, color.a);
     }
+    color *= color_pass;
     FragColor = color;
 }

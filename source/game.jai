@@ -195,6 +195,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     shader_uniform(mask_shader, "view", Matrix4_Identity);
     shader_uniform(mask_shader, "dim_level", 0);
     shader_uniform(mask_shader, "blend_alpha", 0);
+    shader_uniform(mask_shader, "blend_rgb", 0);
 
     use_shader(texture_shader);
     shader_uniform(texture_shader, "projection", projection);
@@ -202,6 +203,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     shader_uniform(texture_shader, "grayscale", 0);
     shader_uniform(texture_shader, "gold", 0);
     shader_uniform(texture_shader, "colormult", 1.0);
+    shader_uniform(texture_shader, "color_pass", Vector4.{1, 1, 1, 1});
 
 
     resource_check_timer += FRAME_TIME;
@@ -285,28 +287,12 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
             shadow layer as a mask.
         */
         // Lighting
-        vertices: [..] Vertex(.UV_DISABLED);
-        vertices.allocator = temp;
-
         glDisable(GL_DEPTH_TEST);
         set_framebuffer(*world_mesh.light_buffer);
-        clear_framebuffer(0, 0, 0, 0);
+        clear_framebuffer(1, 1, 1, 0);
 
         for index: 0..light_count-1 {
             light := *lights[index];
-            vertices.count = 0;
-            array_add(*vertices, .{light.pos.x, light.pos.y, 0});
-            for corner: light.mesh {
-                array_add(*vertices, .{corner.x, corner.y, 0});
-            }
-            array_add(*vertices, vertices[1]);
-            
-            for *corner: vertices {
-                corner.x -= light.pos.x;
-                corner.y -= light.pos.y;
-                corner.x += light.radius;
-                corner.y += light.radius;
-            }
 
             set_framebuffer(*light.shadow_buffer);
             clear_framebuffer(0, 0, 0, 0);
@@ -315,21 +301,20 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
 
             use_shader(color_shader);
             shader_uniform(color_shader, "projection", *fb_projection);
-            shader_uniform(color_shader, "color", Vector4.{1, 1, 1, 1});
+            light_color := Vector4.{1, 1, 1, 1};
+            shader_uniform(color_shader, "color", light_color);
             shader_uniform(color_shader, "view", Matrix4_Identity);
 
             glBindVertexArray(intermediate_vao);
             glBindBuffer(GL_ARRAY_BUFFER, intermediate_vbo);
-            glBufferData(GL_ARRAY_BUFFER, size_of(Vertex(.UV_DISABLED)) * vertices.count, vertices.data, GL_STATIC_DRAW);
+            glBufferData(GL_ARRAY_BUFFER, size_of(Vertex(.UV_DISABLED)) * light.mesh.count, light.mesh.data, GL_STATIC_DRAW);
             // position
             glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * size_of(float32), null);
             glEnableVertexAttribArray(0);
 
             glBindBuffer(GL_ARRAY_BUFFER, 0);
-            glDrawArrays(GL_TRIANGLE_FAN, 0, xx vertices.count);
+            glDrawArrays(GL_TRIANGLE_FAN, 0, xx light.mesh.count);
 
-            use_shader(texture_shader);
-            shader_uniform(texture_shader, "view", view);
             use_shader(mask_shader);
             shader_uniform(mask_shader, "projection", fb_projection);
             shader_uniform(mask_shader, "view", Matrix4_Identity);
@@ -343,10 +328,15 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
             draw_mask_textures(sh_rect, sh_dest, sh_rect, sh_dest, *light.shadow_buffer.tex, *spotlight);
 
             use_shader(texture_shader);
+            shader_uniform(texture_shader, "view", view);
+            if index > 0 {
+                shader_uniform(texture_shader, "color_pass", Vector4.{1,1,0,1});
+            }
             set_framebuffer(*world_mesh.light_buffer);
             light_src := buffer_rect(light.light_buffer);
             light_rect := get_light_rect(light);
             draw_texture(light_src, light_rect, light.light_buffer.tex);
+            shader_uniform(texture_shader, "color_pass", Vector4.{1,1,1,1});
         }
 
         set_framebuffer(null);
@@ -358,11 +348,12 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         flip_rect(*screen_dest);
         flip_rect(*final_buffer_dest);
         use_shader(mask_shader);
-        dim_level := 0.4;
+        dim_level := 0.5;
         shader_uniform(mask_shader, "projection", projection);
         shader_uniform(mask_shader, "dim_level", dim_level);
         shader_uniform(mask_shader, "blend_alpha", 0);
         shader_uniform(mask_shader, "view", Matrix4_Identity);
+        shader_uniform(mask_shader, "blend_rgb", 1);
 
         draw_mask_textures(screen_source, screen_dest, final_buffer_src, final_buffer_dest, *floor_buffer.tex, *world_mesh.light_buffer.tex);
 
@@ -372,12 +363,6 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         bind_texture(world_buffer.tex);
         draw_texture(screen_source, screen_dest, world_buffer.tex);
         shader_uniform(texture_shader, "colormult", 1.0);
-
-        // use_shader(texture_shader);
-        // shader_uniform(texture_shader, "view", Matrix4_Identity);
-        // shader_uniform(texture_shader, "colormult", 1.0);
-        // draw_texture(screen_source, screen_dest, world_mesh.light_buffer.tex);
-        // shader_uniform(texture_shader, "colormult", 1.0);
     }
 
     // GUI Elements
