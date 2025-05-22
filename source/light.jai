@@ -1,18 +1,33 @@
 Light :: struct {
     pos: Vector2;
     radius: float;
+
+    shadow_buffer: Framebuffer;
+    shadow_texture: Resource(Texture);
+    light_buffer: Framebuffer;
+    light_texture: Resource(Texture);
+    initialized := false;
 }
 
-Light_Mesh_Node :: struct {
-    #as using pos: Vector2;
-    extension: bool;
+init_light :: (light: *Light, pos: Vector2, radius: float) {
+    light.pos = pos;
+    light.radius = radius;
+
+    if light.initialized == false {
+        light.initialized = true;
+        size := light.radius * 2;
+        load_texture_for_framebuffer(*light.shadow_texture, xx size, xx size);
+        light.shadow_buffer = create_framebuffer(*light.shadow_texture);
+        load_texture_for_framebuffer(*light.light_texture, xx size, xx size);
+        light.light_buffer = create_framebuffer(*light.light_texture);
+    }    
 }
 
 // Returns every point to draw triangle strips of
-compute_light_points :: (light: Light, light_mesh: *[..] Light_Mesh_Node) {
+compute_light_points :: (light: Light, light_mesh: *[..] Vector2) {
     using context.game_state;
     // Get all blocks within radius
-    corners: [..] Light_Mesh_Node;
+    corners: [..] Vector2;
     corners.allocator = temp;
 
     light_top_left := light.pos - .{light.radius, light.radius};
@@ -29,27 +44,27 @@ compute_light_points :: (light: Light, light_mesh: *[..] Light_Mesh_Node) {
 
                 // We add 1 to the radius to get everything within the box, then we can crop it out later
                 if distance(pos, light.pos) <= light.radius + 64 {
-                    array_add(*corners, .{pos, false});
+                    array_add(*corners, pos);
                 }
             }
         }
     }
 
     top_left := light.pos - .{light.radius, light.radius};
-    array_add(*corners, .{top_left, false});
-    array_add(*corners, .{top_left + .{light.radius * 2, 0}, false});
-    array_add(*corners, .{top_left + .{0, light.radius * 2}, false});
-    array_add(*corners, .{top_left + .{light.radius * 2, light.radius * 2}, false});
+    array_add(*corners, top_left);
+    array_add(*corners, top_left + .{light.radius * 2, 0});
+    array_add(*corners, top_left + .{0, light.radius * 2});
+    array_add(*corners, top_left + .{light.radius * 2, light.radius * 2});
 
     // Go through all corners and raycast
     for corner: corners {
         col := get_collision(light.pos, corner, *level);
 
         if col.collides == false {
-            array_add(light_mesh, .{corner, true});
+            array_add(light_mesh, corner);
             continue;
         }
-        defer array_add(light_mesh, .{col.collision_point, false});
+        defer array_add(light_mesh, col.collision_point);
         
         // Now we check for collision beyond
         v := corner - light.pos;
@@ -74,9 +89,9 @@ compute_light_points :: (light: Light, light_mesh: *[..] Light_Mesh_Node) {
                 if past.collision_point == col.collision_point {
                     continue;
                 }
-                array_add(light_mesh, .{past.collision_point, true});
+                array_add(light_mesh, past.collision_point);
             } else {
-                array_add(light_mesh, .{past_pos, true});
+                array_add(light_mesh, past_pos);
             }
         }
     }
@@ -84,7 +99,7 @@ compute_light_points :: (light: Light, light_mesh: *[..] Light_Mesh_Node) {
     for light_mesh.* {
         found : bool;
         for second: it_index+1..light_mesh.count-1 {
-            if it.pos == light_mesh.*[second].pos && it.extension == light_mesh.*[second].extension {
+            if it == light_mesh.*[second] {
                 found = true;
                 break;
             }
@@ -139,7 +154,7 @@ get_intersection :: (ray_start: Vector2, ray_end: Vector2, seg_start: Vector2, s
     return result;
 }
 
-angle_sort_clockwise :: (a: Light_Mesh_Node, b: Light_Mesh_Node) -> float {
+angle_sort_clockwise :: (a: Vector2, b: Vector2) -> float {
     ppos := Vector2.{xx context.game_state.level.player_pos.x, xx context.game_state.level.player_pos.y};
     ppos += .{0.5, 0.5};
     ppos *= 64;

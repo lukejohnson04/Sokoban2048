@@ -251,18 +251,23 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
 
     } else {
         // Lighting
-        use_shader(color_shader);
-        shader_uniform(color_shader, "color", Vector4.{1, 0, 0, 1});
 
         vertices: [..] Vertex(.UV_DISABLED);
         vertices.allocator = temp;
         array_add(*vertices, .{player_light.pos.x, player_light.pos.y, 0});
         if world_mesh.light_mesh.count > 0 {
             // Sort.quick_sort(world_mesh.light_mesh, angle_sort_clockwise);
+            wiremesh_lighting := false;
+            if wiremesh_lighting {
+                use_shader(color_shader);
+                shader_uniform(color_shader, "color", Vector4.{1, 0, 0, 1});
+            }
             for 0..world_mesh.light_mesh.count-1 {
                 corner := world_mesh.light_mesh[it];
                 //shader_uniform(color_shader, "color", Vector4.{1, 0, 0, 1});
-                //draw_line(player_light.pos, corner, intermediate_vao, intermediate_vbo);
+                if wiremesh_lighting {
+                    draw_line(player_light.pos, corner, intermediate_vao, intermediate_vbo);
+                }
                 // Calculate the position of the corner within the texture
                 array_add(*vertices, .{corner.x, corner.y, 0});
             }
@@ -275,10 +280,10 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
                 corner.y += player_light.radius;
             }
 
-            set_framebuffer(*shadow_framebuffer);
+            set_framebuffer(*player_light.shadow_buffer);
             clear_framebuffer(0, 0, 0, 0);
 
-            fb_projection := orthographic_projection_matrix(0, xx shadow_framebuffer.w, xx shadow_framebuffer.h, 0, -1, 1);
+            fb_projection := orthographic_projection_matrix(0, xx player_light.shadow_buffer.w, xx player_light.shadow_buffer.h, 0, -1, 1);
 
             use_shader(color_shader);
             shader_uniform(color_shader, "projection", *fb_projection);
@@ -296,17 +301,17 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
             glBindBuffer(GL_ARRAY_BUFFER, 0);
             glDrawArrays(GL_TRIANGLE_FAN, 0, xx point_count);
 
-            set_framebuffer(*light_framebuffer);
+            set_framebuffer(*player_light.light_buffer);
             clear_framebuffer(0, 0, 0, 0);
             use_shader(mask_shader);
             shader_uniform(mask_shader, "projection", fb_projection);
             shader_uniform(mask_shader, "view", Matrix4_Identity);
             shader_uniform(mask_shader, "dim_level", 0);
             shader_uniform(mask_shader, "blend_alpha", 1);
-            sh_rect := Rect.{0, 0, xx light_texture.width, xx light_texture.height};
-            sh_dest := Rect.{0, 0, xx light_texture.width, xx light_texture.height};
+            sh_rect := Rect.{0, 0, xx player_light.light_texture.width, xx player_light.light_texture.height};
+            sh_dest := Rect.{0, 0, xx player_light.light_texture.width, xx player_light.light_texture.height};
 
-            draw_mask_textures(sh_rect, sh_dest, sh_rect, sh_dest, *shadow_texture, *spotlight);
+            draw_mask_textures(sh_rect, sh_dest, sh_rect, sh_dest, *player_light.shadow_texture, *spotlight);
 
             set_framebuffer(null);
             use_shader(texture_shader);
@@ -326,11 +331,11 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
             screen_dest := get_camera_rect(camera);
             screen_dest.y += screen_dest.h;
             screen_dest.h *= -1;
-            mask_source := Rect.{0, 0, xx light_texture.width, xx light_texture.height};
-            mask_dest := Rect.{0, 0, xx light_texture.width, xx light_texture.height};
+            mask_source := Rect.{0, 0, xx player_light.light_texture.width, xx player_light.light_texture.height};
+            mask_dest := Rect.{0, 0, xx player_light.light_texture.width, xx player_light.light_texture.height};
             mask_dest.x = player_light.pos.x - mask_dest.w/2;
             mask_dest.y = player_light.pos.y - mask_dest.h/2;
-            draw_mask_textures(screen_source, screen_dest, mask_source, mask_dest, *world_texture, *light_texture, true);
+            draw_mask_textures(screen_source, screen_dest, mask_source, mask_dest, *world_texture, *player_light.light_texture, true);
 
             /*
             
@@ -448,4 +453,4 @@ Sort :: #import "Sort";
 #load "audio/audio.jai";
 #load "dialogue.jai";
 #load "assets/assets.jai";
-#load "lighting.jai";
+#load "light.jai";

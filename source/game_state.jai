@@ -30,10 +30,10 @@ Game_State :: struct {
     spotlight : Resource(Texture);
     dialogue_player_texture : Resource(Texture);
 
-    shadow_texture : Resource(Texture);
-    shadow_framebuffer : Framebuffer;
-    light_texture : Resource(Texture);
-    light_framebuffer : Framebuffer;
+    // shadow_texture : Resource(Texture);
+    // shadow_framebuffer : Framebuffer;
+    // light_texture : Resource(Texture);
+    // light_framebuffer : Framebuffer;
     world_texture : Resource(Texture);
     world_framebuffer : Framebuffer;
 
@@ -122,10 +122,10 @@ on_startup :: () {
     create_shader(*color_shader, "data/shaders/color.vert", "data/shaders/color.frag");
     create_shader(*mask_shader, "data/shaders/mask.vert", "data/shaders/mask.frag");
 
-    load_texture_for_framebuffer(*shadow_texture, xx (3.5 * 64 * 2), xx (3.5 * 64 * 2));
-    shadow_framebuffer = create_framebuffer(*shadow_texture);
-    load_texture_for_framebuffer(*light_texture, xx (3.5 * 64 * 2), xx (3.5 * 64 * 2));
-    light_framebuffer = create_framebuffer(*light_texture);
+    // load_texture_for_framebuffer(*shadow_texture, xx (3.5 * 64 * 2), xx (3.5 * 64 * 2));
+    // shadow_framebuffer = create_framebuffer(*shadow_texture);
+    // load_texture_for_framebuffer(*light_texture, xx (3.5 * 64 * 2), xx (3.5 * 64 * 2));
+    // light_framebuffer = create_framebuffer(*light_texture);
     load_texture_for_framebuffer(*world_texture, WINDOW_WIDTH, WINDOW_HEIGHT);
     world_framebuffer = create_framebuffer(*world_texture);
 

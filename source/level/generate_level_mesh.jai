@@ -5,7 +5,7 @@ Level_Mesh :: struct {
     goal: Mesh;
     gold: Mesh;
 
-    light_mesh: [..] Light_Mesh_Node;
+    light_mesh: [..] Vector2;
 }
 
 generate_level_mesh :: () {
@@ -86,7 +86,7 @@ generate_level_mesh :: () {
     mesh_generate(*mesh.goal);
 
     mesh.light_mesh.count = 0;
-    player_light = Light.{(Vector2.{xx level.player_pos.x, xx level.player_pos.y} + Vector2.{0.5, 0.5}) * 64, 3.5 * 64};
+    init_light(*player_light, (Vector2.{xx level.player_pos.x, xx level.player_pos.y} + Vector2.{0.5, 0.5}) * 64, 5.5 * 64);
     compute_light_points(player_light, *mesh.light_mesh);
     Sort.quick_sort(mesh.light_mesh, angle_sort_clockwise);
 }
