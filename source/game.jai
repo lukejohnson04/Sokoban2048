@@ -190,6 +190,8 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     use_shader(mask_shader);
     shader_uniform(mask_shader, "projection", projection);
     shader_uniform(mask_shader, "view", Matrix4_Identity);
+    shader_uniform(mask_shader, "dim_level", 0);
+    shader_uniform(mask_shader, "blend_alpha", 0);
 
     use_shader(texture_shader);
     shader_uniform(texture_shader, "projection", projection);
@@ -239,7 +241,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     shader_uniform(color_shader, "view", view);
     draw_rect_with_outline(Rect.{0, 0, xx (level.dimensions.x * 64), xx (level.dimensions.y * 64)}, 4);
 
-    if lighting_enabled == false || true {
+    if lighting_enabled == false {
         set_framebuffer(null);
         
         use_shader(texture_shader);
@@ -249,7 +251,6 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
 
     } else {
         // Lighting
-        glDisable(GL_DEPTH_TEST);
         use_shader(color_shader);
         shader_uniform(color_shader, "color", Vector4.{1, 0, 0, 1});
 
@@ -301,6 +302,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
             shader_uniform(mask_shader, "projection", fb_projection);
             shader_uniform(mask_shader, "view", Matrix4_Identity);
             shader_uniform(mask_shader, "dim_level", 0);
+            shader_uniform(mask_shader, "blend_alpha", 1);
             sh_rect := Rect.{0, 0, xx light_texture.width, xx light_texture.height};
             sh_dest := Rect.{0, 0, xx light_texture.width, xx light_texture.height};
             sh_dest.y += sh_dest.h;
@@ -311,28 +313,38 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
             set_framebuffer(null);
             use_shader(texture_shader);
             shader_uniform(texture_shader, "view", Matrix4_Identity);
-            bind_texture(light_texture);
-            sh_rect = Rect.{0, 0, xx light_texture.width, xx light_texture.height};
-            sh_dest = Rect.{0, 0, xx light_texture.width, xx light_texture.height};
-            sh_dest.y += sh_dest.h;
-            sh_dest.h *= -1;
-            draw_texture(sh_rect, sh_dest, *light_texture);
+            bind_texture(world_texture);
+            screen_source := Rect.{0, 0, WINDOW_WIDTH, WINDOW_HEIGHT};
+            screen_dest := Rect.{0, 0, WINDOW_WIDTH, WINDOW_HEIGHT};
+            screen_dest.y += screen_dest.h;
+            screen_dest.h *= -1;
+            draw_texture(screen_source, screen_dest, world_texture);
 
-            // Final world mask pass
             use_shader(mask_shader);
+            shader_uniform(mask_shader, "view", view);
             shader_uniform(mask_shader, "projection", projection);
             shader_uniform(mask_shader, "view", Matrix4_Identity);
             shader_uniform(mask_shader, "dim_level", 0.25);
+            shader_uniform(mask_shader, "blend_alpha", 0);
 
-            source := Rect.{0, 0, WINDOW_WIDTH, WINDOW_HEIGHT};
-            dest := Rect.{0, 0, WINDOW_WIDTH, WINDOW_HEIGHT};
-            dest.y += dest.h;
-            dest.h *= -1;
-
-            mask_dest := Rect.{player_light.pos.x - player_light.radius, player_light.pos.y - player_light.radius, player_light.radius * 2, player_light.radius * 2};
+            // bind_texture(light_texture);
+            // shader_uniform(texture_shader, "view", view);
+            shader_uniform(mask_shader, "view", view);
+            // Slightly awkward work around. Since the world texture is drawn as a simple
+            // flat texture that isn't translated by the view (since everything drawn to the
+            // texture was drawn with it already so it's not necessary to do it for the texture),
+            // we need this awkward work around so the mask can use the view, but it's factored
+            // out for the regular world texture by moving its destination by the camera position.
+            cam_rect := get_camera_rect(camera);
+            screen_dest.x += camera.pos.x - WINDOW_WIDTH/2;
+            screen_dest.y += camera.pos.y - WINDOW_HEIGHT/2;
             mask_source := Rect.{0, 0, xx light_texture.width, xx light_texture.height};
-
-            draw_mask_textures(source, dest, mask_source, mask_dest, *world_texture, *light_texture, true);
+            mask_dest := Rect.{0, 0, xx light_texture.width, xx light_texture.height};
+            mask_dest.x = player_light.pos.x - mask_dest.w/2;
+            mask_dest.y = player_light.pos.y - mask_dest.h/2;
+            mask_dest.y += mask_dest.h;
+            mask_dest.h *= -1;
+            draw_mask_textures(screen_source, screen_dest, mask_source, mask_dest, *world_texture, *light_texture, true);
 
             /*
             

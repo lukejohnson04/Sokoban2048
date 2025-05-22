@@ -48,6 +48,17 @@ camera_zoom :: (using camera: *Camera2D, zoom_into: Vector2, zoom_factor: float3
     camera.pos += world_before - world_after;
 }
 
+get_camera_rect :: (camera: Camera2D) -> Rect {
+    rect: Rect;
+    zoom := 1.0 / camera.zoom;
+    camera_size := Vector2.{WINDOW_WIDTH * zoom, WINDOW_HEIGHT * zoom};
+    rect.w = camera_size.x;
+    rect.h = camera_size.y;
+    rect.x = camera.pos.x - rect.w / 2;
+    rect.y = camera.pos.y - rect.h / 2;
+    return rect;
+}
+
 get_camera_level_bounds :: (camera: Camera2D, level: *Level) -> v2i, v2i {
     camera_bound_begin, camera_bound_end : v2i;
 
