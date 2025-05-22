@@ -87,7 +87,7 @@ controls :: (input: *Input_State) {
             if just_pressed || action.timer <= 0 {
                 action.do_action = true;
                 if action.timer <= 0 {
-                    if action.repetitions > repeat_fast_repitition_threshold {
+                    if action.repeat_fast && action.repetitions > repeat_fast_repitition_threshold {
                         action.timer = action.repeat_interval_fast;
                     } else {
                         action.timer = action.repeat_interval;

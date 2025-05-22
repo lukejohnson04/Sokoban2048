@@ -319,6 +319,12 @@ generate_interaction_queue :: (state: *Dialogue_Player_State, block: Block) {
             }
         }
 
+        // James Salad
+        case 11; {
+            queue_text("Hello there! The name's Salad. James, Salad");
+            queue_text("Welcome to my little shop! You will find wares that are well worth your money.");
+        }
+
         case; {
             queue_text("Interaction queue failed!");
             print("Interaction queue failed!\n");

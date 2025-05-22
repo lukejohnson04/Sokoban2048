@@ -3,9 +3,7 @@ Light :: struct {
     radius: float;
 
     shadow_buffer: Framebuffer;
-    shadow_texture: Resource(Texture);
     light_buffer: Framebuffer;
-    light_texture: Resource(Texture);
     initialized := false;
 }
 
@@ -16,10 +14,8 @@ init_light :: (light: *Light, pos: Vector2, radius: float) {
     if light.initialized == false {
         light.initialized = true;
         size := light.radius * 2;
-        load_texture_for_framebuffer(*light.shadow_texture, xx size, xx size);
-        light.shadow_buffer = create_framebuffer(*light.shadow_texture);
-        load_texture_for_framebuffer(*light.light_texture, xx size, xx size);
-        light.light_buffer = create_framebuffer(*light.light_texture);
+        light.shadow_buffer = create_framebuffer(xx size, xx size);
+        light.light_buffer = create_framebuffer(xx size, xx size);
     }    
 }
 

@@ -293,6 +293,7 @@ draw_radial_texture :: (source: Rect, center: Vector2, radius: float, progress: 
 }
 
 Framebuffer :: struct {
+    tex: Resource(Texture);
     id: GLuint;
     w, h: int;
 }
@@ -311,16 +312,18 @@ clear_framebuffer :: (r: float, g: float, b: float, a: float) {
     glClear(GL_COLOR_BUFFER_BIT);
 }
 
-create_framebuffer :: (texture: Resource(Texture)) -> Framebuffer {
+create_framebuffer :: (width: s32, height: s32) -> Framebuffer {
     buffer: Framebuffer;
+
+    load_texture_for_framebuffer(*buffer.tex, width, height);
 
     glGenFramebuffers(1, *buffer.id);
     glBindFramebuffer(GL_FRAMEBUFFER, buffer.id);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture.id, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, buffer.tex.id, 0);
     glBindFramebuffer(GL_FRAMEBUFFER,0);
 
-    buffer.w = texture.width;
-    buffer.h = texture.height;
+    buffer.w = width;
+    buffer.h = height;
 
     return buffer;
 }

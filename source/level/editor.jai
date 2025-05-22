@@ -546,13 +546,10 @@ update_editor :: (input: *Input_State) {
 
 editor_draw :: () {
     using context.game_state;
-    
-    if editor.editing_level == false {
-        source := Rect.{16,0,16,16};
-        dest := Rect.{xx (level.player_pos.x*64), xx (level.player_pos.y*64), 64, 64};
-        draw_texture(source, dest, *sprites, intermediate_vao, intermediate_vbo);
+    if editor.editing_level == false || editor.enabled == false {
+        return;
     }
-
+    
     if editor.editing_level && (editor.tool == .BRUSH || editor.tool == .FILL) && is_in_bounds(editor.mouse_tile, *level) {
         block := editor.selected_block;
         source := get_block_source(block);
@@ -569,7 +566,6 @@ editor_draw :: () {
     }
 
     // Editor draw final pass
-    glDisable(GL_DEPTH_TEST);
     use_shader(color_shader);
 
     // Select tool

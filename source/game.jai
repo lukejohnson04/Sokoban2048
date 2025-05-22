@@ -169,10 +169,13 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     }
 
     // Rendering
+    glDisable(GL_DEPTH_TEST);
     set_framebuffer(null);
     clear_framebuffer(0, 0, 0, 1);
-    set_framebuffer(*world_framebuffer);
-    clear_framebuffer(0, 0, 0, 1);
+    set_framebuffer(*floor_buffer);
+    clear_framebuffer(0, 0, 0, 0);
+    set_framebuffer(*world_buffer);
+    clear_framebuffer(0, 0, 0, 0);
 
     lerp_player_camera(window);    
 
@@ -221,7 +224,9 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     }
     
     if editor.enabled == false || editor.show_both_layers {
+        set_framebuffer(*floor_buffer);
         mesh_draw(*world_mesh.floor);
+        set_framebuffer(*world_buffer);
         mesh_draw(*world_mesh.tiles);
         draw_extra_mesh_layers();
     } else {
@@ -229,10 +234,18 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
             mesh_draw(*world_mesh.tiles);
             draw_extra_mesh_layers();
         } else {
+            set_framebuffer(*floor_buffer);
             mesh_draw(*world_mesh.floor);
+            set_framebuffer(*world_buffer);
         }
     }
 
+    if editor.editing_level == false {
+        source := Rect.{16,0,16,16};
+        dest := Rect.{xx (level.player_pos.x*64), xx (level.player_pos.y*64), 64, 64};
+        bind_texture(sprites);
+        draw_texture(source, dest, *sprites);
+    }
 
     editor_draw();
     
@@ -241,13 +254,15 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     shader_uniform(color_shader, "view", view);
     draw_rect_with_outline(Rect.{0, 0, xx (level.dimensions.x * 64), xx (level.dimensions.y * 64)}, 4);
 
-    if lighting_enabled == false {
+    if lighting_enabled == false || editor.editing_level {
         set_framebuffer(null);
         
         use_shader(texture_shader);
-        bind_texture(world_texture);
         shader_uniform(texture_shader, "view", Matrix4_Identity);
-        draw_texture(Rect.{0, 0, WINDOW_WIDTH, WINDOW_HEIGHT}, .{0, WINDOW_HEIGHT, WINDOW_WIDTH, -WINDOW_HEIGHT}, world_texture);
+        bind_texture(floor_buffer.tex);
+        draw_texture(Rect.{0, 0, WINDOW_WIDTH, WINDOW_HEIGHT}, .{0, WINDOW_HEIGHT, WINDOW_WIDTH, -WINDOW_HEIGHT}, floor_buffer.tex);
+        bind_texture(world_buffer.tex);
+        draw_texture(Rect.{0, 0, WINDOW_WIDTH, WINDOW_HEIGHT}, .{0, WINDOW_HEIGHT, WINDOW_WIDTH, -WINDOW_HEIGHT}, world_buffer.tex);
 
     } else {
         // Lighting
@@ -308,10 +323,10 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
             shader_uniform(mask_shader, "view", Matrix4_Identity);
             shader_uniform(mask_shader, "dim_level", 0);
             shader_uniform(mask_shader, "blend_alpha", 1);
-            sh_rect := Rect.{0, 0, xx player_light.light_texture.width, xx player_light.light_texture.height};
-            sh_dest := Rect.{0, 0, xx player_light.light_texture.width, xx player_light.light_texture.height};
+            sh_rect := Rect.{0, 0, xx player_light.light_buffer.tex.width, xx player_light.light_buffer.tex.height};
+            sh_dest := Rect.{0, 0, xx player_light.light_buffer.tex.width, xx player_light.light_buffer.tex.height};
 
-            draw_mask_textures(sh_rect, sh_dest, sh_rect, sh_dest, *player_light.shadow_texture, *spotlight);
+            draw_mask_textures(sh_rect, sh_dest, sh_rect, sh_dest, *player_light.shadow_buffer.tex, *spotlight);
 
             set_framebuffer(null);
             use_shader(texture_shader);
@@ -320,7 +335,8 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
             use_shader(mask_shader);
             shader_uniform(mask_shader, "projection", projection);
             shader_uniform(mask_shader, "view", view);
-            shader_uniform(mask_shader, "dim_level", 0.25);
+            dim_level := 0.7;
+            shader_uniform(mask_shader, "dim_level", dim_level);
             shader_uniform(mask_shader, "blend_alpha", 0);
             // Slightly awkward work around. Since the world texture is drawn as a simple
             // flat texture that isn't translated by the view (since everything drawn to the
@@ -331,11 +347,17 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
             screen_dest := get_camera_rect(camera);
             screen_dest.y += screen_dest.h;
             screen_dest.h *= -1;
-            mask_source := Rect.{0, 0, xx player_light.light_texture.width, xx player_light.light_texture.height};
-            mask_dest := Rect.{0, 0, xx player_light.light_texture.width, xx player_light.light_texture.height};
+            mask_source := Rect.{0, 0, xx player_light.light_buffer.tex.width, xx player_light.light_buffer.tex.height};
+            mask_dest := Rect.{0, 0, xx player_light.light_buffer.tex.width, xx player_light.light_buffer.tex.height};
             mask_dest.x = player_light.pos.x - mask_dest.w/2;
             mask_dest.y = player_light.pos.y - mask_dest.h/2;
-            draw_mask_textures(screen_source, screen_dest, mask_source, mask_dest, *world_texture, *player_light.light_texture, true);
+            draw_mask_textures(screen_source, screen_dest, mask_source, mask_dest, *floor_buffer.tex, *player_light.light_buffer.tex, true);
+
+            use_shader(texture_shader);
+            shader_uniform(texture_shader, "colormult", 1.0);
+            bind_texture(world_buffer.tex);
+            draw_texture(screen_source, screen_dest, world_buffer.tex);
+            shader_uniform(texture_shader, "colormult", 1.0);
 
             /*
             

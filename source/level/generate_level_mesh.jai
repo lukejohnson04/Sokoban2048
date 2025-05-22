@@ -6,6 +6,12 @@ Level_Mesh :: struct {
     gold: Mesh;
 
     light_mesh: [..] Vector2;
+    // shadow_texture: Resource(Texture);
+    // shadow_buffer: Framebuffer;
+    // load_texture_for_framebuffer(*shadow_texture, xx (3.5 * 64 * 2), xx (3.5 * 64 * 2));
+    // shadow_framebuffer = create_framebuffer(*shadow_texture);
+    // load_texture_for_framebuffer(*light_texture, xx (3.5 * 64 * 2), xx (3.5 * 64 * 2));
+    // light_framebuffer = create_framebuffer(*light_texture);
 }
 
 generate_level_mesh :: () {

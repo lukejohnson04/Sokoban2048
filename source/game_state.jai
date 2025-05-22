@@ -30,12 +30,10 @@ Game_State :: struct {
     spotlight : Resource(Texture);
     dialogue_player_texture : Resource(Texture);
 
-    // shadow_texture : Resource(Texture);
-    // shadow_framebuffer : Framebuffer;
-    // light_texture : Resource(Texture);
-    // light_framebuffer : Framebuffer;
-    world_texture : Resource(Texture);
-    world_framebuffer : Framebuffer;
+    // world_texture : Resource(Texture);
+    world_buffer : Framebuffer;
+    // floor_texture : Resource(Texture);
+    floor_buffer : Framebuffer;
 
     photograph_song : *Mix_Chunk;
     
@@ -122,12 +120,9 @@ on_startup :: () {
     create_shader(*color_shader, "data/shaders/color.vert", "data/shaders/color.frag");
     create_shader(*mask_shader, "data/shaders/mask.vert", "data/shaders/mask.frag");
 
-    // load_texture_for_framebuffer(*shadow_texture, xx (3.5 * 64 * 2), xx (3.5 * 64 * 2));
-    // shadow_framebuffer = create_framebuffer(*shadow_texture);
-    // load_texture_for_framebuffer(*light_texture, xx (3.5 * 64 * 2), xx (3.5 * 64 * 2));
-    // light_framebuffer = create_framebuffer(*light_texture);
-    load_texture_for_framebuffer(*world_texture, WINDOW_WIDTH, WINDOW_HEIGHT);
-    world_framebuffer = create_framebuffer(*world_texture);
+
+    world_buffer = create_framebuffer(WINDOW_WIDTH, WINDOW_HEIGHT);
+    floor_buffer = create_framebuffer(WINDOW_WIDTH, WINDOW_HEIGHT);
 
     use_shader(texture_shader);
     shader_uniform(texture_shader, "texture1", 0);
