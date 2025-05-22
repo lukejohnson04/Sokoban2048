@@ -5,7 +5,6 @@ Level_Mesh :: struct {
     goal: Mesh;
     gold: Mesh;
 
-    light_mesh: [..] Vector2;
     // Overall buffer for combined render of every light mask 
     light_buffer: Framebuffer;
 }
@@ -87,11 +86,11 @@ generate_level_mesh :: () {
     mesh_generate(*mesh.gold);
     mesh_generate(*mesh.goal);
 
-    mesh.light_mesh.count = 0;
     player_light = *lights[0];
+    player_light.mesh.count = 0;
     init_light(player_light, (Vector2.{xx level.player_pos.x, xx level.player_pos.y} + Vector2.{0.5, 0.5}) * 64, 5.5 * 64);
-    compute_light_points(player_light, *mesh.light_mesh);
-    Sort.quick_sort(mesh.light_mesh, angle_sort_clockwise);
+    compute_light_points(player_light);
+    Sort.quick_sort(player_light.mesh, angle_sort_clockwise);
 
     if mesh.light_buffer.id == 0 {
         mesh.light_buffer = create_framebuffer(WINDOW_WIDTH, WINDOW_HEIGHT);

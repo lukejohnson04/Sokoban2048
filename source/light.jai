@@ -4,6 +4,7 @@ Light :: struct {
 
     shadow_buffer: Framebuffer;
     light_buffer: Framebuffer;
+    mesh: [..] Vector2;
 
     initialized := false;
 }
@@ -30,7 +31,7 @@ get_light_rect :: (light: Light) -> Rect {
 }
 
 // Returns every point to draw triangle strips of
-compute_light_points :: (light: Light, light_mesh: *[..] Vector2) {
+compute_light_points :: (light: *Light) {
     using context.game_state;
     // Get all blocks within radius
     corners: [..] Vector2;
@@ -67,10 +68,10 @@ compute_light_points :: (light: Light, light_mesh: *[..] Vector2) {
         col := get_collision(light.pos, corner, *level);
 
         if col.collides == false {
-            array_add(light_mesh, corner);
+            array_add(*light.mesh, corner);
             continue;
         }
-        defer array_add(light_mesh, col.collision_point);
+        defer array_add(*light.mesh, col.collision_point);
         
         // Now we check for collision beyond
         v := corner - light.pos;
@@ -95,17 +96,17 @@ compute_light_points :: (light: Light, light_mesh: *[..] Vector2) {
                 if past.collision_point == col.collision_point {
                     continue;
                 }
-                array_add(light_mesh, past.collision_point);
+                array_add(*light.mesh, past.collision_point);
             } else {
-                array_add(light_mesh, past_pos);
+                array_add(*light.mesh, past_pos);
             }
         }
     }
 
-    for light_mesh.* {
+    for light.mesh {
         found : bool;
-        for second: it_index+1..light_mesh.count-1 {
-            if it == light_mesh.*[second] {
+        for second: it_index+1..light.mesh.count-1 {
+            if it == light.mesh[second] {
                 found = true;
                 break;
             }

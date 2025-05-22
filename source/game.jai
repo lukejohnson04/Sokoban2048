@@ -269,15 +269,15 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         vertices: [..] Vertex(.UV_DISABLED);
         vertices.allocator = temp;
         array_add(*vertices, .{player_light.pos.x, player_light.pos.y, 0});
-        if world_mesh.light_mesh.count > 0 {
-            // Sort.quick_sort(world_mesh.light_mesh, angle_sort_clockwise);
+        if player_light.mesh.count > 0 {
+            // Sort.quick_sort(player_light.mesh, angle_sort_clockwise);
             wiremesh_lighting := false;
             if wiremesh_lighting {
                 use_shader(color_shader);
                 shader_uniform(color_shader, "color", Vector4.{1, 0, 0, 1});
             }
-            for 0..world_mesh.light_mesh.count-1 {
-                corner := world_mesh.light_mesh[it];
+            for 0..player_light.mesh.count-1 {
+                corner := player_light.mesh[it];
                 //shader_uniform(color_shader, "color", Vector4.{1, 0, 0, 1});
                 if wiremesh_lighting {
                     draw_line(player_light.pos, corner, intermediate_vao, intermediate_vbo);
@@ -306,7 +306,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
 
             glBindVertexArray(intermediate_vao);
             glBindBuffer(GL_ARRAY_BUFFER, intermediate_vbo);
-            point_count := world_mesh.light_mesh.count + 2;
+            point_count := player_light.mesh.count + 2;
             glBufferData(GL_ARRAY_BUFFER, size_of(Vertex(.UV_DISABLED)) * point_count, vertices.data, GL_STATIC_DRAW);
             // position
             glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * size_of(float32), null);
