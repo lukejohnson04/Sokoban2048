@@ -305,45 +305,31 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
             shader_uniform(mask_shader, "blend_alpha", 1);
             sh_rect := Rect.{0, 0, xx light_texture.width, xx light_texture.height};
             sh_dest := Rect.{0, 0, xx light_texture.width, xx light_texture.height};
-            sh_dest.y += sh_dest.h;
-            sh_dest.h *= -1;
 
             draw_mask_textures(sh_rect, sh_dest, sh_rect, sh_dest, *shadow_texture, *spotlight);
 
             set_framebuffer(null);
             use_shader(texture_shader);
-            shader_uniform(texture_shader, "view", Matrix4_Identity);
-            bind_texture(world_texture);
-            screen_source := Rect.{0, 0, WINDOW_WIDTH, WINDOW_HEIGHT};
-            screen_dest := Rect.{0, 0, WINDOW_WIDTH, WINDOW_HEIGHT};
-            screen_dest.y += screen_dest.h;
-            screen_dest.h *= -1;
-            draw_texture(screen_source, screen_dest, world_texture);
-
+            // Note to self:
+            // Try rounding camera coords but ONLY in the matrix generation function
             use_shader(mask_shader);
-            shader_uniform(mask_shader, "view", view);
             shader_uniform(mask_shader, "projection", projection);
-            shader_uniform(mask_shader, "view", Matrix4_Identity);
+            shader_uniform(mask_shader, "view", view);
             shader_uniform(mask_shader, "dim_level", 0.25);
             shader_uniform(mask_shader, "blend_alpha", 0);
-
-            // bind_texture(light_texture);
-            // shader_uniform(texture_shader, "view", view);
-            shader_uniform(mask_shader, "view", view);
             // Slightly awkward work around. Since the world texture is drawn as a simple
             // flat texture that isn't translated by the view (since everything drawn to the
             // texture was drawn with it already so it's not necessary to do it for the texture),
             // we need this awkward work around so the mask can use the view, but it's factored
             // out for the regular world texture by moving its destination by the camera position.
-            cam_rect := get_camera_rect(camera);
-            screen_dest.x += camera.pos.x - WINDOW_WIDTH/2;
-            screen_dest.y += camera.pos.y - WINDOW_HEIGHT/2;
+            screen_source := Rect.{0, 0, WINDOW_WIDTH, WINDOW_HEIGHT};
+            screen_dest := get_camera_rect(camera);
+            screen_dest.y += screen_dest.h;
+            screen_dest.h *= -1;
             mask_source := Rect.{0, 0, xx light_texture.width, xx light_texture.height};
             mask_dest := Rect.{0, 0, xx light_texture.width, xx light_texture.height};
             mask_dest.x = player_light.pos.x - mask_dest.w/2;
             mask_dest.y = player_light.pos.y - mask_dest.h/2;
-            mask_dest.y += mask_dest.h;
-            mask_dest.h *= -1;
             draw_mask_textures(screen_source, screen_dest, mask_source, mask_dest, *world_texture, *light_texture, true);
 
             /*

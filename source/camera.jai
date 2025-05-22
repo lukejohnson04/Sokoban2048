@@ -54,8 +54,8 @@ get_camera_rect :: (camera: Camera2D) -> Rect {
     camera_size := Vector2.{WINDOW_WIDTH * zoom, WINDOW_HEIGHT * zoom};
     rect.w = camera_size.x;
     rect.h = camera_size.y;
-    rect.x = camera.pos.x - rect.w / 2;
-    rect.y = camera.pos.y - rect.h / 2;
+    rect.x = camera.pos.x - rect.w / 2.0;
+    rect.y = camera.pos.y - rect.h / 2.0;
     return rect;
 }
 
