@@ -24,10 +24,31 @@ generate_level_mesh :: () {
 
     light_count = 0;
 
-    generate_mesh_of_layer :: (blocks: *type_of(Level.grid), mesh_layer: *Mesh) #expand {
+    generate_mesh_of_layer :: (blocks: *type_of(Level.grid), mesh_layer: *Mesh, generate_lights: bool) #expand {
         for x: 0..level.dimensions.x {
             for y: 0..level.dimensions.y {
                 block := blocks.*[x][y];
+                if generate_lights {
+                    is_player := level.player_pos.x == xx x && level.player_pos.y == xx y;
+                    if is_player || (block.type == .WALL && block.number == 7) {
+                        light := *lights[light_count];
+    
+                        light_pos := (Vector2.{xx x, xx y} + Vector2.{0.5, 0.5}) * 64;
+                        color := ifx is_player then Vector4.{1,1,1,1} else Vector4.{1,1,0,1};
+                        init_light(light, light_pos, 5.5 * 64, color);
+                        compute_light_points(light);
+                        array_add(*light.mesh, light.mesh[1]);
+                        for *corner: light.mesh {
+                            corner.x -= light.pos.x;
+                            corner.y -= light.pos.y;
+                            corner.x += light.radius;
+                            corner.y += light.radius;
+                        }
+
+                        light_count += 1;
+                    }
+                }
+
                 if block == .{} continue;
 
                 if editor.editing_level == false && field[x][y].visible == false {
@@ -77,34 +98,13 @@ generate_level_mesh :: () {
                         array_add(*mesh_layer.vertices, it);
                     }
                 }
-
-                is_player := level.player_pos.x == xx x && level.player_pos.y == xx y;
-                if is_player || (block.type == .WALL && block.number == 7) {
-                    light := *lights[light_count];
- 
-                    light_pos := (Vector2.{xx x, xx y} + Vector2.{0.5, 0.5}) * 64;
-                    init_light(light, light_pos, 5.5 * 64);
-                    compute_light_points(light);
-                    _light_iter = light;
-                    sort_view : [] Vertex(.UV_DISABLED);
-                    sort_view.count = light.mesh.count - 1;
-                    sort_view.data = light.mesh.data + 1;
-                    Sort.quick_sort(sort_view, angle_sort_clockwise);
-                    array_add(*light.mesh, light.mesh[1]);
-                    for *corner: light.mesh {
-                        corner.x -= light.pos.x;
-                        corner.y -= light.pos.y;
-                        corner.x += light.radius;
-                        corner.y += light.radius;
-                    }
-
-                    light_count += 1;
-                }
             }
         }
     }
-    generate_mesh_of_layer(*level.floor, *mesh.floor);
-    generate_mesh_of_layer(*level.grid, *mesh.tiles);
+
+
+    generate_mesh_of_layer(*level.floor, *mesh.floor, false);
+    generate_mesh_of_layer(*level.grid, *mesh.tiles, true);
 
     mesh_generate(*mesh.floor);
     mesh_generate(*mesh.tiles);

@@ -1,6 +1,7 @@
 Light :: struct {
     pos: Vector2;
     radius: float;
+    color: Vector4;
 
     shadow_buffer: Framebuffer;
     light_buffer: Framebuffer;
@@ -9,9 +10,10 @@ Light :: struct {
     initialized := false;
 }
 
-init_light :: (light: *Light, pos: Vector2, radius: float) {
+init_light :: (light: *Light, pos: Vector2, radius: float, color: Vector4) {
     light.pos = pos;
     light.radius = radius;
+    light.color = color;
     light.mesh.count = 0;
 
     if light.initialized == false {
@@ -43,7 +45,7 @@ compute_light_points :: (light: *Light) {
     min_x, min_y, max_x, max_y := block_range(light_top_left, light_bot_right, *level);
     for x: min_x..max_x {
         for y: min_y..max_y {
-            if level.grid[x][y].type == .NONE continue;
+            if block_blocks_light(level.grid[x][y]) == false continue;
             if x == xx floor(light.pos.x / 64.0) && y == xx floor(light.pos.y / 64.0) {
                 continue;
             }
@@ -126,6 +128,20 @@ compute_light_points :: (light: *Light) {
             remove it;
         }
     }
+
+    for *vert: light.mesh {
+        ppos := light.pos;
+        a := Vector2.{vert.x, vert.y};
+        pos := a - ppos;
+        vert.z = atan2(pos.y, pos.x);
+    }
+    // Quick sort by z element
+    sort_view : [] Vertex(.UV_DISABLED);
+    sort_view.count = light.mesh.count - 1;
+    sort_view.data = light.mesh.data + 1;
+    Sort.quick_sort(sort_view, angle_sort_clockwise);
+
+    for *vert: light.mesh vert.z = 0;
 }
 
 
@@ -173,18 +189,7 @@ get_intersection :: (ray_start: Vector2, ray_end: Vector2, seg_start: Vector2, s
 }
 
 angle_sort_clockwise :: (va: Vertex(.UV_DISABLED), vb: Vertex(.UV_DISABLED)) -> float {
-    ppos := context.game_state._light_iter.pos;
-    a := Vector2.{va.x, va.y};
-    b := Vector2.{vb.x, vb.y};
-    first := a - ppos;
-    second := b - ppos;
-    angle_a := atan2(first.y, first.x);
-    angle_b := atan2(second.y, second.x);
-    angle_a += TAU;
-    angle_b += TAU;
-    
-    angle := angle_a - angle_b;
-    return angle;
+    return va.z - vb.z;
 }
 
 block_range :: (from: Vector2, to: Vector2, level: *Level) -> min_x: int, min_y: int, max_x: int, max_y: int {
@@ -215,7 +220,7 @@ get_collision :: (from: Vector2, to: Vector2, level: *Level) -> Intersection {
     for x: min_x..max_x {
         for y: min_y..max_y {
             block := level.grid[x][y];
-            if block.type == .NONE continue;
+            if block_blocks_light(block) == false continue;
             if x == xx floor(from.x / 64.0) && y == xx floor(from.y / 64.0) {
                 continue;
             }

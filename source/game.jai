@@ -4,7 +4,7 @@ BUILD_TYPE :: enum #specified {
     PROFILE :: 2;
 }
 
-BUILD :: BUILD_TYPE.RELEASE;
+BUILD :: BUILD_TYPE.DEBUG;
 
 #add_context game_state: *Game_State;
 
@@ -329,9 +329,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
 
             use_shader(texture_shader);
             shader_uniform(texture_shader, "view", view);
-            if index > 0 {
-                shader_uniform(texture_shader, "color_pass", Vector4.{1,1,0,1});
-            }
+            shader_uniform(texture_shader, "color_pass", light.color);
             set_framebuffer(*world_mesh.light_buffer);
             light_src := buffer_rect(light.light_buffer);
             light_rect := get_light_rect(light);
