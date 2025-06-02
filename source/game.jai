@@ -320,12 +320,14 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
             shader_uniform(mask_shader, "view", Matrix4_Identity);
             shader_uniform(mask_shader, "dim_level", 0);
             shader_uniform(mask_shader, "blend_alpha", 1);
+            shader_uniform(mask_shader, "blend_rgb", 1);
 
             set_framebuffer(*light.light_buffer);
             clear_framebuffer(0, 0, 0, 0);
             sh_rect := Rect.{0, 0, xx light.light_buffer.tex.width, xx light.light_buffer.tex.height};
             sh_dest := Rect.{0, 0, xx light.light_buffer.tex.width, xx light.light_buffer.tex.height};
             draw_mask_textures(sh_rect, sh_dest, sh_rect, sh_dest, *light.shadow_buffer.tex, *spotlight);
+
 
             use_shader(texture_shader);
             shader_uniform(texture_shader, "view", view);
@@ -351,7 +353,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         shader_uniform(mask_shader, "dim_level", dim_level);
         shader_uniform(mask_shader, "blend_alpha", 0);
         shader_uniform(mask_shader, "view", Matrix4_Identity);
-        shader_uniform(mask_shader, "blend_rgb", 1);
+        shader_uniform(mask_shader, "blend_rgb", 0);
 
         draw_mask_textures(screen_source, screen_dest, final_buffer_src, final_buffer_dest, *floor_buffer.tex, *world_mesh.light_buffer.tex);
 

@@ -25,8 +25,8 @@ generate_level_mesh :: () {
     light_count = 0;
 
     generate_mesh_of_layer :: (blocks: *type_of(Level.grid), mesh_layer: *Mesh, generate_lights: bool) #expand {
-        for x: 0..level.dimensions.x {
-            for y: 0..level.dimensions.y {
+        for x: 0..level.dimensions.x-1 {
+            for y: 0..level.dimensions.y-1 {
                 block := blocks.*[x][y];
                 if generate_lights {
                     is_player := level.player_pos.x == xx x && level.player_pos.y == xx y;
@@ -49,7 +49,8 @@ generate_level_mesh :: () {
                     }
                 }
 
-                if block == .{} continue;
+                empty_block :: Block.{};
+                if block == empty_block continue;
 
                 if editor.editing_level == false && field[x][y].visible == false {
                     continue;

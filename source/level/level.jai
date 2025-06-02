@@ -1,7 +1,7 @@
 
 Level :: struct {
-    MAX_WIDTH :: 256;
-    MAX_HEIGHT :: 256;
+    MAX_WIDTH :: 512;
+    MAX_HEIGHT :: 512;
     dimensions := v2i.{4, 4};
     grid: [MAX_WIDTH][MAX_HEIGHT] Block;
     floor: [MAX_WIDTH][MAX_HEIGHT] Block;

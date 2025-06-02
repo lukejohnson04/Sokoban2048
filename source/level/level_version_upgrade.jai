@@ -1,9 +1,4 @@
 
-Old_Dialogue_Data :: struct {
-    interaction_count: [256] [256] u16;
-    talked_to_mayor: s32;
-}
-
 Old_Level :: struct {
     MAX_WIDTH :: 256;
     MAX_HEIGHT :: 256;
@@ -16,31 +11,37 @@ Old_Level :: struct {
 
     name : [MAX_LEVEL_NAME_LENGTH]u8;
     id : u32 = 0;
-
-    dialogue_data: Old_Dialogue_Data;
+    
+    dialogue_data: Dialogue_Data;
 }
 
 
 one_time_conversion :: (level_name: string) {
-    old: Old_Level;
-    new: Level;
-    load_old_level(*old, level_name);
-    level_format_converter(*new, *old);
-    save_level(*new, level_name);
-    print("Finished conversion\n");
+    old: *Old_Level = New(Old_Level);
+    new: *Level = New(Level);
+    load_old_level(old, level_name);
+    level_format_converter(new, old);
+    save_level(new, level_name);
+    free(old);
+    free(new);
 }
 
 // #run one_time_conversion("open");
 
 level_format_converter :: (level: *Level, old_level: *Old_Level) {
     level.* = .{};
-    memcpy(level, old_level, size_of(Old_Level));
-    level.dialogue_data = .{};
-
-    // level.player_pos = old_level.player_pos;
-    // level.player_spawn_pos = old_level.player_spawn_pos;
-    // memcpy(level.name.data, old_level.name.data, MAX_LEVEL_NAME_LENGTH);
-    // level.id = old_level.id;
+    level.dimensions = old_level.dimensions;
+    for x: 0..level.dimensions.x-1 {
+        for y: 0..level.dimensions.y-1 {
+            level.grid[x][y] = old_level.grid[x][y];
+            level.floor[x][y] = old_level.floor[x][y];
+        }
+    }
+    level.player_pos = old_level.player_pos;
+    level.player_spawn_pos = old_level.player_spawn_pos;
+    memcpy(level.name.data, old_level.name.data, MAX_LEVEL_NAME_LENGTH);
+    level.id = old_level.id;
+    level.dialogue_data = old_level.dialogue_data;
 }
 
 load_old_level :: (level: *Old_Level, name: string) -> bool {

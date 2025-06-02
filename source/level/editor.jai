@@ -102,7 +102,7 @@ draw_editor :: () {
         if ImGui.Button("Edit Level") {
             editor.editing_level = true;
             loaded = load_level(*level, xx level.name, *game_state.field);
-            if loaded {
+            if loaded { 
                 clear_turn_memory(*turn_memory);
             }
         }
@@ -214,6 +214,10 @@ draw_editor :: () {
         ImGui.SameLine();
         if ImGui.Button("Add bot") {
             level_increase_dimensions(*level, 0, 0, 0, 1);
+        }
+        ImGui.SameLine();
+        if ImGui.Button("Max size") {
+            level_increase_dimensions(*level, 0, Level.MAX_WIDTH - level.dimensions.x, 0, Level.MAX_HEIGHT - level.dimensions.y);
         }
 
 
@@ -397,7 +401,7 @@ update_editor :: (input: *Input_State) {
                 field := cast(*Visibility_Field)New(Visibility_Field);
                 for x: 0..level.dimensions.x-1 {
                     for y: 0..level.dimensions.y-1 {
-                        field.*[x][y] = .{.{x, y}, false, false, 0};
+                        field.*[x][y] = .{false, false};
                     }
                 }
 
@@ -408,22 +412,24 @@ update_editor :: (input: *Input_State) {
                     blocks = *level.floor;
                 }
 
-                queue := cast(*Queue(v2i,1000))New(Queue(v2i, 1000));
+                queue := cast(*Queue(v2i, 1000))New(Queue(v2i, 1000));
                 queue_add(queue, start_pos);
                 comparison_block := blocks.*[start_pos.x][start_pos.y];
 
                 dirs := v2i.[.{1,0}, .{0,1}, .{-1,0}, .{0,-1}];
 
-                while queue_is_empty(queue) == false {
+                while outter := queue_is_empty(queue) == false {
                     coord := queue_remove(queue);
-                    if field.*[coord.x][coord.y].visited continue;
-                    field.*[coord.x][coord.y].visible = true;
-                    field.*[coord.x][coord.y].visited = true;
+                    node := *field.*[coord.x][coord.y];
+                    if node.visited continue;
+                    node.visible = true;
+                    node.visited = true;
                     for dir: dirs {
                         pos := coord + dir;
                         
                         if !is_in_bounds(pos, level) continue;
-                        if field.*[pos.x][pos.y].visited continue;
+                        new_node := field.*[pos.x][pos.y];
+                        if new_node.visited continue;
                         block := blocks.*[pos.x][pos.y];
 
                         if block != comparison_block {
@@ -442,6 +448,9 @@ update_editor :: (input: *Input_State) {
                         }
                         
                         queue_add(queue, pos);
+                        if queue.count == queue.MAX_SIZE {
+                            break outter;
+                        }
                     }
                 }
                 for x: 0..level.dimensions.x-1 {

@@ -44,7 +44,7 @@ block_is_goal :: (block: Block) -> bool {
 }
 
 block_blocks_light :: (block: Block) -> bool {
-    return block.type == .WALL || block.type == .BOULDER || block.type == .INTERACTABLE;
+    return block.type == .WALL || block.type == .BOULDER || block.type == .INTERACTABLE || block.type == .NUMBERED;
 }
 
 Block :: struct {

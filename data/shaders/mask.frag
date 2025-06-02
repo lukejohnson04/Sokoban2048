@@ -25,8 +25,12 @@ void main()
         if (blend_alpha) {
             alpha_mult = mix(0, tex.a, mask.a);
         }
+        // if (blend_rgb) {
+        //     rgb *= 1.0;
+        // }
         if (blend_rgb) {
-            rgb *= mask.rgb;
+            rgb = mix(rgb, mask.rgb, 0.5);
+            // rgb *= mask.rgb;
         }
     }
 
