@@ -6,9 +6,17 @@ Character :: struct {
     advance : u32;
 }
 
-Font :: struct {
+Font_Face :: struct {
     characters: [256] Character;
     size: int;
+}
+
+Font :: struct {
+    size: int;
+
+    normal: Font_Face;
+    italic: Font_Face;
+    bold: Font_Face;
 }
 
 draw_text :: (text: string, position: v2i, font: *Font, vao: GLuint, vbo: GLuint, max_width: int = 0, fancy_format: bool = false) {
@@ -20,7 +28,30 @@ draw_text :: (text: string, position: v2i, font: *Font, vao: GLuint, vbo: GLuint
     ypos := base_y;
 
     i : int = 0;
+
+    Text_State :: struct {
+        italic: bool;
+        bold: bool;
+    }
+
+    text_state: Text_State;
+    face := *font.normal;
+
+    is_delimiter :: (char: u8) -> bool #expand {
+        return (fancy_format && char == #char "\n") || char == #char "\\" || char == #char " ";
+    }
+
     while i < text.count {
+        if text[i] == #char "\\" {
+            text_state.italic = !text_state.italic;
+            if text_state.italic {
+                face = *font.italic;
+            } else {
+                face = *font.normal;
+            }
+            i += 1;
+            continue;
+        }
         // ----------------------------------------------------------
         // 1.   Explicit newline support (when fancy_format is true)
         // ----------------------------------------------------------
@@ -37,11 +68,9 @@ draw_text :: (text: string, position: v2i, font: *Font, vao: GLuint, vbo: GLuint
         word_start := i;
         word_adv   : int = 0;
 
-        while i < text.count
-               && text[i] != #char " "
-               && !(fancy_format && text[i] == #char "\n") {
+        while i < text.count && !is_delimiter(text[i]) {
             code     := text[i];                       // u8
-            ch       := font.characters[code];    // lookup
+            ch       := face.characters[code];    // lookup
             word_adv += ch.advance >> 6;               // FreeType stores >>6
             i += 1;
         }
@@ -49,7 +78,7 @@ draw_text :: (text: string, position: v2i, font: *Font, vao: GLuint, vbo: GLuint
         // If there *is* a space after the word, include *its* advance
         has_space := (i < text.count && text[i] == #char " ");
         if has_space {
-            space_ch  := font.characters[32];          // ASCII 32 == space
+            space_ch  := face.characters[32];          // ASCII 32 == space
             word_adv += space_ch.advance >> 6;
         }
 
@@ -67,7 +96,7 @@ draw_text :: (text: string, position: v2i, font: *Font, vao: GLuint, vbo: GLuint
         j : int = word_start;
         while j < i {
             code := text[j];
-            ch   := font.characters[code];
+            ch   := face.characters[code];
 
             w := ch.size.x;
             h := ch.size.y;
@@ -90,14 +119,28 @@ draw_text :: (text: string, position: v2i, font: *Font, vao: GLuint, vbo: GLuint
         // 5.   Emit (and advance past) the trailing space, if any
         // ----------------------------------------------------------
         if has_space {
-            space_ch := font.characters[32];
+            space_ch := face.characters[32];
             xpos    += space_ch.advance >> 6;
             i       += 1;              // swallow the space
         }
     }
 }
 
-load_font :: (path: string, font: *Font, size: int = 48) -> bool {
+load_font :: (font: *Font, name: string, italic: bool, bold: bool, size: int) -> bool {
+    font.size = size;
+    if !load_font_face(*font.normal, tprint("data/fonts/%.ttf", name), size) return false;
+    if italic {
+        // Workaround right now. In the future we will have dedicated files for each font face, but
+        // for now it's generated as oblique instead.
+        if !load_font_face(*font.italic, tprint("data/fonts/%.ttf", name), size, true) return false;
+    }
+    if bold {
+        if !load_font_face(*font.bold, tprint("data/fonts/%-bold.ttf", name), size) return false;
+    }
+    return true;
+}
+
+load_font_face :: (font_face: *Font_Face, path: string, size: int, oblique: bool = false) -> bool {
     ft: FT_Library;
     if FT_Init_FreeType(*ft) {
         print("Failed to init freetype!\n");
@@ -111,6 +154,15 @@ load_font :: (path: string, font: *Font, size: int = 48) -> bool {
     }
 
     FT_Set_Pixel_Sizes(face, 0, xx size);
+    if oblique {
+        matrix: FT_Matrix;
+        matrix._xx = 0x10000;
+        matrix.xy = 0x03000; // ~0.375 in 16.16 fixed-point, adjust for desired slant
+        matrix.yx = 0;
+        matrix.yy = 0x10000;
+
+        FT_Set_Transform(face, *matrix, xx 0);
+    }
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     glPixelStorei(GL_UNPACK_ROW_LENGTH, face.glyph.bitmap.pitch);
 
@@ -145,7 +197,7 @@ load_font :: (path: string, font: *Font, size: int = 48) -> bool {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-        character := *font.characters[it];
+        character := *font_face.characters[it];
         character.texture = texture;
         character.size = .{face.glyph.bitmap.width, face.glyph.bitmap.rows};
         character.bearing = .{face.glyph.bitmap_left, face.glyph.bitmap_top};
@@ -154,7 +206,7 @@ load_font :: (path: string, font: *Font, size: int = 48) -> bool {
     FT_Done_Face(face);
     FT_Done_FreeType(ft);
 
-    font.size = size;
+    font_face.size = size;
 
     return true;
 }

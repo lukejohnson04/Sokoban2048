@@ -134,8 +134,8 @@ on_startup :: () {
     shader_uniform(mask_shader, "texture1", 0);
     shader_uniform(mask_shader, "mask_texture", 1);
 
-    load_font("data/fonts/arial.ttf", *font_arial);
-    load_font("data/fonts/m5x7.ttf", *font_m5x7, 60);
+    load_font(*font_arial, "arial", false, false, 48);
+    load_font(*font_m5x7, "m5x7", true, false, 60);
 
     photograph_song = Mix_LoadWAV("data/audio/photograph_song.ogg");
     note_normal = Mix_LoadWAV("data/audio/note_normal.ogg");
