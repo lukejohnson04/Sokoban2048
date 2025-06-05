@@ -61,39 +61,35 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
 
     if !moved_this_turn && editor.editing_level == false && just_got_photograph == false && dialogue_state.open == false {
         // This is a shocking amount of code for how simple this task is
-        target_dir := v2i.{0, 0};
-        move := v2i.{0, 0};
-        if do_action(.LEFT) {
-            target_dir.x = -1;
-        } else if do_action(.RIGHT) {
-            target_dir.x = 1;
-        } if do_action(.UP) {
-            target_dir.y = -1;
-        } else if do_action(.DOWN) {
-            target_dir.y = 1;
-        }
-        
-        // In the case multiple are pressed, pick the one more recently pressed
-        if target_dir != move_direction {
-            if target_dir.x != 0 && target_dir.y != 0 {
-                if target_dir.x != move_direction.x && target_dir.y == move_direction.y {
-                    target_dir.y = 0;
-                } else if target_dir.x == move_direction.x && target_dir.y != move_direction.y {
-                    target_dir.x = 0;
-                } else {
-                    target_dir.y = 0;
+        for Bindings.Action_Type.[.LEFT, .RIGHT, .UP, .DOWN] {
+            if do_action(it) == false continue;
+            move := v2i.{0, 0};
+            if it == .LEFT {
+                move.x = -1;
+            } else if it == .RIGHT {
+                move.x = 1;
+            } else if it == .UP {
+                move.y = -1;
+            } else if it == .DOWN {
+                move.y = 1;
+            }
+
+            if move != .{0, 0} {
+                success, combines_block, activates_goal_block := move_player(move);
+                if success {
+                    moved_this_turn = true;
+                    // play_sound_effect(footsteps[move_number % footsteps.count]);
+                    if combines_block {
+                        if activates_goal_block {
+                            play_sound_effect(note_echo);
+                        } else {
+                            play_sound_effect(note_normal);
+                        }
+                    }
+                    if just_got_photograph {
+                        Mix_PlayChannel(0, photograph_song, 0);
+                    }
                 }
-            }
-            if move_direction == .{0, 0} {
-                move = target_dir;
-            }
-            move_direction = target_dir;
-            move_repeat_timer = 0;
-        } else if move_direction != .{0, 0} {
-            move_repeat_timer += FRAME_TIME;
-            if move_repeat_timer > MOVE_REPEAT_TIME {
-                move_repeat_timer -= MOVE_REPEAT_TIME;
-                move = target_dir;
             }
         }
 
@@ -119,24 +115,6 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         if do_action(.REDO) {
             moved_this_turn = true;
             apply_turn();
-        }
-
-        if move != .{0, 0} {
-            success, combines_block, activates_goal_block := move_player(move);
-            if success {
-                moved_this_turn = true;
-                //play_sound_effect(footsteps[move_number % footsteps.count]);
-                if combines_block {
-                    if activates_goal_block {
-                        play_sound_effect(note_echo);
-                    } else {
-                        play_sound_effect(note_normal);
-                    }
-                }
-                if just_got_photograph {
-                    Mix_PlayChannel(0, photograph_song, 0);
-                }
-            }
         }
     }
     

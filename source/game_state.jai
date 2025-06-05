@@ -57,8 +57,6 @@ Game_State :: struct {
     rewinding : bool;
     rewind_meter : float32;
 
-    move_repeat_timer : float32;
-    move_direction : v2i;
     turn_memory: Turn_Memory;
 
 

@@ -12,7 +12,11 @@ get_block_source :: (block: Block) -> Rect {
     } else if block.type == .PLAYER_SPAWN {
         source = Rect.{64,0,16,16};
     } else if block.type == .BOULDER {
-        source = Rect.{32,0,16,16};
+        if block.flags & .STICKY {
+            source = Rect.{112,32,16,16};
+        } else {
+            source = Rect.{32,0,16,16};
+        }
     } else if block.type == .SIGNED_PHOTOGRAPH {
         source = Rect.{80,0,16,16};
     } else if block.type == .INTERACTABLE {
@@ -65,10 +69,11 @@ Block :: struct {
     }
 
     Flag :: enum u8 #specified {
-        GOAL :: 0x1;
-        VANISH_GOAL :: 0x2;
-        FLIPPED_X :: 0x4;
-        FLIPPED_Y :: 0x8;
+        GOAL :: 1;
+        VANISH_GOAL :: 2;
+        FLIPPED_X :: 4;
+        FLIPPED_Y :: 8;
+        STICKY :: 16;
     }
 }
 

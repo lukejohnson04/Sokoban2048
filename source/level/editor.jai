@@ -288,6 +288,9 @@ draw_editor :: () {
                         } else if highlighted_block == 7 {
                             block.type = .INTERACTABLE;
                             block.interaction_id = 10_000;
+                        } else if highlighted_block == 23 {
+                            block.type = .BOULDER;
+                            block.flags ^= .STICKY;
                         } else if highlighted_block >= 8 && highlighted_block < 16 {
                             block.type = .NUMBERED;
                             block.number = xx (highlighted_block - 7);
