@@ -12,11 +12,7 @@ get_block_source :: (block: Block) -> Rect {
     } else if block.type == .PLAYER_SPAWN {
         source = Rect.{64,0,16,16};
     } else if block.type == .BOULDER {
-        if block.flags & .STICKY {
-            source = Rect.{112,32,16,16};
-        } else {
-            source = Rect.{32,0,16,16};
-        }
+        source = Rect.{32,0,16,16};
     } else if block.type == .SIGNED_PHOTOGRAPH {
         source = Rect.{80,0,16,16};
     } else if block.type == .INTERACTABLE {
@@ -73,9 +69,39 @@ Block :: struct {
         VANISH_GOAL :: 2;
         FLIPPED_X :: 4;
         FLIPPED_Y :: 8;
-        STICKY :: 16;
     }
 }
+
+Tile_Id :: s32;
+
+FIRST_NUMBERED_BLOCK_ID : Tile_Id : 8;
+
+/*
+ Block struct overview
+
+ Flags:
+    Solid
+    Pushable
+    Numbered
+    Blocks visibility
+    Interactable
+
+ Local flags:
+    Goal block
+    Vanishing goal block
+    flip x
+    flip y
+ Local data: Interaction id
+
+
+Note: Floors can be stored as literally just texture id (atlas coords)
+Number currently just represents the texture id, although it's used for combining numbered blocks as well.
+It would be good to have like enum names for every tile maybe?
+
+Here's the thing: We want every tile that is visibly the same to work the exact same across the game. We don't want
+there to ever be like a numbered block that somehow can't combine, or a boulder that can't be pushed because some
+flag is disabled.
+*/
 
 operator == :: (a: Block, b: Block) -> bool {
     return a.type == b.type &&
