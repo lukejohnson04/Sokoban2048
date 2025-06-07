@@ -11,6 +11,9 @@ Level_Mesh :: struct {
 
 generate_level_mesh :: () {
     using context.game_state;
+
+    time_begin := to_microseconds(current_time_monotonic());
+
     mesh: *Level_Mesh = *world_mesh;
     mesh_free(*mesh.floor);
     mesh_free(*mesh.tiles);
@@ -22,21 +25,33 @@ generate_level_mesh :: () {
     mesh_init(*mesh.gold);
     mesh_init(*mesh.goal);
 
+    time_init_finish := to_microseconds(current_time_monotonic());
+
+    print("Time to init meshes: %\n", (time_init_finish - time_begin) / 1000000.0);
+
     light_count = 0;
+    light_compute_total_time := 0;
 
     generate_mesh_of_layer :: (blocks: *type_of(Level.grid), mesh_layer: *Mesh, generate_lights: bool) #expand {
         for x: 0..level.dimensions.x-1 {
             for y: 0..level.dimensions.y-1 {
                 block := blocks.*[x][y];
+                // Empty block
+                is_player := level.player_pos.x == xx x && level.player_pos.y == xx y;
+                if block.id == 0 && is_player == false continue;
                 if generate_lights {
-                    is_player := level.player_pos.x == xx x && level.player_pos.y == xx y;
-                    if is_player || (block.type == .WALL && block.number == 7) {
+                    if is_player || block_is_light_source(block) {
                         light := *lights[light_count];
     
                         light_pos := (Vector2.{xx x, xx y} + Vector2.{0.5, 0.5}) * 64;
                         color := ifx is_player then Vector4.{1,1,1,1} else Vector4.{1,1,0,1};
                         init_light(light, light_pos, 5.5 * 64, color);
+
+                        time_light_compute_start := to_microseconds(current_time_monotonic());
                         compute_light_points(light);
+                        time_light_compute_end := to_microseconds(current_time_monotonic());
+                        light_compute_total_time += time_light_compute_end - time_light_compute_start;
+
                         array_add(*light.mesh, light.mesh[1]);
                         for *corner: light.mesh {
                             corner.x -= light.pos.x;
@@ -107,6 +122,14 @@ generate_level_mesh :: () {
     generate_mesh_of_layer(*level.floor, *mesh.floor, false);
     generate_mesh_of_layer(*level.grid, *mesh.tiles, true);
 
+    time_generate_layer_mesh_finish := to_microseconds(current_time_monotonic());
+    print("Time to generate meshes: %\n", (time_generate_layer_mesh_finish - time_init_finish) / 1000000.0);
+
+    print("Light point compute total time: %\n", light_compute_total_time / 1000000.0);
+    // Note to self: the main performance issue I have identified so far is the light point compute time in the
+    // "compute_light_points" procedure. Profile this fucntion further. It might be faster to do all the
+    // compute_light_point calls in one big batch because right now it could be a bit random when it does the calls.
+
     mesh_generate(*mesh.floor);
     mesh_generate(*mesh.tiles);
     mesh_generate(*mesh.gold);
@@ -115,4 +138,7 @@ generate_level_mesh :: () {
     if mesh.light_buffer.id == 0 {
         mesh.light_buffer = create_framebuffer(WINDOW_WIDTH, WINDOW_HEIGHT);
     }
+
+    time_end := to_microseconds(current_time_monotonic());
+    print("Level mesh generation time: %\n", (time_end - time_begin) / 1000000.0);
 }

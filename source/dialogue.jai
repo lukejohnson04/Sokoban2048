@@ -93,7 +93,7 @@ dialogue_queue_text :: (dialogue_state: *Dialogue_Player_State, text: string) {
 
 generate_interaction_queue :: (state: *Dialogue_Player_State, block: Block) {
     using context.game_state;
-    assert(block.type == .INTERACTABLE);
+    assert(get_block_type(block) == .INTERACTABLE);
 
     new_interaction := false;
     top := turn_memory.curr;
@@ -153,10 +153,10 @@ generate_interaction_queue :: (state: *Dialogue_Player_State, block: Block) {
     }
     assert(block.interaction_id < 256);
 
-    count := level.dialogue_data.interaction_count[block.number][block.interaction_id];
-    if block.number == {
+    count := level.dialogue_data.interaction_count[block.id][block.interaction_id];
+    if block.id == {
         // Guy in hidden house
-        case 0; {
+        case 56; {
             queue_text("Oh my goodness! Thank heavens you rescued me!");
             queue_text("I spent so long trying to find the perfect hiding spot for a key to my house...");
             queue_text("That I forgot I needed the key to get out as well!");
@@ -165,7 +165,8 @@ generate_interaction_queue :: (state: *Dialogue_Player_State, block: Block) {
             queue_text("I cannot hold my emotions any longer! I should have appreciated what I had before I lost it.");
             queue_text("You know what? I think I'll stay put here after all!");
         }
-        case 1; {
+        // Guy outside hot puzzle area
+        case 57; {
             queue_text("I don't know why people even bother with some puzzles.");
             queue_text("Solving puzzles is already so dangerous, and some of the solutions I've seen can be kind of... complicated?");
             queue_text("I mean, not complicated. But like, involved.");
@@ -174,7 +175,7 @@ generate_interaction_queue :: (state: *Dialogue_Player_State, block: Block) {
             queue_text("It's always felt a little tricky for me. Too many things to consider. Puzzle solving's just not for me I guess.");
         }
         // Blue boy
-        case 2; {
+        case 58; {
             if block.interaction_id == {
                 // Top of town location
                 case 0; {
@@ -187,14 +188,15 @@ generate_interaction_queue :: (state: *Dialogue_Player_State, block: Block) {
                 }
             }
         }
-        case 3; #through;
-        case 4; {
+        // Kid and mom
+        case 59; #through;
+        case 60; {
             queue_text("Mom look what I found!");
             queue_text("Can I please keep him as a pet? Pleeeeease?");
             queue_text("For the last time, no blocks allowed inside the house!");
         }
         // Guy with funny eyebrows
-        case 5; {
+        case 61; {
             if block.interaction_id == {
                 case 0; {
                     queue_text("I've been going through all the puzzles in the area and I can't help but ask myself...");
@@ -205,7 +207,7 @@ generate_interaction_queue :: (state: *Dialogue_Player_State, block: Block) {
         }
 
         // Sign
-        case 6; {
+        case 62; {
             if block.interaction_id == {
                 case 0; {
                     queue_text("In order to leave, you must seal off the entrance.");
@@ -245,17 +247,17 @@ generate_interaction_queue :: (state: *Dialogue_Player_State, block: Block) {
                 }
             }
         }
-        case 7; {
-            queue_text("Jeez louise! Thank heavens you rescued me!");
-            queue_text("I went exploring and accidentally pushed a boulder through this rooms only entrance.");
-            queue_text("I immediately realized my horrific mistake. I got the boulder through the door, but couldn't go to the other side to unblock the exit.");
-            queue_text("I have no idea how long I have been waiting. It felt like the first half of infinity, and longer still.");
-            queue_text("Now that I'm free, I'm I can finally accomplish my true goal in life:");
-            queue_text("Successfuly gerrymandering my hometown so that my cousin Jeffrey's vote no longer matters!");
-        }
+        // case 7; {
+        //     queue_text("Jeez louise! Thank heavens you rescued me!");
+        //     queue_text("I went exploring and accidentally pushed a boulder through this rooms only entrance.");
+        //     queue_text("I immediately realized my horrific mistake. I got the boulder through the door, but couldn't go to the other side to unblock the exit.");
+        //     queue_text("I have no idea how long I have been waiting. It felt like the first half of infinity, and longer still.");
+        //     queue_text("Now that I'm free, I'm I can finally accomplish my true goal in life:");
+        //     queue_text("Successfuly gerrymandering my hometown so that my cousin Jeffrey's vote no longer matters!");
+        // }
 
         // Atlas
-        case 8; {
+        case 48; {
             if block.interaction_id == {
                 case 0; {
                     if count == 0 {
@@ -289,7 +291,7 @@ generate_interaction_queue :: (state: *Dialogue_Player_State, block: Block) {
         }
 
         // Hiding person
-        case 9; {
+        case 49; {
             if count == 0 {
                 queue_text("Who says you can come to my home? I did not invite you.");
             } else if count == 1 {
@@ -304,7 +306,7 @@ generate_interaction_queue :: (state: *Dialogue_Player_State, block: Block) {
         }
 
         // Mayor
-        case 10; {
+        case 50; {
             if block.interaction_id == {
                 case 0; {
                     queue_text("Greetings!");
@@ -320,20 +322,20 @@ generate_interaction_queue :: (state: *Dialogue_Player_State, block: Block) {
         }
 
         // James Salad
-        case 11; {
+        case 51; {
             queue_text("Hello there! The name's Salad. James, Salad");
             queue_text("Welcome to my little shop! You will find wares that are well worth your money.");
         }
 
         case; {
-            queue_text("Interaction queue failed!");
+            queue_text(tprint("Interaction queue failed: % is not a valid interaction id", block.id));
             print("Interaction queue failed!\n");
             return;
         }
     }
     
     if new_interaction {
-        addr := *level.dialogue_data.interaction_count[block.number][block.interaction_id];
+        addr := *level.dialogue_data.interaction_count[block.id][block.interaction_id];
         queue_dialogue_data_change(addr, addr.* + 1);
         queue_text("");
     }

@@ -32,23 +32,24 @@ move_player :: (move: v2i) -> success: bool, combines_block: bool, activates_goa
     delta_data : Move_Delta_Data;
     delta_data.old_player_pos = player_pos;
 
+    new_pos_type := get_block_type(level.grid[new_pos.x][new_pos.y]);
     if new_pos.x < 0 || new_pos.x >= level.dimensions.x || new_pos.y < 0 || new_pos.y >= level.dimensions.y {
         return false, false, false;
-    } else if level.grid[new_pos.x][new_pos.y].type == .INTERACTABLE {
+    } else if new_pos_type == .INTERACTABLE {
         generate_interaction_queue(*dialogue_state, level.grid[new_pos.x][new_pos.y]);
         apply_turn();
         return true, false, false;
-    } else if level.grid[new_pos.x][new_pos.y].type == .NONE || level.grid[new_pos.x][new_pos.y].type == .BLOCK_BARRIER {
+    } else if new_pos_type == .NONE || new_pos_type == .BLOCK_BARRIER {
         success = true;
         player_pos = new_pos;
-    } else if level.grid[new_pos.x][new_pos.y].type == .SIGNED_PHOTOGRAPH {
+    } else if new_pos_type == .SIGNED_PHOTOGRAPH {
         success = true;
 
         player_pos = new_pos;
 
         delta := add_move_delta(*delta_data);
         delta.coord = new_pos;
-        delta.old_value = .{type = .SIGNED_PHOTOGRAPH};
+        delta.old_value = .{id = 5};
         delta.new_value = .{};
 
         level.grid[new_pos.x][new_pos.y] = .{};
@@ -73,13 +74,14 @@ move_player :: (move: v2i) -> success: bool, combines_block: bool, activates_goa
                 break;
             }
 
-            if block.type == .WALL || block.type == .BLOCK_BARRIER || block.type == .INTERACTABLE {
+            block_type := get_block_type(block);
+            if block_type == .WALL || block_type == .BLOCK_BARRIER || block_type == .INTERACTABLE {
                 success = false;
                 break;
             }
 
             // Encounter air block
-            if block.type == .NONE {
+            if block_type == .NONE {
                 success = true;
                 break;
             } else {
@@ -99,9 +101,11 @@ move_player :: (move: v2i) -> success: bool, combines_block: bool, activates_goa
                 curr_block := level.grid[pos.x][pos.y];
                 prev_block := level.grid[prev.x][prev.y];
                 // See if two blocks can be combined, and if so, combine them and replace one with air
-                if curr_block.type == prev_block.type && curr_block.number == prev_block.number && curr_block.type != .BOULDER && curr_block.type != .BLOCK_BARRIER {
+                curr_block_type := get_block_type(curr_block);
+                prev_block_type := get_block_type(prev_block);
+                if curr_block_type == .NUMBERED && prev_block_type == .NUMBERED && curr_block.id == prev_block.id  {
                     new_block := prev_block;
-                    new_block.number += 1;
+                    new_block.id += 1;
                     combines_block = true;
 
                     if block_is_goal(curr_block) || block_is_goal(prev_block) {

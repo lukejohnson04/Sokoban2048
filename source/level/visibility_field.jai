@@ -38,7 +38,8 @@ vfield_generate_flood_fill :: (level: *Level, field: [][Level.MAX_HEIGHT] Visibi
             }
             block := level.grid[pos.x][pos.y];
 
-            if block.type == .WALL || block_is_goal(block) || block.type == .BOULDER {
+            block_type := get_block_type(block);
+            if block_type == .WALL || block_is_goal(block) || block_type == .BOULDER {
                 new_node.visible = true;
                 new_node.visited = true;
                 continue;

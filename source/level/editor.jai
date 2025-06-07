@@ -245,7 +245,7 @@ draw_editor :: () {
                 ImGui.SameLine();
                 if ImGui.Button("Set interaction id") {
                     tile := level.grid[editor.select_start.x][editor.select_start.y];
-                    if tile.type != .NONE {
+                    if get_block_type(tile) != .NONE {
                         if editor.interaction_id > 65535 || editor.interaction_id < 0 {
                             print("Interaction id is out of range of u16!\n");
                         } else {
@@ -275,37 +275,7 @@ draw_editor :: () {
                 if focused {
                     if ImGui.IsMouseDown(ImGui.MouseButton.Left) {
                         block: Block;
-                        if highlighted_block == 2 {
-                            block.type = .BOULDER;
-                        } else if highlighted_block == 3 {
-                            block.type = .WALL;
-                        } else if highlighted_block == 4 {
-                            block.type = .PLAYER_SPAWN;
-                        } else if highlighted_block == 5 {
-                            block.type = .SIGNED_PHOTOGRAPH;
-                        } else if highlighted_block == 6 {
-                            block.type = .BLOCK_BARRIER;
-                        } else if highlighted_block == 7 {
-                            block.type = .INTERACTABLE;
-                            block.interaction_id = 10_000;
-                        } else if highlighted_block == 23 {
-                            block.type = .BOULDER;
-                        } else if highlighted_block >= 8 && highlighted_block < 16 {
-                            block.type = .NUMBERED;
-                            block.number = xx (highlighted_block - 7);
-                        } else if highlighted_block >= 16 && highlighted_block < 24 {
-                            block.type = .WALL;
-                            block.number = xx (highlighted_block - 15);
-                        } else if highlighted_block >= 24 && highlighted_block < 48 {
-                            block.type = .NONE;
-                            block.number = xx (highlighted_block - 23);
-                        } else if highlighted_block >= 48 && highlighted_block < 56 {
-                            block.type = .INTERACTABLE;
-                            block.number = xx (highlighted_block - 40);
-                        } else if highlighted_block >= 56 && highlighted_block < 64 {
-                            block.type = .INTERACTABLE;
-                            block.number = xx (highlighted_block - 56);
-                        }
+                        block.id = xx highlighted_block;
                         editor.selected_block = block;
                         editor.selected_block_pos = highlighted_xy;
                     }
@@ -314,7 +284,7 @@ draw_editor :: () {
         }
 
         // Make sure flip is always synchronized with checkbox
-        if editor.selected_block.type != .NONE {
+        if get_block_type(editor.selected_block) != .NONE {
             if editor.block_flip_x != cast(bool) (editor.selected_block.flags & .FLIPPED_X) {
                 editor.selected_block.flags ^= .FLIPPED_X;
             }
@@ -335,15 +305,13 @@ draw_editor :: () {
         }
 
         // Draw green rect around selected tile
-        if editor.selected_block.type != .NONE {
-            p1 := ImGui.ImVec2.{editor.selected_block_pos.x * TILE_SIZE, editor.selected_block_pos.y * TILE_SIZE};
-            p2 := p1 + .{TILE_SIZE, 0};
-            p3 := p1 + .{TILE_SIZE, TILE_SIZE};
-            p4 := p1 + .{0, TILE_SIZE};
-            colf := Vector4.{0, 1, 0, 1};
-            
-            draw_list.AddQuad(draw_list, img_pos + p1, img_pos + p2, img_pos + p3, img_pos + p4, ImGui.GetColorU32(colf), 2);
-        }
+        p1 := ImGui.ImVec2.{editor.selected_block_pos.x * TILE_SIZE, editor.selected_block_pos.y * TILE_SIZE};
+        p2 := p1 + .{TILE_SIZE, 0};
+        p3 := p1 + .{TILE_SIZE, TILE_SIZE};
+        p4 := p1 + .{0, TILE_SIZE};
+        colf := Vector4.{0, 1, 0, 1};
+        
+        draw_list.AddQuad(draw_list, img_pos + p1, img_pos + p2, img_pos + p3, img_pos + p4, ImGui.GetColorU32(colf), 2);
     }
     if loaded {
         vfield_generate_flood_fill(*level, game_state.field);
@@ -379,11 +347,11 @@ update_editor :: (input: *Input_State) {
             if input.mouse_pressed || input.rmouse_pressed || input.mwheel_pressed {
                 if is_in_bounds(mouse_tile, *level) {
                     // Spawn blocks have special functionality and don't show up in game
-                    if editor.selected_block.type == .PLAYER_SPAWN {
+                    if get_block_type(editor.selected_block) == .PLAYER_SPAWN {
                         level.player_spawn_pos = .{mouse_tile.x, mouse_tile.y};
                     } else {
                         if blocks == *level.floor {
-                            if editor.selected_block.type != .NONE {
+                            if get_block_type(editor.selected_block) != .NONE {
                                 return;
                             }
                         }
@@ -444,7 +412,7 @@ update_editor :: (input: *Input_State) {
                             } else {
                                 other_block = level.floor[pos.x][pos.y];
                             }
-                            if other_block != comparison_block && other_block.type != .NONE {
+                            if other_block != comparison_block && get_block_type(other_block) != .NONE {
                                 continue;
                             }
                         }
@@ -570,7 +538,7 @@ editor_draw :: () {
 
     if editor.enabled && editor.editing_level {
         spawn : Block;
-        spawn.type = .PLAYER_SPAWN;
+        spawn.id = 4;
         source := get_block_source(spawn);
         dest := Rect.{xx (level.player_spawn_pos.x*64), xx (level.player_spawn_pos.y*64), 64, 64};
         draw_texture(source, dest, *sprites, intermediate_vao, intermediate_vbo);

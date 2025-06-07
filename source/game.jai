@@ -376,7 +376,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         if editor.editing_level {
             if is_in_bounds(editor.mouse_tile, *level) {
                 tile := level.grid[editor.mouse_tile.x][editor.mouse_tile.y];
-                if tile.type == .NONE {
+                if get_block_type(tile) == .NONE {
                     tile = level.floor[editor.mouse_tile.x][editor.mouse_tile.y];
                 }
                 struct_str := tprint("%", tile);

@@ -1,40 +1,8 @@
 
 get_block_source :: (block: Block) -> Rect {
     source : Rect;
-    if block.type == .NONE {
-        source = Rect.{0, 0, 16, 16};
-        if block.number > 0 {
-            row : int = (block.number - 1) / 8;
-            source = Rect.{xx (((block.number - 1) % 8) * 16), xx (48 + (row * 16)), 16, 16};
-        }
-    } else if block.type == .BLOCK_BARRIER {
-        source = Rect.{96,0,16,16};
-    } else if block.type == .PLAYER_SPAWN {
-        source = Rect.{64,0,16,16};
-    } else if block.type == .BOULDER {
-        source = Rect.{32,0,16,16};
-    } else if block.type == .SIGNED_PHOTOGRAPH {
-        source = Rect.{80,0,16,16};
-    } else if block.type == .INTERACTABLE {
-        if block.number >= 8 {
-            source = Rect.{xx ((block.number % 8) * 16), 96, 16,16};
-        } else {
-            source = Rect.{xx (block.number * 16), 112, 16,16};
-        }
-        if block.interaction_id == 10_000 {
-            source = Rect.{112,0,16,16};
-        }
-    } else if block.type == .WALL {
-        if block.number == 0 {
-            source = Rect.{48,0,16,16};
-        } else {
-            source = Rect.{xx ((block.number - 1) * 16), 32, 16, 16};
-        }
-    } else if block.type == .NUMBERED {
-        source = Rect.{xx ((block.number-1) * 16),16,16,16};
-    } else {
-        source = Rect.{0,0,16,16};
-    }
+    source = Rect.{xx ((block.id % 8) * 16), xx ((block.id / 8) * 16), 16, 16};
+
     return source;
 }
 
@@ -44,25 +12,60 @@ block_is_goal :: (block: Block) -> bool {
 }
 
 block_blocks_light :: (block: Block) -> bool {
-    return block.type == .WALL || block.type == .BOULDER || block.type == .INTERACTABLE || block.type == .NUMBERED;
+    type := get_block_type(block);
+    return type == .WALL || type == .BOULDER || type == .INTERACTABLE || type == .NUMBERED;
 }
 
+block_number :: (block: Block) -> u8 {
+    return block.id - FIRST_NUMBERED_BLOCK_ID;
+}
+
+block_is_light_source :: (block: Block) -> bool {
+    return block.id == 22;
+}
+
+get_block_type :: (block: Block) -> Block_Type {
+    if block.id == {
+        case 0; return .NONE;
+        case 2; return .BOULDER;
+        case 3; return .WALL;
+        case 4; return .PLAYER_SPAWN;
+        case 5; return .SIGNED_PHOTOGRAPH;
+        case 6; return .BLOCK_BARRIER;
+        case 7; return .INTERACTABLE; // Save point specifically
+    }
+    if block.id >= 8 && block.id < 16 {
+        return .NUMBERED;
+    }
+    if block.id >= 16 && block.id < 25 {   
+        return .WALL;
+    }
+    if block.id >= 24 && block.id < 48 {
+        return .NONE;
+    }
+    if block.id >= 48 && block.id < 56 {
+        return .INTERACTABLE;
+    }
+    if block.id >= 56 && block.id < 64 {
+        return .INTERACTABLE;
+    }
+
+    return .NONE;
+}
+
+// Note to self:
+/*
+
+The last thing I did was write the get_block_type method. The first thing I should do to continue fixing up the tile system
+is make sure that it works exactly as it did before, except with the id instead of a type field.
+
+*/
+
+
 Block :: struct {
-    type: Block_Type;
-    number: u8;
+    id: u8;
     flags: Flag;
     interaction_id: u16;
-
-    Block_Type :: enum u8 #specified {
-        NONE :: 0;
-        NUMBERED :: 1;
-        WALL :: 2;
-        BOULDER :: 3;
-        SIGNED_PHOTOGRAPH :: 4;
-        PLAYER_SPAWN :: 5;
-        BLOCK_BARRIER :: 6;
-        INTERACTABLE :: 7;
-    }
 
     Flag :: enum u8 #specified {
         GOAL :: 1;
@@ -72,9 +75,29 @@ Block :: struct {
     }
 }
 
-Tile_Id :: s32;
+Block_Type :: enum u8 #specified {
+    NONE :: 0;
+    NUMBERED :: 1;
+    WALL :: 2;
+    BOULDER :: 3;
+    SIGNED_PHOTOGRAPH :: 4;
+    PLAYER_SPAWN :: 5;
+    BLOCK_BARRIER :: 6;
+    INTERACTABLE :: 7;
+}
 
-FIRST_NUMBERED_BLOCK_ID : Tile_Id : 8;
+// New_Block :: struct {
+//     id: u8;
+//     flags: Block.Flag;
+//     interaction_id: u16;
+// }
+
+
+// We'll want to implement the backend first before we hook it up to the editor.
+// We can do this by removing the Block_Type field and replacing it with a Tile_Id field.
+// Then, we hardcode the necessary lookups in some method.
+
+FIRST_NUMBERED_BLOCK_ID : u8 : 8;
 
 /*
  Block struct overview
@@ -104,8 +127,7 @@ flag is disabled.
 */
 
 operator == :: (a: Block, b: Block) -> bool {
-    return a.type == b.type &&
-            a.number == b.number &&
+    return a.id == b.id &&
             a.flags == b.flags &&
             a.interaction_id == b.interaction_id;
 }
