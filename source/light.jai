@@ -65,6 +65,7 @@ compute_light_points :: (light: *Light) {
         }
     }
 
+
     mesh_add :: (thing: Vector2) #expand {
         array_add(*light.mesh, .{thing.x, thing.y, 0});
     }
@@ -77,6 +78,7 @@ compute_light_points :: (light: *Light) {
 
     light.mesh.count = 0;
     mesh_add(light.pos);
+    
     // Go through all corners and raycast
     for corner: corners {
         col := get_collision(light.pos, corner, *level);
@@ -98,10 +100,12 @@ compute_light_points :: (light: *Light) {
         right_pos := light.pos + rotate(v, -0.005) * t;
 
         // if it goes through a block just discard
-        // col_test := col.collision_point + v * 0.001;
-        // if level.grid[xx (col_test.x / 64.0)][xx (col_test.y / 64.0)].type != .NONE {
-        //     continue;
-        // }
+        // Note: If there's a lighting bug in the future it might be this code. I randomly
+        // decided to uncomment it and I am hoping it works. #YOLO
+        col_test := col.collision_point + v * 0.001;
+        if level.grid[xx (col_test.x / 64.0)][xx (col_test.y / 64.0)].id != 0 {
+            continue;
+        }
 
         for past_pos: Vector2.[left_pos, right_pos] {
             past := get_collision(light.pos, past_pos, *level);
@@ -116,6 +120,7 @@ compute_light_points :: (light: *Light) {
             }
         }
     }
+
 
     for light.mesh {
         found : bool;
@@ -218,18 +223,20 @@ get_collision :: (from: Vector2, to: Vector2, level: *Level) -> Intersection {
     // Range of blocks
     min_x, min_y, max_x, max_y := block_range(from, to, level);
 
+    from_floored := v2i.{xx floor(from.x / 64.0), xx floor(from.y / 64.0)};
+
+    segments : [4] Segment;
     for x: min_x..max_x {
         for y: min_y..max_y {
             block := level.grid[x][y];
             if block_blocks_light(block) == false continue;
-            if x == xx floor(from.x / 64.0) && y == xx floor(from.y / 64.0) {
+            if x == from_floored.x && y == from_floored.y {
                 continue;
             }
 
             p1 := Vector2.{xx x, xx y};
             p1 *= 64;
             
-            segments : [4] Segment;
             segments[0] =   .{p1, p1 + .{64, 0}};
             segments[1] =   .{p1, p1 + .{0, 64}};
             segments[2] =   .{p1 + .{0, 64}, p1 + .{64, 64}};
@@ -237,9 +244,9 @@ get_collision :: (from: Vector2, to: Vector2, level: *Level) -> Intersection {
 
             for seg: segments {
                 col := get_intersection(from, to, seg.p1, seg.p2);
-                if (col.collides) {
+                if col.collides {
                     dist := distance(from, col.collision_point);
-                    if (res.collides == false || dist <= closest) {
+                    if res.collides == false || dist <= closest {
                         closest = dist;
                         res = col;
                     }
