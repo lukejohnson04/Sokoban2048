@@ -1,27 +1,5 @@
 
-Old_Level :: struct {
-    MAX_WIDTH :: 512;
-    MAX_HEIGHT :: 512;
-    dimensions := v2i.{4, 4};
-    grid: [MAX_WIDTH][MAX_HEIGHT] Old_Block;
-    floor: [MAX_WIDTH][MAX_HEIGHT] Old_Block;
-
-    player_pos := v2i.{0, 0};
-    player_spawn_pos := v2i.{0, 0};
-
-    name : [MAX_LEVEL_NAME_LENGTH]u8;
-    id : u32 = 0;
-    
-    dialogue_data: Dialogue_Data;
-}
-
-Old_Block :: struct {
-    id: u8;
-    number: u8;
-    flags: Block.Flag;
-    interaction_id: u16;
-}
-
+Old_Level :: Level;
 
 one_time_conversion :: (level_name: string) {
     old: *Old_Level = New(Old_Level);
@@ -35,22 +13,15 @@ one_time_conversion :: (level_name: string) {
 }
 
 // #run one_time_conversion("open");
-
 level_format_converter :: (level: *Level, old_level: *Old_Level) {
-    level.* = .{};
-    level.dimensions = old_level.dimensions;
+    level.* = old_level.*;
     for x: 0..level.dimensions.x-1 {
         for y: 0..level.dimensions.y-1 {
-            old_block := old_level.grid[x][y];
-            old_floor := old_level.floor[x][y];
+            level.grid[x][y] = old_level.grid[x][y];
+            level.floor[x][y] = old_level.floor[x][y];
 
-            level.grid[x][y].id = old_block.id;
-            level.grid[x][y].flags = old_block.flags;
-            level.grid[x][y].interaction_id = old_block.interaction_id;
-
-            level.floor[x][y].id = old_floor.id;
-            level.floor[x][y].flags = old_floor.flags;
-            level.floor[x][y].interaction_id = old_floor.interaction_id;
+            level.grid[x][y].id += xx ((cast(int)(level.grid[x][y].id) / 8) * 8);
+            level.floor[x][y].id += xx ((cast(int)(level.floor[x][y].id) / 8) * 8);
         }
     }
 }

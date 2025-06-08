@@ -1,7 +1,8 @@
 
 get_block_source :: (block: Block) -> Rect {
     source : Rect;
-    source = Rect.{xx ((block.id % 8) * 16), xx ((block.id / 8) * 16), 16, 16};
+    stride := cast(int)(context.game_state.sprites.width / 16.0);
+    source = Rect.{xx ((block.id % stride) * 16), xx ((block.id / stride) * 16), 16, 16};
 
     return source;
 }
@@ -21,7 +22,7 @@ block_number :: (block: Block) -> u8 {
 }
 
 block_is_light_source :: (block: Block) -> bool {
-    return block.id == 22;
+    return block.id == 38;
 }
 
 get_block_type :: (block: Block) -> Block_Type {
@@ -34,19 +35,19 @@ get_block_type :: (block: Block) -> Block_Type {
         case 6; return .BLOCK_BARRIER;
         case 7; return .INTERACTABLE; // Save point specifically
     }
-    if block.id >= 8 && block.id < 16 {
+    if block.id >= 16 && block.id < 24 {
         return .NUMBERED;
     }
-    if block.id >= 16 && block.id < 25 {   
+    if (block.id >= 32 && block.id < 40) || (block.id >= 48 && block.id < 50) {
         return .WALL;
     }
-    if block.id >= 24 && block.id < 48 {
+    if block.id >= 48 && block.id < 96 {
         return .NONE;
     }
-    if block.id >= 48 && block.id < 56 {
+    if block.id >= 96 && block.id < 104 {
         return .INTERACTABLE;
     }
-    if block.id >= 56 && block.id < 64 {
+    if block.id >= 112 && block.id < 120 {
         return .INTERACTABLE;
     }
 

@@ -269,7 +269,7 @@ draw_editor :: () {
                 highlighted_xy.x = floor((mouse_x - img_pos.x) / TILE_SIZE);
                 highlighted_xy.y = floor((mouse_y - img_pos.y) / TILE_SIZE);
 
-                highlighted_block = xx (highlighted_xy.x + highlighted_xy.y * 8);
+                highlighted_block = xx (highlighted_xy.x + highlighted_xy.y * 16);
                 highlighted = true;
 
                 if focused {

@@ -156,7 +156,7 @@ generate_interaction_queue :: (state: *Dialogue_Player_State, block: Block) {
     count := level.dialogue_data.interaction_count[block.id][block.interaction_id];
     if block.id == {
         // Guy in hidden house
-        case 56; {
+        case 112; {
             queue_text("Oh my goodness! Thank heavens you rescued me!");
             queue_text("I spent so long trying to find the perfect hiding spot for a key to my house...");
             queue_text("That I forgot I needed the key to get out as well!");
@@ -166,7 +166,7 @@ generate_interaction_queue :: (state: *Dialogue_Player_State, block: Block) {
             queue_text("You know what? I think I'll stay put here after all!");
         }
         // Guy outside hot puzzle area
-        case 57; {
+        case 113; {
             queue_text("I don't know why people even bother with some puzzles.");
             queue_text("Solving puzzles is already so dangerous, and some of the solutions I've seen can be kind of... complicated?");
             queue_text("I mean, not complicated. But like, involved.");
@@ -175,7 +175,7 @@ generate_interaction_queue :: (state: *Dialogue_Player_State, block: Block) {
             queue_text("It's always felt a little tricky for me. Too many things to consider. Puzzle solving's just not for me I guess.");
         }
         // Blue boy
-        case 58; {
+        case 114; {
             if block.interaction_id == {
                 // Top of town location
                 case 0; {
@@ -189,14 +189,14 @@ generate_interaction_queue :: (state: *Dialogue_Player_State, block: Block) {
             }
         }
         // Kid and mom
-        case 59; #through;
-        case 60; {
+        case 115; #through;
+        case 116; {
             queue_text("Mom look what I found!");
             queue_text("Can I please keep him as a pet? Pleeeeease?");
             queue_text("For the last time, no blocks allowed inside the house!");
         }
         // Guy with funny eyebrows
-        case 61; {
+        case 117; {
             if block.interaction_id == {
                 case 0; {
                     queue_text("I've been going through all the puzzles in the area and I can't help but ask myself...");
@@ -207,7 +207,7 @@ generate_interaction_queue :: (state: *Dialogue_Player_State, block: Block) {
         }
 
         // Sign
-        case 62; {
+        case 118; {
             if block.interaction_id == {
                 case 0; {
                     queue_text("In order to leave, you must seal off the entrance.");
@@ -257,7 +257,7 @@ generate_interaction_queue :: (state: *Dialogue_Player_State, block: Block) {
         // }
 
         // Atlas
-        case 48; {
+        case 96; {
             if block.interaction_id == {
                 case 0; {
                     if count == 0 {
@@ -291,7 +291,7 @@ generate_interaction_queue :: (state: *Dialogue_Player_State, block: Block) {
         }
 
         // Hiding person
-        case 49; {
+        case 97; {
             if count == 0 {
                 queue_text("Who says you can come to my home? I did not invite you.");
             } else if count == 1 {
@@ -306,7 +306,7 @@ generate_interaction_queue :: (state: *Dialogue_Player_State, block: Block) {
         }
 
         // Mayor
-        case 50; {
+        case 98; {
             if block.interaction_id == {
                 case 0; {
                     queue_text("Greetings!");
@@ -322,7 +322,7 @@ generate_interaction_queue :: (state: *Dialogue_Player_State, block: Block) {
         }
 
         // James Salad
-        case 51; {
+        case 99; {
             queue_text("Hello there! The name's Salad. James, Salad");
             queue_text("Welcome to my little shop! You will find wares that are well worth your money.");
         }

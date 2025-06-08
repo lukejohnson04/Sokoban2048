@@ -9,6 +9,7 @@ MAX_MOVE_DELTAS :: 16;
 Move_Delta_Data :: struct {
     count: s32;
     deltas: [MAX_MOVE_DELTAS] Move_Delta;
+    // Change this to just one variable "new player delta"
     old_player_pos: v2i;
     new_player_pos: v2i;
 }
