@@ -155,7 +155,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     set_framebuffer(*world_buffer);
     clear_framebuffer(0, 0, 0, 0);
 
-    lerp_player_camera(window);    
+    lerp_player_camera(window);
 
     view := camera_view_matrix(camera);
     projection := orthographic_projection_matrix(0, WINDOW_WIDTH, WINDOW_HEIGHT, 0, -1, 1);
@@ -191,6 +191,14 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     }
 
     bind_texture(sprites);
+
+    if input.just_pressed[SDL_SCANCODE_Y] {
+        camera.zoom += 0.01;
+        print("Zoom: %\n", camera.zoom);
+    } else if input.just_pressed[SDL_SCANCODE_T] {
+        camera.zoom -= 0.01;
+        print("Zoom: %\n", camera.zoom);
+    }
 
     draw_extra_mesh_layers :: () #expand {
         shader_uniform(texture_shader, "colormult", 0.8);

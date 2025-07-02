@@ -245,16 +245,37 @@ generate_interaction_queue :: (state: *Dialogue_Player_State, block: Block) {
                         queue_text("Wow! You talked to the mayor?!?!");
                     }
                 }
+                case 8; {
+                    queue_text("Dear traveller: Do you remember how everything works around here?");
+                    queue_text("Why I bother writing is a mystery to me. It's not like you're ever going to actually read this.");
+                }
+                case 9; {
+                    queue_text("Once you proceed through the facility exit below, enter the mines through the right.");
+                    queue_text("The mines are long abandoned so you will not find a single soul there.");
+                }
+                case 10; {
+                    queue_text("Congratulations.");
+                }
+                case 11; {
+                    queue_text("A final test to prove your worth.");
+                }
+                case 12; {
+                    queue_text("I hate having to write these messages not knowing what's going to happen to you.");
+                    queue_text("Just keep trying, Orion.");
+                }
+                case 13; {
+                    // queue_text(")
+                }
+                case 14; {
+                    // MAM - Megaturns After the Moment
+                    queue_text("Dr. C - 6313 MAM");
+                    queue_text("Today I had a difficult day with Amelia. I've written before about how she'll have 'good days' and 'bad days', today was definitely one of the bad days.");
+                    queue_text("I knocked on her door to come out of her room, and she got all quiet as if she wasn't there.");
+                    queue_text("I knocked another time and she started yelling, and name calling.");
+                    queue_text("It hurts to care so much for someone and have them throw it in your face.");
+                }
             }
         }
-        // case 7; {
-        //     queue_text("Jeez louise! Thank heavens you rescued me!");
-        //     queue_text("I went exploring and accidentally pushed a boulder through this rooms only entrance.");
-        //     queue_text("I immediately realized my horrific mistake. I got the boulder through the door, but couldn't go to the other side to unblock the exit.");
-        //     queue_text("I have no idea how long I have been waiting. It felt like the first half of infinity, and longer still.");
-        //     queue_text("Now that I'm free, I'm I can finally accomplish my true goal in life:");
-        //     queue_text("Successfuly gerrymandering my hometown so that my cousin Jeffrey's vote no longer matters!");
-        // }
 
         // Atlas
         case 96; {
@@ -356,6 +377,11 @@ generate_interaction_queue :: (state: *Dialogue_Player_State, block: Block) {
 
         queue_text("Yo mama so fat, she takes up two tiles!");
         queue_text("How could you say something so hurtful?");
+
+        queue_text("My mother asked me an interesting question the other day...");
+        queue_text("\"Where do you see yourself in 5000 turns?\"");
+        queue_text("Sometimes I look back a thousand turns ago, or ten thousand turns ago.");
+        queue_text("It all seems to slip by so fast.");
 
         // House where there's a wall 2 blocks in front of the door, so the front door must be pushed in and not out
         // And the reason the wall is there is because construction accidentally came too close to the house, so

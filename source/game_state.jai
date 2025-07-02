@@ -30,9 +30,7 @@ Game_State :: struct {
     spotlight : Resource(Texture);
     dialogue_player_texture : Resource(Texture);
 
-    // world_texture : Resource(Texture);
     world_buffer : Framebuffer;
-    // floor_texture : Resource(Texture);
     floor_buffer : Framebuffer;
 
     photograph_song : *Mix_Chunk;
