@@ -26,6 +26,11 @@ block_is_light_source :: (block: Block) -> bool {
 }
 
 get_block_type :: (block: Block) -> Block_Type {
+    if block.flags & .TIMER {
+        if timer_is_active(block) == false {
+            return .NONE;
+        }
+    }
     if block.id == {
         case 0; return .NONE;
         case 2; return .BOULDER;
@@ -67,14 +72,47 @@ Block :: struct {
     id: u8;
     flags: Flag;
     interaction_id: u16;
+    
+    union {
+        struct {
+            turns_on_active: u8;
+            turns_on_inactive: u8;
+            timer_turns_left: u8;
+            timer_is_solid: bool;
+        }
+    }
 
     Flag :: enum u8 #specified {
         GOAL :: 1;
         VANISH_GOAL :: 2;
         FLIPPED_X :: 4;
         FLIPPED_Y :: 8;
+        TIMER :: 16;
     }
 }
+
+timer_turns_left :: (block: Block) -> u8 {
+    timer_length := cast(s64)(block.turns_on_active) + xx block.turns_on_inactive;
+    inc := cast(u8)(context.game_state.turn_count % timer_length);
+    print("Timer length: %\nInc: %\n", timer_length, inc);
+    // Block is inactive, timer counting down to active
+    if inc >= block.turns_on_active {
+        return xx (timer_length - inc);
+    // Block is active, timer counting down to inactive
+    } else {
+        return xx (block.turns_on_active - inc);
+    }
+}
+
+timer_is_active :: (block: Block) -> bool {
+    timer_length := cast(s64)(block.turns_on_active) + xx block.turns_on_inactive;
+    turns_to_next := cast(u8)(context.game_state.turn_count % timer_length);
+    if turns_to_next < block.turns_on_active {
+        return true;
+    }
+    return false;
+}
+
 
 Block_Type :: enum u8 #specified {
     NONE :: 0;

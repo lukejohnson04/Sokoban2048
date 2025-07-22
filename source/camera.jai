@@ -97,17 +97,24 @@ lerp_player_camera :: (window: *SDL_Window) {
 
     } else if (SDL_GetWindowFlags(window) & SDL_WINDOW_INPUT_FOCUS) != 0 {
         DEBUG_CAMERA_SPEED := 12.0 * (1.0 / camera.zoom);
-        DEADZONE_PERCENT :: 0.01;
+        DEADZONE_PERCENT :: 0.1;
+        DEADZONE_WIDTH := WINDOW_WIDTH * DEADZONE_PERCENT;
+        DEADZONE_HEIGHT := WINDOW_HEIGHT * DEADZONE_PERCENT;
 
         mouse_pos := get_mouse_position();
-        if mouse_pos.x >= WINDOW_WIDTH - WINDOW_WIDTH*DEADZONE_PERCENT {
+
+        if mouse_pos.x <= 0 || mouse_pos.y <= 0 || mouse_pos.y >= WINDOW_HEIGHT-1 || mouse_pos.x >= WINDOW_WIDTH-1 {
+            return;
+        }
+        
+        if mouse_pos.x >= WINDOW_WIDTH - DEADZONE_WIDTH {
             camera.pos.x += DEBUG_CAMERA_SPEED;
-        } else if mouse_pos.x < WINDOW_WIDTH*DEADZONE_PERCENT {
+        } else if mouse_pos.x < DEADZONE_WIDTH {
             camera.pos.x -= DEBUG_CAMERA_SPEED;
         }
-        if mouse_pos.y >= WINDOW_HEIGHT - WINDOW_HEIGHT*DEADZONE_PERCENT {
+        if mouse_pos.y >= WINDOW_HEIGHT - DEADZONE_HEIGHT {
             camera.pos.y += DEBUG_CAMERA_SPEED;
-        } else if mouse_pos.y < WINDOW_HEIGHT*DEADZONE_PERCENT {
+        } else if mouse_pos.y < DEADZONE_HEIGHT {
             camera.pos.y -= DEBUG_CAMERA_SPEED;
         }
     }

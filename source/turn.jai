@@ -35,6 +35,7 @@ apply_turn :: () {
     if turn_memory.curr.next == null {
         return;
     }
+    turn_count += 1;
     if turn_memory.curr.type == .MOVE {
         level.player_pos = turn_memory.curr.move_delta.new_player_pos;
         for 0..turn_memory.curr.move_delta.count-1 {
@@ -67,6 +68,7 @@ undo_turn :: () {
     if turn_memory.curr.prev == null {
         return;
     }
+    turn_count -= 1;
     turn_memory.curr -= 1;
     if turn_memory.curr.type == .MOVE {
         level.player_pos = turn_memory.curr.move_delta.old_player_pos;

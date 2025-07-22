@@ -28,11 +28,14 @@ Editor_State :: struct {
     move_start : v2i;
     move_end : v2i;
 
+    // ImGui state
     load_level_field : [MAX_LEVEL_NAME_LENGTH]u8;
     save_level_field : [MAX_LEVEL_NAME_LENGTH]u8;
     dimension_field : [MAX_LEVEL_NAME_LENGTH]u8;
 
     interaction_id : s32;
+    turns_on_inactive : s32;
+    turns_on_active : s32;
 
     Editor_Tool :: enum {
         BRUSH;
@@ -110,6 +113,7 @@ draw_editor :: () {
         if level.id != 0 {
             if ImGui.Button("Restart Level") {
                 loaded = load_level(*level, xx level.name, *game_state.field);
+                turn_count = 0;
                 if loaded {
                     clear_turn_memory(*turn_memory);
                 }
@@ -139,7 +143,9 @@ draw_editor :: () {
             } else {
                 save_level(*level, xx level.name);
                 loaded = load_level(*level, xx level.name, *game_state.field);
+                turn_count = 0;
                 camera.zoom = 1;
+                camera.pos = .{level.player_pos.x * 64.0, level.player_pos.y * 64.0};
                 if loaded {
                     clear_turn_memory(*turn_memory);
                 }
@@ -196,66 +202,46 @@ draw_editor :: () {
         ImGui.SameLine();
         ImGui.Checkbox("Flip y", *editor.block_flip_y);
 
-        img_pos := window_pos + .{0, 215};
-
-        draw_list.AddImage(draw_list, cast,no_check(*void)(sprites.id), img_pos, img_pos + dest);
-
-        if ImGui.Button("Add left") {
+        if ImGui.Button("+L") {
             level_increase_dimensions(*level, 1, 0, 0, 0);
         }
         ImGui.SameLine();
-        if ImGui.Button("Add right") {
+        if ImGui.Button("+R") {
             level_increase_dimensions(*level, 0, 1, 0, 0);
         }
         ImGui.SameLine();
-        if ImGui.Button("Add top") {
+        if ImGui.Button("+T") {
             level_increase_dimensions(*level, 0, 0, 1, 0);
         }
         ImGui.SameLine();
-        if ImGui.Button("Add bot") {
+        if ImGui.Button("+B") {
             level_increase_dimensions(*level, 0, 0, 0, 1);
         }
         ImGui.SameLine();
-        if ImGui.Button("Max size") {
+        if ImGui.Button("Max") {
             level_increase_dimensions(*level, 0, Level.MAX_WIDTH - level.dimensions.x, 0, Level.MAX_HEIGHT - level.dimensions.y);
         }
 
 
-        if ImGui.Button("Rem left") {
+        if ImGui.Button("-L") {
             level_increase_dimensions(*level, -1, 0, 0, 0);
         }
         ImGui.SameLine();
-        if ImGui.Button("Rem right") {
+        if ImGui.Button("-R") {
             level_increase_dimensions(*level, 0, -1, 0, 0);
         }
         ImGui.SameLine();
-        if ImGui.Button("Rem top") {
+        if ImGui.Button("-T") {
             level_increase_dimensions(*level, 0, 0, -1, 0);
         }
         ImGui.SameLine();
-        if ImGui.Button("Rem bot") {
+        if ImGui.Button("-B") {
             level_increase_dimensions(*level, 0, 0, 0, -1);
         }
 
+        img_pos := window_pos + .{0, 256};
 
-        ImGui.PushItemWidth(150);
-        ImGui.InputInt("Interaction Id", *editor.interaction_id);
-        if editor.tool == .SELECT && editor.select_start == editor.select_end {
-            if is_in_bounds(editor.select_start, *level) {
-                ImGui.SameLine();
-                if ImGui.Button("Set interaction id") {
-                    tile := level.grid[editor.select_start.x][editor.select_start.y];
-                    if get_block_type(tile) != .NONE {
-                        if editor.interaction_id > 65535 || editor.interaction_id < 0 {
-                            print("Interaction id is out of range of u16!\n");
-                        } else {
-                            level.grid[editor.select_start.x][editor.select_start.y].interaction_id = xx editor.interaction_id;
-                        }
-                    }
-                }
-            }
-        }
-
+        draw_list.AddImage(draw_list, cast,no_check(*void)(sprites.id), img_pos, img_pos + dest);
         // Selected tile
         focused := ImGui.IsWindowFocused();
         mouse_x, mouse_y := get_mouse_position_explicit();
@@ -292,6 +278,48 @@ draw_editor :: () {
                 editor.selected_block.flags ^= .FLIPPED_Y;
             }
         }
+
+        ImGui.PushItemWidth(150);
+        ImGui.InputInt("Interaction Id", *editor.interaction_id);
+        if editor.tool == .SELECT && editor.select_start == editor.select_end {
+            if is_in_bounds(editor.select_start, *level) {
+                ImGui.SameLine();
+                if ImGui.Button("Set") {
+                    tile := level.grid[editor.select_start.x][editor.select_start.y];
+                    if get_block_type(tile) != .NONE {
+                        if editor.interaction_id > 65535 || editor.interaction_id < 0 {
+                            print("Interaction id is out of range of u16!\n");
+                        } else {
+                            level.grid[editor.select_start.x][editor.select_start.y].interaction_id = xx editor.interaction_id;
+                        }
+                    }
+                }
+            }
+
+        }
+        ImGui.PushItemWidth(150);
+        ImGui.InputInt("Turns on inanctive", *editor.turns_on_inactive);
+        if editor.tool == .SELECT && editor.select_start == editor.select_end {
+            if is_in_bounds(editor.select_start, *level) {
+                ImGui.SameLine();
+                if ImGui.Button("Set") {
+                    level.grid[editor.select_start.x][editor.select_start.y].turns_on_inactive = xx editor.turns_on_inactive;
+                }
+            }
+        }
+        ImGui.PushItemWidth(150);
+        ImGui.InputInt("Turns on active", *editor.turns_on_active);
+        if editor.tool == .SELECT && editor.select_start == editor.select_end {
+            if is_in_bounds(editor.select_start, *level) {
+                ImGui.SameLine();
+                if ImGui.Button("Set") {
+                    level.grid[editor.select_start.x][editor.select_start.y].turns_on_active = xx editor.turns_on_active;
+                }
+            }
+        }
+        editor.selected_block.turns_on_active = xx editor.turns_on_active;
+        editor.selected_block.turns_on_inactive = xx editor.turns_on_inactive;
+
 
         // Draw yellow rect around hovered tile
         if highlighted && editor.selected_block_pos != highlighted_xy {
@@ -360,6 +388,12 @@ update_editor :: (input: *Input_State) {
                             blocks.*[mouse_tile.x][mouse_tile.y].flags |= Block.Flag.GOAL;
                         } else if input.mwheel_pressed {
                             blocks.*[mouse_tile.x][mouse_tile.y].flags |= Block.Flag.VANISH_GOAL;
+                        } if input.is_pressed[SDL_SCANCODE_LCTRL] {
+                            blocks.*[mouse_tile.x][mouse_tile.y].flags |= Block.Flag.TIMER;
+                            blocks.*[mouse_tile.x][mouse_tile.y].timer_turns_left = 0;
+                            blocks.*[mouse_tile.x][mouse_tile.y].turns_on_active = cast(u8)editor.turns_on_active;
+                            blocks.*[mouse_tile.x][mouse_tile.y].turns_on_inactive = cast(u8)editor.turns_on_inactive;
+                            blocks.*[mouse_tile.x][mouse_tile.y].timer_is_solid = true;
                         }
                     }
                     changed_map = true;

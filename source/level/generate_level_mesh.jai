@@ -4,6 +4,7 @@ Level_Mesh :: struct {
     tiles: Mesh;
     goal: Mesh;
     gold: Mesh;
+    timer: Mesh;
 
     // Overall buffer for combined render of every light mask 
     light_buffer: Framebuffer;
@@ -17,11 +18,13 @@ generate_level_mesh :: () {
     mesh_free(*mesh.tiles);
     mesh_free(*mesh.gold);
     mesh_free(*mesh.goal);
+    mesh_free(*mesh.timer);
     
     mesh_init(*mesh.floor);
     mesh_init(*mesh.tiles);
     mesh_init(*mesh.gold);
     mesh_init(*mesh.goal);
+    mesh_init(*mesh.timer);
 
     light_count = 0;
 
@@ -29,6 +32,11 @@ generate_level_mesh :: () {
         for x: 0..level.dimensions.x-1 {
             for y: 0..level.dimensions.y-1 {
                 block := blocks.*[x][y];
+                if block.flags & .TIMER {
+                    if timer_is_active(block) == false {
+                        continue;
+                    }
+                }
                 // Empty block
                 is_player := level.player_pos.x == xx x && level.player_pos.y == xx y;
                 if block.id == 0 && is_player == false continue;
@@ -119,6 +127,7 @@ generate_level_mesh :: () {
     mesh_generate(*mesh.tiles);
     mesh_generate(*mesh.gold);
     mesh_generate(*mesh.goal);
+    mesh_generate(*mesh.timer);
 
     if mesh.light_buffer.id == 0 {
         mesh.light_buffer = create_framebuffer(WINDOW_WIDTH, WINDOW_HEIGHT);

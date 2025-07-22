@@ -8,7 +8,7 @@ Level :: struct {
 
     player_pos := v2i.{0, 0};
     player_spawn_pos := v2i.{0, 0};
-
+    
     name : [MAX_LEVEL_NAME_LENGTH]u8;
     id : u32 = 0;
     

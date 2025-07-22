@@ -1,12 +1,37 @@
 
-Old_Level :: Level;
+Old_Level :: struct {
+    MAX_WIDTH :: 512;
+    MAX_HEIGHT :: 512;
+    dimensions := v2i.{4, 4};
+    grid: [MAX_WIDTH][MAX_HEIGHT] Old_Block;
+    floor: [MAX_WIDTH][MAX_HEIGHT] Old_Block;
+
+    player_pos := v2i.{0, 0};
+    player_spawn_pos := v2i.{0, 0};
+
+    name : [MAX_LEVEL_NAME_LENGTH]u8;
+    id : u32 = 0;
+    
+    dialogue_data: Dialogue_Data;
+}
+
+Old_Block :: struct {
+    id: u8;
+    flags: Block.Flag;
+    interaction_id: u16;
+}
 
 one_time_conversion :: (level_name: string) {
+    print("%, %\n", size_of(Old_Level), size_of(Level));
+    print("Starting conversion\n");
     old: *Old_Level = New(Old_Level);
     new: *Level = New(Level);
     load_old_level(old, level_name);
+    print("Loaded old level\n");
     level_format_converter(new, old);
+    print("Converted\n");
     save_level(new, level_name);
+    print("Saved\n");
     free(old);
     free(new);
     print("One time level conversion completed successfully.\n");
@@ -15,14 +40,19 @@ one_time_conversion :: (level_name: string) {
 // #run one_time_conversion("open");
 
 level_format_converter :: (level: *Level, old_level: *Old_Level) {
-    level.* = old_level.*;
+    level.dimensions = old_level.dimensions;
+    level.player_pos = old_level.player_pos;
+    level.player_spawn_pos = old_level.player_spawn_pos;
+    level.dialogue_data = old_level.dialogue_data;
+    level.name = old_level.name;
+    level.id = old_level.id;
+
     for x: 0..level.dimensions.x-1 {
         for y: 0..level.dimensions.y-1 {
-            level.grid[x][y] = old_level.grid[x][y];
-            level.floor[x][y] = old_level.floor[x][y];
-
-            level.grid[x][y].id += xx ((cast(int)(level.grid[x][y].id) / 8) * 8);
-            level.floor[x][y].id += xx ((cast(int)(level.floor[x][y].id) / 8) * 8);
+            level.grid[x][y] = .{};
+            level.floor[x][y] = .{};
+            memcpy(*level.grid[x][y], *old_level.grid[x][y], size_of(Old_Block));
+            memcpy(*level.floor[x][y], *old_level.floor[x][y], size_of(Old_Block));
         }
     }
 }

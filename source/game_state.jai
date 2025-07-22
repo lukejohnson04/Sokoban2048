@@ -56,6 +56,7 @@ Game_State :: struct {
     rewind_meter : float32;
 
     turn_memory: Turn_Memory;
+    turn_count := 0;
 
 
     resource_check_timer : float32;

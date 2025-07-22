@@ -208,6 +208,10 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         shader_uniform(texture_shader, "gold", 1);
         mesh_draw(*world_mesh.gold);
         shader_uniform(texture_shader, "gold", 0);
+        shader_uniform(texture_shader, "color_pass", Vector4.{1, 0.2, 0.2, 1});
+        mesh_draw(*world_mesh.timer);
+        shader_uniform(texture_shader, "color_pass", Vector4.{1, 1, 1, 1});
+        shader_uniform(texture_shader, "gold", 0);
         shader_uniform(texture_shader, "colormult", 1.0);
     }
     
@@ -227,6 +231,26 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
             set_framebuffer(*world_buffer);
         }
     }
+
+    // Draw timer blocks
+    use_shader(text_shader);
+    shader_uniform(text_shader, "view", view);
+    shader_uniform(text_shader, "color", .{1, 1, 1, 1});
+    for x: 0..level.dimensions.x-1 {
+        for y: 0..level.dimensions.y-1 {
+            timer := level.grid[x][y];
+            if timer.flags & .TIMER {
+                left := timer_turns_left(timer);
+                print("Turns left on timer: %\n", left);
+                print("Active: % Inactive: %\n", timer.turns_on_active, timer.turns_on_inactive);
+                struct_str := tprint("%", left);
+                draw_text(struct_str, .{x * 64 + 24, y * 64 + 44}, *font_m5x7, intermediate_vao, intermediate_vbo);
+                break;
+            }
+        }
+    }
+    use_shader(texture_shader);
+
 
     if editor.editing_level == false {
         source := Rect.{16,0,16,16};
@@ -379,6 +403,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
 
     #if true {
         use_shader(text_shader);
+        shader_uniform(text_shader, "view", Matrix4_Identity);
         shader_uniform(text_shader, "color", .{1, 0, 0, 1});
 
         if editor.editing_level {
