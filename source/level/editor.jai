@@ -205,10 +205,12 @@ draw_editor :: () {
 
         if editor.tool == .SELECT || editor.tool == .MOVE {
             if ImGui.Button("Flip horizontally") {
-                print("Flip x\n");
+                flip_tiles(*level.grid, true, false);
+                generate_level_mesh();
             }
             if ImGui.Button("Flip vertically") {
-                print("Flip y\n");
+                flip_tiles(*level.grid, false, true);
+                generate_level_mesh();
             }
         }
     }
@@ -526,35 +528,6 @@ update_editor :: (input: *Input_State) {
             }
         }
         case .MOVE; {
-            move_tiles :: (blocks: *type_of(Level.grid), offset: v2i) {
-                using context.game_state;
-                start, end : v2i;
-                start.x = min(editor.select_end.x, editor.select_start.x);
-                start.y = min(editor.select_end.y, editor.select_start.y);
-                end.x   = max(editor.select_end.x, editor.select_start.x);
-                end.y   = max(editor.select_end.y, editor.select_start.y);
-                
-                selection_size := end - start + .{1, 1};
-                memory := cast(*Block) temporary_alloc(selection_size.x * selection_size.y * size_of(Block));
-
-                for x: 0..selection_size.x-1 {
-                    for y: 0..selection_size.y-1 {
-                        memory[x + y * selection_size.x] = blocks.*[start.x + x][start.y + y];
-                        blocks.*[start.x + x][start.y + y] = .{};
-                    }
-                }
-
-                for x: 0..selection_size.x-1 {
-                    for y: 0..selection_size.y-1 {
-                        copied_block := memory[x + y * selection_size.x];
-                        block_ptr := *blocks.*[start.x + x + offset.x][start.y + y + offset.y];
-                        if copied_block != .{} {
-                            block_ptr.* = copied_block;
-                        }
-                    }
-                }
-            }
-
             if is_in_bounds(mouse_tile, *level) {
                 if editor.move_state == .NOT_STARTED {
                     if input.mouse_just_pressed {
@@ -657,4 +630,53 @@ HSV :: (h: float, s: float, v: float, a: float = 1.0) -> Vector4 {
     r, g, b: float;
     ImGui.ColorConvertHSVtoRGB(h, s, v, *r, *g, *b);
     return .{r, g, b, a};
+}
+
+move_tiles :: (blocks: *type_of(Level.grid), offset: v2i) {
+    using context.game_state;
+    start, end : v2i;
+    start.x = min(editor.select_end.x, editor.select_start.x);
+    start.y = min(editor.select_end.y, editor.select_start.y);
+    end.x   = max(editor.select_end.x, editor.select_start.x);
+    end.y   = max(editor.select_end.y, editor.select_start.y);
+    
+    selection_size := end - start + .{1, 1};
+    memory := cast(*Block) temporary_alloc(selection_size.x * selection_size.y * size_of(Block));
+
+    for x: 0..selection_size.x-1 {
+        for y: 0..selection_size.y-1 {
+            memory[x + y * selection_size.x] = blocks.*[start.x + x][start.y + y];
+            blocks.*[start.x + x][start.y + y] = .{};
+        }
+    }
+
+    for x: 0..selection_size.x-1 {
+        for y: 0..selection_size.y-1 {
+            copied_block := memory[x + y * selection_size.x];
+            block_ptr := *blocks.*[start.x + x + offset.x][start.y + y + offset.y];
+            if copied_block != .{} {
+                block_ptr.* = copied_block;
+            }
+        }
+    }
+}
+
+flip_tiles :: (blocks: *type_of(Level.grid), flip_x: bool, flip_y: bool) {
+    using context.game_state;
+    start, end : v2i;
+    start.x = min(editor.select_end.x, editor.select_start.x);
+    start.y = min(editor.select_end.y, editor.select_start.y);
+    end.x   = max(editor.select_end.x, editor.select_start.x);
+    end.y   = max(editor.select_end.y, editor.select_start.y);
+    
+    selection_size := end - start;
+
+    for x: 0..ifx flip_x selection_size.x/2 else selection_size.x {
+        for y: 0..ifx flip_y selection_size.y/2 else selection_size.y {
+            temp_block := blocks.*[start.x + x][start.y + y];
+            end_block := *blocks.*[ifx flip_x end.x - x else start.x + x][ifx flip_y end.y - y else start.y + y];
+            blocks.*[start.x + x][start.y + y] = end_block.*;
+            end_block.* = temp_block;
+        }
+    }
 }
