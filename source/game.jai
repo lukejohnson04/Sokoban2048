@@ -133,23 +133,31 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
 
     if editor.enabled && editor.editing_level {
         update_editor(input);
+        if input.just_pressed[SDL_SCANCODE_LALT] {
+            editor.move_camera_with_mouse = !editor.move_camera_with_mouse;
+        }
     }
 
 
-    // Render begin
-    if editor.enabled {
-        ImGui_ImplSdl_NewFrame(window);
-        ImGui.NewFrame();
 
-        ImGui.Begin("Window");
-        draw_editor();
+    // Render begin
+    ImGui_ImplSdl_NewFrame(window);
+    ImGui.NewFrame();
+    if editor.enabled {
+
+        window_flags : ImGui.WindowFlags = 0;
+        // window_flags |= ImGui.WindowFlags.MenuBar;
+
+        if ImGui.Begin("Window", null, window_flags) {
+            draw_editor();
+        }
         ImGui.End();
     }
 
     // Rendering
     glDisable(GL_DEPTH_TEST);
     set_framebuffer(null);
-    clear_framebuffer(0, 0, 0, 1);
+    clear_framebuffer(1, 1, 1, 1);
     set_framebuffer(*floor_buffer);
     clear_framebuffer(0, 0, 0, 0);
     set_framebuffer(*world_buffer);
@@ -241,8 +249,6 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
             timer := level.grid[x][y];
             if timer.flags & .TIMER {
                 left := timer_turns_left(timer);
-                print("Turns left on timer: %\n", left);
-                print("Active: % Inactive: %\n", timer.turns_on_active, timer.turns_on_inactive);
                 struct_str := tprint("%", left);
                 draw_text(struct_str, .{x * 64 + 24, y * 64 + 44}, *font_m5x7, intermediate_vao, intermediate_vbo);
                 break;

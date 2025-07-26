@@ -19,6 +19,7 @@ Editor_State :: struct {
     block_flip_y: bool;
     fill_all_layers: bool;
     show_both_layers: bool = true;
+    move_camera_with_mouse: bool;
 
     select_state := Editor_Select_State.NOT_STARTED;
     select_start : v2i;
@@ -83,23 +84,43 @@ draw_editor :: () {
         editor.editing_level = true;
     }
 
-    if level.id != 0 {
-        ImGui.LabelText("##level_title", tprint("Level: %", cast(string) level.name));
-    } else {
-        ImGui.LabelText("##level_title", "No level loaded");
-    }
-    ImGui.InputText("##load", editor.load_level_field.data, MAX_LEVEL_NAME_LENGTH);
-    ImGui.SameLine();
-    if ImGui.Button("Load Level") {
-        loaded = load_level(*level, xx editor.load_level_field, *game_state.field);
-        clear_turn_memory(*turn_memory);
-        if loaded {
-            for 0..editor.load_level_field.count-1 {
-                editor.load_level_field[it] = 0;
+    if ImGui.CollapsingHeader("File") {
+        if level.id != 0 {
+            ImGui.LabelText("##level_title", tprint("Level: %", cast(string) level.name));
+        } else {
+            ImGui.LabelText("##level_title", "No level loaded");
+        }
+        ImGui.InputText("##load", editor.load_level_field.data, MAX_LEVEL_NAME_LENGTH);
+        ImGui.SameLine();
+        if ImGui.Button("Load Level") {
+            loaded = load_level(*level, xx editor.load_level_field, *game_state.field);
+            clear_turn_memory(*turn_memory);
+            if loaded {
+                for 0..editor.load_level_field.count-1 {
+                    editor.load_level_field[it] = 0;
+                }
+                editor.editing_level = true;
             }
-            editor.editing_level = true;
+        }
+                ImGui.InputText("##save", editor.save_level_field.data, MAX_LEVEL_NAME_LENGTH);
+        ImGui.SameLine();
+        if ImGui.Button("Save Level") {
+            if editor.save_level_field[0] == 0 {
+                save_level(*level, xx level.name);
+            } else {
+                save_level(*level, xx editor.save_level_field);
+            }
+            
+            for 0..editor.save_level_field.count-1 {
+                editor.save_level_field[it] = 0;
+            }
+        }
+        ImGui.SameLine();
+        if ImGui.Button("New level") {
+            on_new_level_pressed();
         }
     }
+
     
     if editor.editing_level == false {
         if ImGui.Button("Edit Level") {
@@ -119,65 +140,52 @@ draw_editor :: () {
                 }
             }
         }
-        ImGui.SameLine();
-        if ImGui.Button("New level") {
-            on_new_level_pressed();
-        }
-    } else {
-        ImGui.InputText("##save", editor.save_level_field.data, MAX_LEVEL_NAME_LENGTH);
-        ImGui.SameLine();
-        if ImGui.Button("Save Level") {
-            if editor.save_level_field[0] == 0 {
-                save_level(*level, xx level.name);
-            } else {
-                save_level(*level, xx editor.save_level_field);
+        return;
+    }
+    if ImGui.Button("Play Level") {
+        if level.id == 0 {
+            print("Save level first!\n");
+        } else {
+            save_level(*level, xx level.name);
+            loaded = load_level(*level, xx level.name, *game_state.field);
+            turn_count = 0;
+            camera.zoom = 1;
+            camera.pos = .{level.player_pos.x * 64.0, level.player_pos.y * 64.0};
+            if loaded {
+                clear_turn_memory(*turn_memory);
             }
-            
-            for 0..editor.save_level_field.count-1 {
-                editor.save_level_field[it] = 0;
-            }
+            editor.editing_level = false;
         }
-        if ImGui.Button("Play Level") {
-            if level.id == 0 {
-                print("Save level first!\n");
-            } else {
-                save_level(*level, xx level.name);
-                loaded = load_level(*level, xx level.name, *game_state.field);
-                turn_count = 0;
-                camera.zoom = 1;
-                camera.pos = .{level.player_pos.x * 64.0, level.player_pos.y * 64.0};
-                if loaded {
-                    clear_turn_memory(*turn_memory);
-                }
-                editor.editing_level = false;
+    }
+
+    items := string.["Layer1", "Floor"];
+    if ImGui.BeginCombo("##combo", items[editor.layer].data) {
+        for 0..items.count-1 {
+            is_selected : bool = editor.layer == it;
+            if ImGui.Selectable(items[it].data, is_selected) {
+                editor.layer = it;
+            }
+
+            if is_selected {
+                ImGui.SetItemDefaultFocus();
             }
         }
-        ImGui.SameLine();
-        if ImGui.Button("New level") {
-            on_new_level_pressed();
-        }
+        ImGui.EndCombo();
+    }
+    ImGui.SameLine();
+    ImGui.Checkbox("Show all layers", *editor.show_both_layers);
 
-        items := string.["Layer1", "Floor"];
-        if ImGui.BeginCombo("##combo", items[editor.layer].data) {
-            for 0..items.count-1 {
-                is_selected : bool = editor.layer == it;
-                if ImGui.Selectable(items[it].data, is_selected) {
-                    editor.layer = it;
-                }
-
-                if is_selected {
-                    ImGui.SetItemDefaultFocus();
-                }
-            }
-            ImGui.EndCombo();
-        }
-        ImGui.SameLine();
-        ImGui.Checkbox("Show all layers", *editor.show_both_layers);
-
-
+    // Tools
+    ImGui.SeparatorText("Tools");
+    {
+        using ImGui.Col;
+        ImGui.PushStyleColor(ImGuiCol_Button, HSV(0.0, 0.6, 0.6));
+        ImGui.PushStyleColor(ImGuiCol_ButtonHovered, HSV(0, 0.7, 0.7));
+        ImGui.PushStyleColor(ImGuiCol_ButtonActive, HSV(0, 0.8, 0.8));
         if ImGui.Button("Brush") {
             editor.tool = .BRUSH;
         }
+        ImGui.PopStyleColor(3);
         ImGui.SameLine();
         if ImGui.Button("Select") {
             editor.tool = .SELECT;
@@ -194,14 +202,17 @@ draw_editor :: () {
         if ImGui.Button("Fill") {
             editor.tool = .FILL;
         }
+    }
 
-        ImGui.SameLine();
-        ImGui.Checkbox("Fill All Layers", *editor.fill_all_layers);
-        ImGui.SameLine();
-        ImGui.Checkbox("Flip x", *editor.block_flip_x);
-        ImGui.SameLine();
-        ImGui.Checkbox("Flip y", *editor.block_flip_y);
+    ImGui.SameLine();
+    ImGui.Checkbox("Fill All Layers", *editor.fill_all_layers);
+    ImGui.SameLine();
+    ImGui.Checkbox("Flip x", *editor.block_flip_x);
+    ImGui.SameLine();
+    ImGui.Checkbox("Flip y", *editor.block_flip_y);
 
+    ImGui.SeparatorText("Map settings");
+    {
         if ImGui.Button("+L") {
             level_increase_dimensions(*level, 1, 0, 0, 0);
         }
@@ -238,10 +249,17 @@ draw_editor :: () {
         if ImGui.Button("-B") {
             level_increase_dimensions(*level, 0, 0, 0, -1);
         }
+    }
+    
 
-        img_pos := window_pos + .{0, 256};
+    // Tile picker
+    ImGui.SeparatorText("Tile picker");
+    {
+        using ImGui.StyleVar;
+        img_pos := ImGui.GetCursorScreenPos();
+        ImGui.Image(cast,no_check(*void)(sprites.id), .{xx sprites.width * 2.0, xx sprites.height * 2.0}, .{0, 0}, .{1, 1});
 
-        draw_list.AddImage(draw_list, cast,no_check(*void)(sprites.id), img_pos, img_pos + dest);
+        // draw_list.AddImage(draw_list, cast,no_check(*void)(sprites.id), img_pos, img_pos + dest);
         // Selected tile
         focused := ImGui.IsWindowFocused();
         mouse_x, mouse_y := get_mouse_position_explicit();
@@ -258,69 +276,14 @@ draw_editor :: () {
                 highlighted_block = xx (highlighted_xy.x + highlighted_xy.y * 16);
                 highlighted = true;
 
-                if focused {
-                    if ImGui.IsMouseDown(ImGui.MouseButton.Left) {
-                        block: Block;
-                        block.id = xx highlighted_block;
-                        editor.selected_block = block;
-                        editor.selected_block_pos = highlighted_xy;
-                    }
+                if ImGui.IsMouseDown(ImGui.MouseButton.Left) {
+                    block: Block;
+                    block.id = xx highlighted_block;
+                    editor.selected_block = block;
+                    editor.selected_block_pos = highlighted_xy;
                 }
             }
         }
-
-        // Make sure flip is always synchronized with checkbox
-        if get_block_type(editor.selected_block) != .NONE {
-            if editor.block_flip_x != cast(bool) (editor.selected_block.flags & .FLIPPED_X) {
-                editor.selected_block.flags ^= .FLIPPED_X;
-            }
-            if editor.block_flip_y != cast(bool) (editor.selected_block.flags & .FLIPPED_Y) {
-                editor.selected_block.flags ^= .FLIPPED_Y;
-            }
-        }
-
-        ImGui.PushItemWidth(150);
-        ImGui.InputInt("Interaction Id", *editor.interaction_id);
-        if editor.tool == .SELECT && editor.select_start == editor.select_end {
-            if is_in_bounds(editor.select_start, *level) {
-                ImGui.SameLine();
-                if ImGui.Button("Set") {
-                    tile := level.grid[editor.select_start.x][editor.select_start.y];
-                    if get_block_type(tile) != .NONE {
-                        if editor.interaction_id > 65535 || editor.interaction_id < 0 {
-                            print("Interaction id is out of range of u16!\n");
-                        } else {
-                            level.grid[editor.select_start.x][editor.select_start.y].interaction_id = xx editor.interaction_id;
-                        }
-                    }
-                }
-            }
-
-        }
-        ImGui.PushItemWidth(150);
-        ImGui.InputInt("Turns on inanctive", *editor.turns_on_inactive);
-        if editor.tool == .SELECT && editor.select_start == editor.select_end {
-            if is_in_bounds(editor.select_start, *level) {
-                ImGui.SameLine();
-                if ImGui.Button("Set") {
-                    level.grid[editor.select_start.x][editor.select_start.y].turns_on_inactive = xx editor.turns_on_inactive;
-                }
-            }
-        }
-        ImGui.PushItemWidth(150);
-        ImGui.InputInt("Turns on active", *editor.turns_on_active);
-        if editor.tool == .SELECT && editor.select_start == editor.select_end {
-            if is_in_bounds(editor.select_start, *level) {
-                ImGui.SameLine();
-                if ImGui.Button("Set") {
-                    level.grid[editor.select_start.x][editor.select_start.y].turns_on_active = xx editor.turns_on_active;
-                }
-            }
-        }
-        editor.selected_block.turns_on_active = xx editor.turns_on_active;
-        editor.selected_block.turns_on_inactive = xx editor.turns_on_inactive;
-
-
         // Draw yellow rect around hovered tile
         if highlighted && editor.selected_block_pos != highlighted_xy {
             p1 := ImGui.ImVec2.{highlighted_xy.x * TILE_SIZE, highlighted_xy.y * TILE_SIZE};
@@ -337,10 +300,66 @@ draw_editor :: () {
         p2 := p1 + .{TILE_SIZE, 0};
         p3 := p1 + .{TILE_SIZE, TILE_SIZE};
         p4 := p1 + .{0, TILE_SIZE};
-        colf := Vector4.{0, 1, 0, 1};
+        colf := Vector4.{1, 0, 0, 1};
         
         draw_list.AddQuad(draw_list, img_pos + p1, img_pos + p2, img_pos + p3, img_pos + p4, ImGui.GetColorU32(colf), 2);
     }
+    // Make sure flip is always synchronized with checkbox
+    if get_block_type(editor.selected_block) != .NONE {
+        if editor.block_flip_x != cast(bool) (editor.selected_block.flags & .FLIPPED_X) {
+            editor.selected_block.flags ^= .FLIPPED_X;
+        }
+        if editor.block_flip_y != cast(bool) (editor.selected_block.flags & .FLIPPED_Y) {
+            editor.selected_block.flags ^= .FLIPPED_Y;
+        }
+    }
+
+    ImGui.PushItemWidth(150);
+    ImGui.InputInt("Interaction Id", *editor.interaction_id);
+    if editor.tool == .SELECT && editor.select_start == editor.select_end {
+        if is_in_bounds(editor.select_start, *level) {
+            ImGui.SameLine();
+            if ImGui.Button("Set") {
+                tile := level.grid[editor.select_start.x][editor.select_start.y];
+                if get_block_type(tile) != .NONE {
+                    if editor.interaction_id > 65535 || editor.interaction_id < 0 {
+                        print("Interaction id is out of range of u16!\n");
+                    } else {
+                        level.grid[editor.select_start.x][editor.select_start.y].interaction_id = xx editor.interaction_id;
+                    }
+                }
+            }
+        }
+
+    }
+    ImGui.PushItemWidth(150);
+    ImGui.InputInt("Turns on inanctive", *editor.turns_on_inactive);
+    if editor.tool == .SELECT && editor.select_start == editor.select_end {
+        if is_in_bounds(editor.select_start, *level) {
+            ImGui.SameLine();
+            if ImGui.Button("Set") {
+                level.grid[editor.select_start.x][editor.select_start.y].turns_on_inactive = xx editor.turns_on_inactive;
+            }
+        }
+    }
+    ImGui.PushItemWidth(150);
+    ImGui.InputInt("Turns on active", *editor.turns_on_active);
+    if editor.tool == .SELECT && editor.select_start == editor.select_end {
+        if is_in_bounds(editor.select_start, *level) {
+            ImGui.SameLine();
+            if ImGui.Button("Set") {
+                level.grid[editor.select_start.x][editor.select_start.y].turns_on_active = xx editor.turns_on_active;
+            }
+        }
+    }
+    editor.selected_block.turns_on_active = xx editor.turns_on_active;
+    editor.selected_block.turns_on_inactive = xx editor.turns_on_inactive;
+
+    ImGui.SeparatorText("Controls");
+    {
+        ImGui.Checkbox("Mouse Cam", *editor.move_camera_with_mouse);
+    }
+
     if loaded {
         vfield_generate_flood_fill(*level, game_state.field);
         generate_level_mesh();
@@ -623,4 +642,10 @@ editor_draw :: () {
         
         draw_rect_with_outline(rect, 4, color_vao, color_vbo);
     }
+}
+
+HSV :: (h: float, s: float, v: float, a: float = 1.0) -> Vector4 {
+    r, g, b: float;
+    ImGui.ColorConvertHSVtoRGB(h, s, v, *r, *g, *b);
+    return .{r, g, b, a};
 }

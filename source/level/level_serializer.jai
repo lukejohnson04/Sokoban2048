@@ -31,6 +31,8 @@ load_level :: (level: *Level, name: string, field: *Visibility_Field, log_errors
         vfield_generate_flood_fill(level, field.*);
     }
 
+    generate_level_mesh();
+    
     return true;
 }
 

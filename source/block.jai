@@ -94,7 +94,6 @@ Block :: struct {
 timer_turns_left :: (block: Block) -> u8 {
     timer_length := cast(s64)(block.turns_on_active) + xx block.turns_on_inactive;
     inc := cast(u8)(context.game_state.turn_count % timer_length);
-    print("Timer length: %\nInc: %\n", timer_length, inc);
     // Block is inactive, timer counting down to active
     if inc >= block.turns_on_active {
         return xx (timer_length - inc);

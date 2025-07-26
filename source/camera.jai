@@ -95,7 +95,7 @@ lerp_player_camera :: (window: *SDL_Window) {
             camera.pos.y = lerp(camera.pos.y, camera_dest.y, 0.008);
         }
 
-    } else if (SDL_GetWindowFlags(window) & SDL_WINDOW_INPUT_FOCUS) != 0 {
+    } else if (SDL_GetWindowFlags(window) & SDL_WINDOW_INPUT_FOCUS) != 0 && editor.move_camera_with_mouse {
         DEBUG_CAMERA_SPEED := 12.0 * (1.0 / camera.zoom);
         DEADZONE_PERCENT :: 0.1;
         DEADZONE_WIDTH := WINDOW_WIDTH * DEADZONE_PERCENT;
@@ -103,9 +103,9 @@ lerp_player_camera :: (window: *SDL_Window) {
 
         mouse_pos := get_mouse_position();
 
-        if mouse_pos.x <= 0 || mouse_pos.y <= 0 || mouse_pos.y >= WINDOW_HEIGHT-1 || mouse_pos.x >= WINDOW_WIDTH-1 {
-            return;
-        }
+        // if mouse_pos.x <= 0 || mouse_pos.y <= 0 || mouse_pos.y >= WINDOW_HEIGHT-1 || mouse_pos.x >= WINDOW_WIDTH-1 {
+        //     return;
+        // }
         
         if mouse_pos.x >= WINDOW_WIDTH - DEADZONE_WIDTH {
             camera.pos.x += DEBUG_CAMERA_SPEED;
