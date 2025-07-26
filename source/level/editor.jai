@@ -150,7 +150,7 @@ draw_editor :: () {
             loaded = load_level(*level, xx level.name, *game_state.field);
             turn_count = 0;
             camera.zoom = 1;
-            camera.pos = .{level.player_pos.x * 64.0, level.player_pos.y * 64.0};
+            //camera.pos = .{level.player_pos.x * 64.0, level.player_pos.y * 64.0};
             if loaded {
                 clear_turn_memory(*turn_memory);
             }
@@ -201,6 +201,15 @@ draw_editor :: () {
         ImGui.SameLine();
         if ImGui.Button("Fill") {
             editor.tool = .FILL;
+        }
+
+        if editor.tool == .SELECT || editor.tool == .MOVE {
+            if ImGui.Button("Flip horizontally") {
+                print("Flip x\n");
+            }
+            if ImGui.Button("Flip vertically") {
+                print("Flip y\n");
+            }
         }
     }
 

@@ -21,7 +21,6 @@ init_light :: (light: *Light, pos: Vector2, radius: float, color: Vector4) {
         size := light.radius * 2;
         light.shadow_buffer = create_framebuffer(xx size, xx size);
         light.light_buffer = create_framebuffer(xx size, xx size);
-        print("Created 2 new framebuffers for a light\n");
     }    
 }
 

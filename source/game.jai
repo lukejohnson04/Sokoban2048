@@ -144,13 +144,10 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     ImGui_ImplSdl_NewFrame(window);
     ImGui.NewFrame();
     if editor.enabled {
-
         window_flags : ImGui.WindowFlags = 0;
-        // window_flags |= ImGui.WindowFlags.MenuBar;
 
-        if ImGui.Begin("Window", null, window_flags) {
-            draw_editor();
-        }
+        ImGui.Begin("Window", null, window_flags);
+        draw_editor();
         ImGui.End();
     }
 
@@ -191,7 +188,6 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     shader_uniform(texture_shader, "colormult", 1.0);
     shader_uniform(texture_shader, "color_pass", Vector4.{1, 1, 1, 1});
 
-
     resource_check_timer += FRAME_TIME;
     if resource_check_timer > 0.25 {
         check_resource_reload(*sprites);
@@ -199,14 +195,6 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     }
 
     bind_texture(sprites);
-
-    if input.just_pressed[SDL_SCANCODE_Y] {
-        camera.zoom += 0.01;
-        print("Zoom: %\n", camera.zoom);
-    } else if input.just_pressed[SDL_SCANCODE_T] {
-        camera.zoom -= 0.01;
-        print("Zoom: %\n", camera.zoom);
-    }
 
     draw_extra_mesh_layers :: () #expand {
         shader_uniform(texture_shader, "colormult", 0.8);
@@ -270,7 +258,30 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     use_shader(color_shader);
     shader_uniform(color_shader, "color", Vector4.{1, 0, 0, 1});
     shader_uniform(color_shader, "view", view);
-    draw_rect_with_outline(Rect.{0, 0, xx (level.dimensions.x * 64), xx (level.dimensions.y * 64)}, 4);
+
+    level_screen_width := level.dimensions.x / SCREEN_TILE_WIDTH;
+    level_screen_height := level.dimensions.y / SCREEN_TILE_HEIGHT;
+
+    bound_begin, bound_end := get_camera_level_bounds(camera, *level);
+    for x: 0..level_screen_width-1 {
+        dimension_x : float32 = (SCREEN_TILE_WIDTH * 64);
+        for y: 0..level_screen_height-1 {
+            dimension_y : float32 = (SCREEN_TILE_HEIGHT * 64);
+            if SCREEN_TILE_WIDTH * (x+1) < xx bound_begin.x {
+                continue;
+            }
+            if SCREEN_TILE_HEIGHT * (y+1) < xx bound_begin.y {
+                continue;
+            }
+            if SCREEN_TILE_WIDTH * x > xx bound_end.x {
+                continue;
+            }
+            if SCREEN_TILE_HEIGHT * y > xx bound_end.y{
+                continue;
+            }
+            draw_rect_with_outline(Rect.{dimension_x * x, dimension_y * y, xx dimension_x, xx dimension_y}, 4);
+        }
+    }
 
     if lighting_enabled == false || editor.editing_level {
         set_framebuffer(null);
@@ -424,10 +435,8 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         }
     }
     
-    if editor.enabled {
-        ImGui.Render();
-        ImGui_ImplSdl_RenderDrawLists(ImGui.GetDrawData());
-    }
+    ImGui.Render();
+    ImGui_ImplSdl_RenderDrawLists(ImGui.GetDrawData());
 
     SDL_GL_SwapWindow(window);
     render_end_time := seconds_since_init();
@@ -438,7 +447,17 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
 
 
 WINDOW_WIDTH :: 1280;
-WINDOW_HEIGHT :: 720;
+WINDOW_HEIGHT :: 960;
+WINDOW_SIZE :: v2i.{WINDOW_WIDTH, WINDOW_HEIGHT};
+
+GAME_WIDTH :: 320;
+GAME_HEIGHT :: 240;
+GAME_SIZE :: v2i.{GAME_WIDTH, GAME_HEIGHT};
+
+SCREEN_TILE_WIDTH :: GAME_WIDTH / 16;
+SCREEN_TILE_HEIGHT :: GAME_HEIGHT / 16;
+SCREEN_TILE_SIZE :: v2i.{SCREEN_TILE_WIDTH, SCREEN_TILE_HEIGHT};
+
 VSYNC :: true;
 
 #load "render/render.jai";

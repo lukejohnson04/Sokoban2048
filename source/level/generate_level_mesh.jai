@@ -118,7 +118,7 @@ generate_level_mesh :: () {
 
 
     generate_mesh_of_layer(*level.floor, *mesh.floor, false);
-    generate_mesh_of_layer(*level.grid, *mesh.tiles, true);
+    generate_mesh_of_layer(*level.grid, *mesh.tiles, false);
 
     // Note to self: the main performance issue I have identified so far is the light point compute time in the
     // "compute_light_points" procedure. Profile this procedure further. It might be faster to do all the

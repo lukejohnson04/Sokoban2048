@@ -78,22 +78,20 @@ get_camera_level_bounds :: (camera: Camera2D, level: *Level) -> v2i, v2i {
     return tile_begin, tile_end;
 }
 
+get_current_screen_coord :: (level: *Level) -> v2i {
+    coord: v2i;
+    coord.x = level.player_pos.x / SCREEN_TILE_WIDTH;
+    coord.y = level.player_pos.y / SCREEN_TILE_HEIGHT;
+    return coord;
+}
+
 
 lerp_player_camera :: (window: *SDL_Window) {
     using context.game_state;
-    // camera deadzone
     if editor.enabled == false || editor.editing_level == false {
-        DEADZONE_PERCENT :: 0.05;
-        player_coord : Vector2;
-        player_coord.x = xx (level.player_pos.x * 64);
-        player_coord.y = xx (level.player_pos.y * 64);
-        camera_dest := player_coord + Vector2.{32, 32};
-        if abs(camera.pos.x - camera_dest.x) > WINDOW_WIDTH * DEADZONE_PERCENT {
-            camera.pos.x = lerp(camera.pos.x, camera_dest.x, 0.008);
-        }
-        if abs(camera.pos.y - camera_dest.y) > WINDOW_HEIGHT * DEADZONE_PERCENT {
-            camera.pos.y = lerp(camera.pos.y, camera_dest.y, 0.008);
-        }
+        screen_coord := get_current_screen_coord(*level);
+        camera.pos.x = screen_coord.x * WINDOW_WIDTH + WINDOW_WIDTH * 0.5;
+        camera.pos.y = screen_coord.y * WINDOW_HEIGHT + WINDOW_HEIGHT * 0.5;
 
     } else if (SDL_GetWindowFlags(window) & SDL_WINDOW_INPUT_FOCUS) != 0 && editor.move_camera_with_mouse {
         DEBUG_CAMERA_SPEED := 12.0 * (1.0 / camera.zoom);
@@ -118,4 +116,22 @@ lerp_player_camera :: (window: *SDL_Window) {
             camera.pos.y -= DEBUG_CAMERA_SPEED;
         }
     }
+    return;
+
+    /*
+    // camera deadzone
+    if editor.enabled == false || editor.editing_level == false {
+        DEADZONE_PERCENT :: 0.05;
+        player_coord : Vector2;
+        player_coord.x = xx (level.player_pos.x * 64);
+        player_coord.y = xx (level.player_pos.y * 64);
+        camera_dest := player_coord + Vector2.{32, 32};
+        if abs(camera.pos.x - camera_dest.x) > WINDOW_WIDTH * DEADZONE_PERCENT {
+            camera.pos.x = lerp(camera.pos.x, camera_dest.x, 0.008);
+        }
+        if abs(camera.pos.y - camera_dest.y) > WINDOW_HEIGHT * DEADZONE_PERCENT {
+            camera.pos.y = lerp(camera.pos.y, camera_dest.y, 0.008);
+        }
+
+    */
 }
