@@ -24,10 +24,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     if just_reloaded_dll.* {
         gl_load(*gl);
         ImGui.SetCurrentContext(imgui_context);
-        if editor.editing_level == false {
-            vfield_generate_flood_fill(*level, field);
-        }
-        generate_level_mesh();
+        level_mesh_needs_update = true;
         just_reloaded_dll.* = false;
     }
 
@@ -123,8 +120,9 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     }
 
     if moved_this_turn {
-        vfield_generate_flood_fill(*level, field);
-        generate_level_mesh();
+        level_mesh_needs_update = true;
+        // vfield_generate_flood_fill(*level, field);
+        // generate_level_mesh();
     }
 
     if just_got_photograph && Mix_Playing(0) == 0 {
@@ -138,6 +136,14 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         }
     }
 
+
+    if level_mesh_needs_update {
+        if editor.editing_level == false {
+            vfield_generate_flood_fill(*level, field);
+        }
+        generate_level_mesh();
+        level_mesh_needs_update = false;
+    }
 
 
     // Render begin
@@ -418,18 +424,19 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         draw_radial_texture(.{0, 0, 32, 32}, .{WINDOW_WIDTH - radius*2, radius*2}, radius, rewind_meter / REWIND_TIME, *ui_sprites, intermediate_vao, intermediate_vbo);
     }
 
+    // Debug text
     #if true {
-        use_shader(text_shader);
-        shader_uniform(text_shader, "view", Matrix4_Identity);
-        shader_uniform(text_shader, "color", .{1, 0, 0, 1});
 
         if editor.editing_level {
+            use_shader(text_shader);
+            shader_uniform(text_shader, "view", Matrix4_Identity);
+            shader_uniform(text_shader, "color", .{1, 0, 0, 1});
             if is_in_bounds(editor.mouse_tile, *level) {
                 tile := level.grid[editor.mouse_tile.x][editor.mouse_tile.y];
-                if get_block_type(tile) == .NONE || (editor.show_both_layers == false && editor.layer == 1) {
+                if tile == BLOCK_NONE || (editor.show_both_layers == false && editor.layer == 1) {
                     tile = level.floor[editor.mouse_tile.x][editor.mouse_tile.y];
                 }
-                struct_str := tprint("%", tile);
+                struct_str := tprint("%, %", tile, get_block_type(tile));
                 draw_text(struct_str, .{32, 64}, *font_m5x7, intermediate_vao, intermediate_vbo);
             }
         }

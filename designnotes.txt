@@ -3,27 +3,6 @@ Goal blocks you can push around?
 Solving a goal block makes it disappear?
 Player can combine with other blocks
 
-Block that you can push around, but can't be pushed by other blocks. You can use it as a prop block to setup combinations
-Timer blocks
-Block that can be pushed a specific amount of times before it locks in place
-Block that can be pushed a specific amount of times before it disappears
-Block that only exists for a certain amount of moves before it disappears
-Block that toggles on or off every turn
-Waste a move button mechanic?
-Sokoban 2048 but moving left moves every block including the player left. So the player is like a crushing mechanism to crush blocks together.
-Block that has a sticky substance on it and can stick to walls so it won't be pushed around. It can also stick to other pushable blocks to move them all in unison
-
-
-Environmental puzzles for open world
-- Boulder puzzles
-- Clearing a path to get a block out, or clearing a path to get multiple blocks out
-- Pushing a lamp around for visibility
-
-
-
-
-
-What is every possible way a player could waste a move?
 
 Boulder visibility puzzle where blocks combine behind the boulder and it isn't visible because the boulder is between it, but the player realizes they combined two blocks just by the audio cue
 
@@ -107,3 +86,21 @@ Headline that says "Hedgehog predicts six more weeks of winter"
 Followed by "Just kidding. There is no sun here so there is no such thing as seasons."
 
 Tile that is concious but other tiles are not aware, leading to dialogue like "I swear I left the room and came back and the tile was in a different place"
+
+
+
+Less thinking about how I think
+
+
+
+
+
+
+Sections
+
+Section for "clearance sacrifice sneak out a block" puzzles
+Section for border block puzzles
+Section for tight sliding puzzles (like those sliding red white wooden bead puzzles)
+Section for vanishing goal block puzzles
+Section for boulder visibility puzzles
+Section for puzzles where the previous rooms exit block is important

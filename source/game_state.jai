@@ -28,6 +28,8 @@ Game_State :: struct {
     sprites_imgui : Resource(Texture);
     ui_sprites : Resource(Texture);
     spotlight : Resource(Texture);
+    clockwise_arrow_texture : Resource(Texture);
+    counter_clockwise_arrow_texture : Resource(Texture);
     dialogue_player_texture : Resource(Texture);
 
     world_buffer : Framebuffer;
@@ -69,6 +71,8 @@ Game_State :: struct {
     frame_number := 0;
 
     bindings: Bindings;
+
+    level_mesh_needs_update := false;
 
     memory_initialized := false;
 }
@@ -112,6 +116,8 @@ on_startup :: () {
     load_resource(*dialogue_player_texture, "data/art/dialoguebox.png");
     load_resource(*ui_sprites, "data/art/ui.png");
     load_resource(*spotlight, "data/art/spotlight.png");
+    load_resource(*clockwise_arrow_texture, "data/art/clockwisearrow.png");
+    load_resource(*counter_clockwise_arrow_texture, "data/art/counterclockwisearrow.png");
 
     create_shader(*texture_shader, "data/shaders/texture.vert", "data/shaders/texture.frag");
     create_shader(*text_shader, "data/shaders/text.vert", "data/shaders/text.frag");
@@ -138,14 +144,6 @@ on_startup :: () {
 
     turn_memory.curr = *turn_memory.turns[0];
 
-    for 0..6 {
-        // print("Salad: %\n", 5);
-        // print("It: %\n", it);
-
-        // path := tprint("data/audio/fstep_%.wav", it+1);
-        // footsteps[it] = Mix_LoadWAV(path.data);
-    }
-
     // Attempt recovery of last close
     #if BUILD == .DEBUG {
         loaded_ini := load_ini_file();
@@ -163,8 +161,9 @@ on_startup :: () {
         camera.pos.y = xx (level.player_pos.y * 64);
     }
     
-    vfield_generate_flood_fill(*level, field);
-    generate_level_mesh();
+    level_mesh_needs_update = true;
+    // vfield_generate_flood_fill(*level, field);
+    // generate_level_mesh();
 }
 
 REWIND_TIME :: 1.25;

@@ -95,7 +95,7 @@ lerp_player_camera :: (window: *SDL_Window) {
 
     } else if (SDL_GetWindowFlags(window) & SDL_WINDOW_INPUT_FOCUS) != 0 && editor.move_camera_with_mouse {
         DEBUG_CAMERA_SPEED := 12.0 * (1.0 / camera.zoom);
-        DEADZONE_PERCENT :: 0.1;
+        DEADZONE_PERCENT :: 0.05;
         DEADZONE_WIDTH := WINDOW_WIDTH * DEADZONE_PERCENT;
         DEADZONE_HEIGHT := WINDOW_HEIGHT * DEADZONE_PERCENT;
 

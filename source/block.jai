@@ -31,6 +31,10 @@ get_block_type :: (block: Block) -> Block_Type {
             return .NONE;
         }
     }
+
+    if (block.id >= 24 && block.id < 32) || (block.id >= 40 && block.id < 48) {
+        return .WALL;
+    }
     if block.id == {
         case 0; return .NONE;
         case 2; return .BOULDER;
@@ -46,6 +50,7 @@ get_block_type :: (block: Block) -> Block_Type {
     if (block.id >= 32 && block.id < 40) || (block.id >= 48 && block.id < 50) {
         return .WALL;
     }
+
     if block.id >= 48 && block.id < 96 {
         return .NONE;
     }
@@ -90,6 +95,8 @@ Block :: struct {
         TIMER :: 16;
     }
 }
+
+BLOCK_NONE := Block.{};
 
 timer_turns_left :: (block: Block) -> u8 {
     timer_length := cast(s64)(block.turns_on_active) + xx block.turns_on_inactive;
