@@ -228,7 +228,7 @@ draw_editor :: () {
                 flip_tiles(*level.grid, false, true);
             }
 
-            // Rotation
+            // Rotate
             if ImGui.ImageButton(cast(*void)(counter_clockwise_arrow_texture.id), .{16, 16}) {
                 rotate_tiles(*level.grid, false);
             }
@@ -677,7 +677,7 @@ rotate_tiles :: (blocks: *type_of(Level.grid), $clockwise: bool) {
 
     for src_x: 0..selection_size.x-1 {
         for src_y: 0..selection_size.y-1 {
-            #if clockwise {
+            #if !clockwise {
                 dest_x := start.x + src_y;
                 dest_y := start.y + selection_size.x - 1 - src_x;
             } else {

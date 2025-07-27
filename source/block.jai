@@ -31,10 +31,6 @@ get_block_type :: (block: Block) -> Block_Type {
             return .NONE;
         }
     }
-
-    if (block.id >= 24 && block.id < 32) || (block.id >= 40 && block.id < 48) {
-        return .WALL;
-    }
     if block.id == {
         case 0; return .NONE;
         case 2; return .BOULDER;
@@ -43,6 +39,11 @@ get_block_type :: (block: Block) -> Block_Type {
         case 5; return .SIGNED_PHOTOGRAPH;
         case 6; return .BLOCK_BARRIER;
         case 7; return .INTERACTABLE; // Save point specifically
+        case 9; return .SPIKED;
+    }
+
+    if (block.id >= 24 && block.id < 32) || (block.id >= 40 && block.id < 48) {
+        return .WALL;
     }
     if block.id >= 16 && block.id < 24 {
         return .NUMBERED;
@@ -129,6 +130,7 @@ Block_Type :: enum u8 #specified {
     PLAYER_SPAWN :: 5;
     BLOCK_BARRIER :: 6;
     INTERACTABLE :: 7;
+    SPIKED :: 8;
 }
 
 // New_Block :: struct {

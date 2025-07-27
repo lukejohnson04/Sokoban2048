@@ -34,50 +34,51 @@ move_player :: (move: v2i) -> success: bool, combines_block: bool, activates_goa
     delta_data.old_player_pos = player_pos;
 
     new_pos_type := get_block_type(level.grid[new_pos.x][new_pos.y]);
+    // Off the map
     if new_pos.x < 0 || new_pos.x >= level.dimensions.x || new_pos.y < 0 || new_pos.y >= level.dimensions.y {
         return false, false, false;
+    // Player walks into interactable
     } else if new_pos_type == .INTERACTABLE {
         generate_interaction_queue(*dialogue_state, level.grid[new_pos.x][new_pos.y]);
         apply_turn();
         return true, false, false;
+    // Player walks into spike
+    } else if new_pos_type == .SPIKED {
+        return false, false, false;
+    // Player walks into air or onto barrier block. Easy case.
     } else if new_pos_type == .NONE || new_pos_type == .BLOCK_BARRIER {
         success = true;
         player_pos = new_pos;
-    } else if new_pos_type == .SIGNED_PHOTOGRAPH {
-        success = true;
-
-        player_pos = new_pos;
-
-        delta := add_move_delta(*delta_data);
-        delta.coord = new_pos;
-        delta.old_value = .{id = 5};
-        delta.new_value = .{};
-
-        level.grid[new_pos.x][new_pos.y] = .{};
-        just_got_photograph = true;
-
     } else {
         stack : Stack(v2i);
 
         iter_pos := player_pos;
 
+        push_into_object := false;
+        destroy_block := false;
+
         // search for air block
         while true {
             iter_pos += move;
             block := level.grid[iter_pos.x][iter_pos.y];
+            // Boundary break
             if iter_pos.x < 0 || iter_pos.x >= level.dimensions.x || iter_pos.y < 0 || iter_pos.y >= level.dimensions.y {
-                success = false;
                 break;
             }
             if block_is_goal(block) {
                 stack_push(*stack, iter_pos);
-                success = false;
+                push_into_object = true;
                 break;
             }
 
             block_type := get_block_type(block);
+            if block_type == .SPIKED {
+                destroy_block = true;
+                success = true;
+                break;
+            }
             if block_type == .WALL || block_type == .BLOCK_BARRIER || block_type == .INTERACTABLE {
-                success = false;
+                push_into_object = true;
                 break;
             }
 
@@ -90,7 +91,7 @@ move_player :: (move: v2i) -> success: bool, combines_block: bool, activates_goa
             }
         }
 
-        if !success {
+        if push_into_object {
             prev := v2i.{-1, -1};
             while stack_is_empty(*stack) == false {
                 pos := stack_pop(*stack);
@@ -104,6 +105,7 @@ move_player :: (move: v2i) -> success: bool, combines_block: bool, activates_goa
                 // See if two blocks can be combined, and if so, combine them and replace one with air
                 curr_block_type := get_block_type(curr_block);
                 prev_block_type := get_block_type(prev_block);
+
                 if curr_block_type == .NUMBERED && prev_block_type == .NUMBERED && curr_block.id == prev_block.id  {
                     new_block := prev_block;
                     new_block.id += 1;
@@ -114,7 +116,7 @@ move_player :: (move: v2i) -> success: bool, combines_block: bool, activates_goa
                         activates_goal_block = true;
 
                         if curr_block.flags & .VANISH_GOAL || prev_block.flags & .VANISH_GOAL {
-                            new_block = .{};
+                            new_block = BLOCK_NONE;
                         } else {
                             new_block.flags &= ~Block.Flag.GOAL;
                             new_block.flags &= ~Block.Flag.VANISH_GOAL;
@@ -129,33 +131,38 @@ move_player :: (move: v2i) -> success: bool, combines_block: bool, activates_goa
                     delta = add_move_delta(*delta_data);
                     delta.coord = pos;
                     delta.old_value = curr_block;
-                    delta.new_value = .{};
+                    delta.new_value = BLOCK_NONE;
 
                     level.grid[prev.x][prev.y] = new_block;
-                    level.grid[pos.x][pos.y] = .{};
+                    level.grid[pos.x][pos.y] = BLOCK_NONE;
                     success = true;
                     break;
                 }
             }
         } if success {
-            // This is for specifically when there's an air block
+            // This is for specifically when there's an air block or spiked block
             player_pos = new_pos;
             while stack_is_empty(*stack) == false {
                 pos := stack_pop(*stack);
                 block_new_pos := pos + move;
 
-                delta := add_move_delta(*delta_data);
-                delta.coord = block_new_pos;
-                delta.old_value = level.grid[block_new_pos.x][block_new_pos.y];
-                delta.new_value = level.grid[pos.x][pos.y];
+                delta: *Move_Delta;
 
+                if destroy_block {
+                    // Remove this line to make an incinerator
+                    destroy_block = false;
+                } else {
+                    delta = add_move_delta(*delta_data);
+                    delta.coord = block_new_pos;
+                    delta.old_value = level.grid[block_new_pos.x][block_new_pos.y];
+                    delta.new_value = level.grid[pos.x][pos.y];
+                    level.grid[block_new_pos.x][block_new_pos.y] = level.grid[pos.x][pos.y];
+                }
                 delta = add_move_delta(*delta_data);
                 delta.coord = pos;
                 delta.old_value = level.grid[pos.x][pos.y];
-                delta.new_value = .{};
-
-                level.grid[block_new_pos.x][block_new_pos.y] = level.grid[pos.x][pos.y];
-                level.grid[pos.x][pos.y] = .{};
+                delta.new_value = BLOCK_NONE;
+                level.grid[pos.x][pos.y] = BLOCK_NONE;
             }
         }
     }
