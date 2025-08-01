@@ -34,12 +34,78 @@ draw_rect_with_outline :: (rect: Rect, thickness: int) {
 }
 
 draw_rect_with_outline :: (rect: Rect, thickness: int, vao: GLuint, vbo: GLuint) {
-    for 0..thickness-1 {
-        draw_line(.{rect.x+it, rect.y+it}, .{rect.x+rect.w-it, rect.y+it}, vao, vbo);
-        draw_line(.{rect.x+rect.w-it, rect.y+it}, .{rect.x+rect.w-it, rect.y+rect.h-it}, vao, vbo);
-        draw_line(.{rect.x+rect.w-it, rect.y+rect.h-it}, .{rect.x+it, rect.y+rect.h-it}, vao, vbo);
-        draw_line(.{rect.x+it, rect.y+rect.h-it}, .{rect.x+it, rect.y+it - 1}, vao, vbo);
-    }
+    draw_rect(CoordRect(rect.p1, Vector2.{rect.p2.x, rect.p1.y + xx thickness}));
+    draw_rect(CoordRect(rect.p1, .{rect.p1.x + xx thickness, rect.p2.y}));
+    draw_rect(CoordRect(.{rect.p2.x - xx thickness, rect.p1.y}, rect.p2));
+    draw_rect(CoordRect(.{rect.p1.x, rect.p2.y - xx thickness}, rect.p2));
+}
+
+draw_rect :: (rect: Rect) {
+    draw_rect(rect, context.game_state.intermediate_vao, context.game_state.intermediate_vbo);
+}
+
+draw_rect :: (dest: Rect, vao: GLuint, vbo: GLuint) {
+    vertices := float32.[
+        dest.p1.x,         dest.p1.y,         0,
+        dest.p2.x,      dest.p1.y,      0,
+        dest.p2.x,      dest.p2.y,      0,
+        dest.p1.x,        dest.p2.y,      0,
+    ];
+
+    glBindVertexArray(vao);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, size_of(float32) * vertices.count, vertices.data, GL_STATIC_DRAW);
+
+    // position
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * size_of(float32), null);
+    glEnableVertexAttribArray(0);
+
+    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+}
+
+draw_rect :: (dest: DiscreteRect) {
+    draw_rect(dest, context.game_state.intermediate_vao, context.game_state.intermediate_vbo);
+}
+
+draw_rect :: (dest: DiscreteRect, vao: GLuint, vbo: GLuint) {
+    using dest;
+    vertices := float32.[
+        p1.x, p1.y, 0,
+        p2.x, p2.y, 0,
+        p3.x, p3.y, 0,
+        p4.x, p4.y, 0,
+    ];
+
+    glBindVertexArray(vao);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, size_of(float32) * vertices.count, vertices.data, GL_STATIC_DRAW);
+
+    // position
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * size_of(float32), null);
+    glEnableVertexAttribArray(0);
+
+    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+}
+
+draw_line_with_thickness :: (p1: Vector2, p2: Vector2, thickness: float) {
+    dir := p2 - p1;
+    tangent := Vector2.{dir.y, -dir.x};
+    tangent = unit_vector(tangent) * thickness * 0.5;
+    rect: DiscreteRect;
+
+    rect.p1 = p1 - tangent;
+    rect.p2 = p2 - tangent;
+    rect.p3 = p2 + tangent;
+    rect.p4 = p1 + tangent;
+    draw_rect(rect);
+}
+
+draw_line :: (p1: Vector2, p2: Vector2) {
+    draw_line(p1, p2, context.game_state.intermediate_vao, context.game_state.intermediate_vbo);
 }
 
 draw_line :: (p1: Vector2, p2: Vector2, vao: GLuint, vbo: GLuint) {

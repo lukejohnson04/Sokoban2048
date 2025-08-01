@@ -27,6 +27,10 @@ block_is_light_source :: (block: Block) -> bool {
 
 get_matching_portal :: (tile: Block, pos: v2i) -> v2i {
     using context.game_state;
+    if tile.interaction_id == 0 {
+        return .{-1, -1};
+    }
+
     for x: 0..level.dimensions.x-1 {
         for y: 0..level.dimensions.y-1 {
             if pos.x == x && pos.y == y continue;
@@ -37,7 +41,6 @@ get_matching_portal :: (tile: Block, pos: v2i) -> v2i {
             }
         }
     }
-    print("Error: No matching portal for id %\n", tile.interaction_id);
     return .{-1, -1};
 }
 

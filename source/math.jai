@@ -37,9 +37,28 @@ Rect :: struct {
 
     #place x;
     pos: Vector2 = ---;
-
     #place w;
     size: Vector2 = ---;
+
+    #place x;
+    p1: Vector2 = ---;
+    #place w;
+    p2: Vector2 = ---;
+}
+
+DiscreteRect :: struct {
+    p1: Vector2;
+    p2: Vector2;
+    p3: Vector2;
+    p4: Vector2;
+}
+
+CoordRect :: (rect: Rect) -> Rect {
+    return Rect.{rect.x, rect.y, rect.x + rect.w, rect.y + rect.h};
+}
+
+CoordRect :: (p1: Vector2, p2: Vector2) -> Rect {
+    return Rect.{p1.x, p1.y, p2.x, p2.y};
 }
 
 iRect :: struct {

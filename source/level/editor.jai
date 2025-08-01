@@ -20,6 +20,7 @@ Editor_State :: struct {
     fill_all_layers: bool;
     show_both_layers: bool = true;
     move_camera_with_mouse: bool;
+    show_portal_connections: bool;
 
     select_state := Editor_Select_State.NOT_STARTED;
     select_start : v2i;
@@ -28,6 +29,9 @@ Editor_State :: struct {
     move_state := Editor_Move_State.NOT_STARTED;
     move_start : v2i;
     move_end : v2i;
+
+    link_state := Editor_Link_State.NOT_STARTED;
+    link_start : v2i;
 
     // ImGui state
     load_level_field : [MAX_LEVEL_NAME_LENGTH]u8;
@@ -52,6 +56,7 @@ Editor_State :: struct {
         MOVE;
         FILL;
         STAMP;
+        LINK;
     }
 
     Editor_Select_State :: enum {
@@ -62,6 +67,11 @@ Editor_State :: struct {
     }
 
     Editor_Move_State :: enum {
+        NOT_STARTED;
+        STARTED;
+    }
+
+    Editor_Link_State :: enum {
         NOT_STARTED;
         STARTED;
     }
@@ -219,6 +229,16 @@ draw_editor :: () {
                 editor.tool = .STAMP;
             }
         } 
+
+        ImGui.PushStyleColor(ImGuiCol_Button, HSV(0.0, 0.6, 0.6));
+        ImGui.PushStyleColor(ImGuiCol_ButtonHovered, HSV(0, 0.7, 0.7));
+        ImGui.PushStyleColor(ImGuiCol_ButtonActive, HSV(0, 0.8, 0.8));
+        ImGui.SameLine();
+        if ImGui.Button("Link Portal") {
+            editor.tool = .LINK;
+        }
+        ImGui.PopStyleColor(3);
+
 
         if editor.tool == .SELECT || editor.tool == .MOVE {
             if ImGui.Button("Flip horizontally") {
@@ -397,6 +417,7 @@ draw_editor :: () {
     ImGui.SeparatorText("Controls");
     {
         ImGui.Checkbox("Mouse Cam", *editor.move_camera_with_mouse);
+        ImGui.Checkbox("Show portal connections", *editor.show_portal_connections);
     }
 
     if loaded {
@@ -517,6 +538,37 @@ update_editor :: (input: *Input_State) {
                 stamp_tiles(*level.grid, *editor.copy_buffer);
             }
         }
+        case .LINK; {
+            if editor.link_state == .NOT_STARTED {
+                if !input.mouse_just_pressed {
+                    return;
+                }
+                if !is_in_bounds(mouse_tile, *level) {
+                    return;
+                }
+                if get_block_type(level.grid[mouse_tile.x][mouse_tile.y]) != .PORTAL {
+                    return;
+                }
+                editor.link_start = mouse_tile;
+                editor.link_state = .STARTED;
+                level.grid[mouse_tile.x][mouse_tile.y].interaction_id = 0;
+                level_mesh_needs_update = true;
+            } else if editor.link_state == .STARTED {
+                if input.mouse_just_released == false {
+                    return;
+                }
+                if !is_in_bounds(mouse_tile, *level) {
+                    return;
+                }
+                if get_block_type(level.grid[mouse_tile.x][mouse_tile.y]) != .PORTAL {
+                    return;
+                }
+                level.grid[editor.link_start.x][editor.link_start.y].interaction_id = 9999;
+                level.grid[mouse_tile.x][mouse_tile.y].interaction_id = 9999;
+                level_mesh_needs_update = true;
+                editor.link_state = .NOT_STARTED;
+            }
+        }
     }
 }
 
@@ -526,7 +578,7 @@ editor_draw :: () {
         return;
     }
     
-    if editor.editing_level && (editor.tool == .BRUSH || editor.tool == .FILL) && is_in_bounds(editor.mouse_tile, *level) {
+    if (editor.tool == .BRUSH || editor.tool == .FILL) && is_in_bounds(editor.mouse_tile, *level) {
         block := editor.selected_block;
         source := get_block_source(block);
         dest := Rect.{xx (editor.mouse_tile.x * 64), xx (editor.mouse_tile.y * 64), 64, 64};
@@ -581,6 +633,7 @@ editor_draw :: () {
         rect.y = xx (start.y * TILE_SIZE);
         rect.w = xx (selection_size.x * TILE_SIZE);
         rect.h = xx (selection_size.y * TILE_SIZE);
+        rect = CoordRect(rect);
         
         draw_rect_with_outline(rect, 4, color_vao, color_vbo);
     }
@@ -597,8 +650,41 @@ editor_draw :: () {
         rect.y = xx (start.y * TILE_SIZE);
         rect.w = xx (selection_size.x * TILE_SIZE);
         rect.h = xx (selection_size.y * TILE_SIZE);
+        rect = CoordRect(rect);
         
         draw_rect_with_outline(rect, 4, color_vao, color_vbo);
+    }
+
+    if editor.tool == .LINK {
+        if editor.link_state == .STARTED {
+            first := editor.link_start;
+            p1 := Vector2.{xx first.x * 64.0, xx first.y * 64.0};
+            p2 := Vector2.{xx editor.mouse_tile.x * 64.0, xx editor.mouse_tile.y * 64.0};
+            p1 += .{32.0, 32.0};
+            p2 += .{32.0, 32.0};
+            draw_line_with_thickness(p1, p2, 10);
+        }
+    }
+
+    if editor.show_portal_connections {
+        draw_portal_connections();
+    }
+}
+
+draw_portal_connections :: () {
+    using context.game_state;
+    shader_uniform(color_shader, "color", Vector4.{0, 0, 1, 1});
+    for 0..portal_list.count-1 {
+        defer it += 1;
+        first := portal_list[it];
+        second := portal_list[it + 1];
+        if second == .{-1, -1} continue;
+
+        p1 := Vector2.{xx first.x * 64.0, xx first.y * 64.0};
+        p2 := Vector2.{xx second.x * 64.0, xx second.y * 64.0};
+        p1 += .{32.0, 32.0};
+        p2 += .{32.0, 32.0};
+        draw_line_with_thickness(p1, p2, 10);
     }
 }
 

@@ -285,7 +285,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
             if SCREEN_TILE_HEIGHT * y > xx bound_end.y{
                 continue;
             }
-            draw_rect_with_outline(Rect.{dimension_x * x, dimension_y * y, xx dimension_x, xx dimension_y}, 4);
+            draw_rect_with_outline(CoordRect(Rect.{dimension_x * x, dimension_y * y, xx dimension_x, xx dimension_y}), 4);
         }
     }
 

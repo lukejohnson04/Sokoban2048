@@ -68,6 +68,8 @@ Game_State :: struct {
     lights: [64] Light;
     light_count: int;
 
+    portal_list: [..] v2i;
+
     frame_number := 0;
 
     bindings: Bindings;

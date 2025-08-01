@@ -132,4 +132,42 @@ generate_level_mesh :: () {
     if mesh.light_buffer.id == 0 {
         mesh.light_buffer = create_framebuffer(WINDOW_WIDTH, WINDOW_HEIGHT);
     }
+
+    // Generate portal list so we don't have to search every time for corresponding portals
+    portal_list.count = 0;
+    for x: 0..level.dimensions.x-1 {
+        for y: 0..level.dimensions.y-1 {
+            tile := level.grid[x][y];
+            if get_block_type(tile) != .PORTAL {
+                continue;
+            }
+            for portal_list {
+                if it == .{x, y}
+                    continue y;
+            }
+
+            corresponding_portal := get_matching_portal(tile, .{x,  y});
+           
+            array_add(*portal_list, .{x, y});
+            array_add(*portal_list, corresponding_portal);
+        }
+    }
+    
+    portal_id := 1;
+    for 0..portal_list.count-1 {
+        p1 := portal_list[it];
+        p2 := v2i.{-1, -1};
+        if it != portal_list.count-1 {
+            p2 = portal_list[it+1];
+        }
+
+        if p2 != .{-1, -1} {
+            level.grid[p1.x][p1.y].interaction_id = xx portal_id;
+            level.grid[p2.x][p2.y].interaction_id = xx portal_id;
+        } else {
+            level.grid[p1.x][p1.y].interaction_id = 0;
+        }
+        it += 1;
+        portal_id += 1;
+    }
 }
