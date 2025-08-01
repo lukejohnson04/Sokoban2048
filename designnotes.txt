@@ -104,3 +104,21 @@ Section for tight sliding puzzles (like those sliding red white wooden bead puzz
 Section for vanishing goal block puzzles
 Section for boulder visibility puzzles
 Section for puzzles where the previous rooms exit block is important
+
+What if the player can push the trash block around? Or what if the trash block can be pushed around like normal until it hits a wall, at which point it acts as a regular trash block?
+
+Make game audio that fills up all frequencies. Fast and full sound effects
+
+Color theory
+
+Add depth to the scene?
+
+Everything eventually fades into one color because of the atmosphere
+
+
+
+
+
+
+
+Make some turns timed? So you have to make them within a certain amount of time
