@@ -443,7 +443,7 @@ update_editor :: (input: *Input_State) {
                         new_block := editor.selected_block;
                         if input.rmouse_pressed {
                             new_block.flags |= Block.Flag.GOAL;
-                        } else if input.mwheel_pressed {
+                        } else if input.mwheel_pressed || input.is_pressed[SDL_SCANCODE_LALT] {
                             new_block.flags |= Block.Flag.VANISH_GOAL;
                         } if input.is_pressed[SDL_SCANCODE_LCTRL] {
                             new_block.flags |= Block.Flag.TIMER;

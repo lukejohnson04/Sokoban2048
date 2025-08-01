@@ -34,6 +34,11 @@ move_player :: (move: v2i) -> success: bool, combines_block: bool, activates_goa
     delta_data.old_player_pos = player_pos;
 
     new_pos_type := get_block_type(level.grid[new_pos.x][new_pos.y]);
+    if new_pos_type == .PORTAL {
+        portal_pos := get_matching_portal(level.grid[new_pos.x][new_pos.y], new_pos);
+        new_pos = portal_pos + move;
+        new_pos_type = get_block_type(level.grid[new_pos.x][new_pos.y]);
+    }
     // Off the map
     if new_pos.x < 0 || new_pos.x >= level.dimensions.x || new_pos.y < 0 || new_pos.y >= level.dimensions.y {
         return false, false, false;
@@ -50,6 +55,7 @@ move_player :: (move: v2i) -> success: bool, combines_block: bool, activates_goa
         success = true;
         player_pos = new_pos;
     } else {
+        // Player walks into portal
         stack : Stack(v2i);
 
         iter_pos := player_pos;
@@ -57,6 +63,7 @@ move_player :: (move: v2i) -> success: bool, combines_block: bool, activates_goa
         push_into_object := false;
         destroy_block := false;
 
+        prev_block_portal := false;
         // search for air block
         while true {
             iter_pos += move;
@@ -81,6 +88,13 @@ move_player :: (move: v2i) -> success: bool, combines_block: bool, activates_goa
                 push_into_object = true;
                 break;
             }
+            if block_type == .PORTAL {
+                portal_pos := get_matching_portal(block, iter_pos);
+                iter_pos = portal_pos;
+                prev_block_portal = true;
+                continue;
+            }
+
 
             // Encounter air block
             if block_type == .NONE {
@@ -89,6 +103,7 @@ move_player :: (move: v2i) -> success: bool, combines_block: bool, activates_goa
             } else {
                 stack_push(*stack, iter_pos);
             }
+            prev_block_portal = false;
         }
 
         if push_into_object {
@@ -136,15 +151,21 @@ move_player :: (move: v2i) -> success: bool, combines_block: bool, activates_goa
                     level.grid[prev.x][prev.y] = new_block;
                     level.grid[pos.x][pos.y] = BLOCK_NONE;
                     success = true;
+                    print("Combination\n");
                     break;
                 }
             }
         } if success {
             // This is for specifically when there's an air block or spiked block
+            // This includes combinations that create an air block
             player_pos = new_pos;
             while stack_is_empty(*stack) == false {
                 pos := stack_pop(*stack);
                 block_new_pos := pos + move;
+                if get_block_type(level.grid[block_new_pos.x][block_new_pos.y]) == .PORTAL {
+                    block_new_pos = get_matching_portal(level.grid[block_new_pos.x][block_new_pos.y], block_new_pos);
+                    block_new_pos += move;
+                }
 
                 delta: *Move_Delta;
 

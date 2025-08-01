@@ -25,6 +25,22 @@ block_is_light_source :: (block: Block) -> bool {
     return block.id == 38;
 }
 
+get_matching_portal :: (tile: Block, pos: v2i) -> v2i {
+    using context.game_state;
+    for x: 0..level.dimensions.x-1 {
+        for y: 0..level.dimensions.y-1 {
+            if pos.x == x && pos.y == y continue;
+            iter := level.grid[x][y];
+            if get_block_type(iter) != .PORTAL continue;
+            if iter.interaction_id == tile.interaction_id {
+                return .{x, y};
+            }
+        }
+    }
+    print("Error: No matching portal for id %\n", tile.interaction_id);
+    return .{-1, -1};
+}
+
 get_block_type :: (block: Block) -> Block_Type {
     if block.flags & .TIMER {
         if timer_is_active(block) == false {
@@ -40,6 +56,7 @@ get_block_type :: (block: Block) -> Block_Type {
         case 6; return .BLOCK_BARRIER;
         case 7; return .INTERACTABLE; // Save point specifically
         case 9; return .SPIKED;
+        case 10; return .PORTAL;
     }
 
     if (block.id >= 24 && block.id < 32) || (block.id >= 40 && block.id < 48) {
@@ -131,6 +148,7 @@ Block_Type :: enum u8 #specified {
     BLOCK_BARRIER :: 6;
     INTERACTABLE :: 7;
     SPIKED :: 8;
+    PORTAL :: 9;
 }
 
 // New_Block :: struct {
