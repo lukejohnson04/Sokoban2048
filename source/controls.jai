@@ -7,7 +7,7 @@ Action :: struct {
     do_action: bool;
 
     repeat_interval_initial := 0.5;
-    repeat_interval := 0.5;
+    repeat_interval := 0.4;
     repeat_interval_fast := 0.1;
     repeat_initial: bool;
     repeat_fast: bool;
