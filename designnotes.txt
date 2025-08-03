@@ -122,3 +122,17 @@ Everything eventually fades into one color because of the atmosphere
 
 
 Make some turns timed? So you have to make them within a certain amount of time
+
+
+
+
+Portals
+
+Puzzle where two blocks can easily combine against another. But to actually get one of the blocks in place to be combined, it's not possible without using a portal.
+
+Puzzle you have to complete in a certain number of moves
+
+
+
+
+Each room the player has been in will show up as a gray box on the map. The room the player is currently in will be a red box.

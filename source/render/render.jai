@@ -29,11 +29,14 @@ load_texture :: (path: string, log_errors := false) -> Texture, bool {
     return tex, true;
 }
 
-draw_rect_with_outline :: (rect: Rect, thickness: int) {
-    draw_rect_with_outline(rect, thickness, context.game_state.intermediate_vao, context.game_state.intermediate_vbo);
+draw_rect_with_outline :: (rect: Rect, thickness: int, $outside := false) {
+    draw_rect_with_outline(rect, thickness, context.game_state.intermediate_vao, context.game_state.intermediate_vbo, outside);
 }
 
-draw_rect_with_outline :: (rect: Rect, thickness: int, vao: GLuint, vbo: GLuint) {
+draw_rect_with_outline :: (rect: Rect, thickness: int, vao: GLuint, vbo: GLuint, $outside := false) {
+    #if outside {
+        thickness *= -1;
+    }
     draw_rect(CoordRect(rect.p1, Vector2.{rect.p2.x, rect.p1.y + xx thickness}));
     draw_rect(CoordRect(rect.p1, .{rect.p1.x + xx thickness, rect.p2.y}));
     draw_rect(CoordRect(.{rect.p2.x - xx thickness, rect.p1.y}, rect.p2));
@@ -44,6 +47,9 @@ draw_rect :: (rect: Rect) {
     draw_rect(rect, context.game_state.intermediate_vao, context.game_state.intermediate_vbo);
 }
 
+// Rect always draws based on discrete points.
+
+// Draws based on points
 draw_rect :: (dest: Rect, vao: GLuint, vbo: GLuint) {
     vertices := float32.[
         dest.p1.x,         dest.p1.y,         0,

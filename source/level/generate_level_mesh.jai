@@ -170,4 +170,6 @@ generate_level_mesh :: () {
         it += 1;
         portal_id += 1;
     }
+
+    render_map();
 }

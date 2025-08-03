@@ -6,8 +6,8 @@ Action :: struct {
     repetitions: int;
     do_action: bool;
 
-    repeat_interval_initial := 0.5;
-    repeat_interval := 0.4;
+    repeat_interval_initial := 0.75;
+    repeat_interval := 0.35;
     repeat_interval_fast := 0.1;
     repeat_initial: bool;
     repeat_fast: bool;
@@ -36,10 +36,13 @@ Bindings :: struct {
     actions[DOWN].keys[0] =   SDL_SCANCODE_DOWN;
     actions[DOWN].keys[1] =   SDL_SCANCODE_S;
 
-    actions[LEFT].repeat_initial =  false; 
-    actions[RIGHT].repeat_initial = false;
-    actions[UP].repeat_initial =    false;
-    actions[DOWN].repeat_initial =  false;
+    actions[LEFT].repeat_initial =  true; 
+    actions[RIGHT].repeat_initial = true;
+    actions[UP].repeat_initial =    true;
+    actions[DOWN].repeat_initial =  true;
+
+    // actions[UNDO].repeat_initial =  false;
+    // actions[REDO].repeat_initial =  false;
 
     actions[UNDO].keys[0] =   SDL_SCANCODE_R;
     actions[REDO].keys[0] =   SDL_SCANCODE_Z;

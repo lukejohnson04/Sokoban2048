@@ -4,6 +4,11 @@ GAME_SAVE_PATH :: "saves/gamesave";
 GAME_SAVE_DIRECTORY :: "saves";
 
 
+Game_Stats :: struct {
+    visited_room: [WORLD_ROOM_WIDTH][WORLD_ROOM_HEIGHT] bool;
+}
+
+
 save_game :: () -> bool {
     make_directory_if_it_does_not_exist(GAME_SAVE_DIRECTORY);
 

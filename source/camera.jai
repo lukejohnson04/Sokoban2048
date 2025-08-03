@@ -17,10 +17,10 @@ Camera2D :: struct {
 
 
 
-camera_view_matrix :: (using camera: Camera2D) -> Matrix4 {
+camera_view_matrix :: (using camera: Camera2D, camera_width := WINDOW_WIDTH, camera_height := WINDOW_HEIGHT) -> Matrix4 {
     view := Matrix4_Identity;
     mult := 1.0 / zoom;
-    CAMERA_SIZE := Vector2.{WINDOW_WIDTH * mult, WINDOW_HEIGHT * mult};
+    CAMERA_SIZE := Vector2.{camera_width * mult, camera_height * mult};
     view = scale(view, .{zoom, zoom, 1});
     view = translate(view, .{-pos.x, -pos.y, 0});
     view = translate(view, .{CAMERA_SIZE.x * 0.5, CAMERA_SIZE.y * 0.5, 0});
@@ -48,10 +48,10 @@ camera_zoom :: (using camera: *Camera2D, zoom_into: Vector2, zoom_factor: float3
     camera.pos += world_before - world_after;
 }
 
-get_camera_rect :: (camera: Camera2D) -> Rect {
+get_camera_rect :: (camera: Camera2D, camera_width := WINDOW_WIDTH, camera_height := WINDOW_HEIGHT) -> Rect {
     rect: Rect;
     zoom := 1.0 / camera.zoom;
-    camera_size := Vector2.{WINDOW_WIDTH * zoom, WINDOW_HEIGHT * zoom};
+    camera_size := Vector2.{camera_width * zoom, camera_height * zoom};
     rect.w = camera_size.x;
     rect.h = camera_size.y;
     rect.x = camera.pos.x - rect.w / 2.0;

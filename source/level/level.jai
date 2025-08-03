@@ -15,6 +15,9 @@ Level :: struct {
     dialogue_data: Dialogue_Data;
 }
 
+WORLD_ROOM_WIDTH :: (Level.MAX_WIDTH / SCREEN_TILE_WIDTH) + 1;
+WORLD_ROOM_HEIGHT :: (Level.MAX_HEIGHT / SCREEN_TILE_HEIGHT) + 1;
+
 level_set_name :: (level: *Level, name: string) {
     assert(name.count <= MAX_LEVEL_NAME_LENGTH);
     memcpy(level.name.data, name.data, name.count);

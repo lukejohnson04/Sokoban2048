@@ -198,6 +198,12 @@ move_player :: (move: v2i) -> success: bool, combines_block: bool, activates_goa
         turn_memory.curr.prev = turn_memory.curr - 1;
         turn_memory.curr.next = null;
         turn_count += 1;
+
+
+        room_x := player_pos.x / SCREEN_TILE_WIDTH;
+        room_y := player_pos.y / SCREEN_TILE_HEIGHT;
+
+        stats.visited_room[room_x][room_y] = true;
     }
 
     return success, combines_block, activates_goal_block;
