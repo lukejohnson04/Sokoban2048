@@ -56,12 +56,6 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         undo_turn();
     }
 
-    if input.just_pressed[SDL_SCANCODE_M] {
-        display_map = !display_map;
-    }
-    if input.just_pressed[SDL_SCANCODE_N] {
-        display_minimap = !display_minimap;
-    }
 
     if !moved_this_turn && editor.editing_level == false && just_got_photograph == false && dialogue_state.open == false {
         // This is a shocking amount of code for how simple this task is
@@ -152,6 +146,9 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         level_mesh_needs_update = false;
     }
 
+    if editor.editing_level == false {
+        update_map(input);
+    }
 
     // Render begin
     ImGui_ImplSdl_NewFrame(window);
@@ -432,35 +429,51 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     }
 
     // Map
-    if display_map {
-        // buffer_size: v2i;
-        // map_dest: Rect;
-        // if display_minimap {
-        //     buffer_size = .{256, 256};
-        //     map_dest.x = WINDOW_WIDTH - 50 - buffer_size.x;
-        //     map_dest.y = WINDOW_H - 50 - buffer_size.x;
-        // }
-        map_dest := Rect.{100, 100, xx map_display_buffer.w, xx map_display_buffer.h};
-        set_framebuffer(*map_display_buffer);
-        clear_framebuffer(0, 0, 1, 1);
-        disp_proj := orthographic_projection_matrix(0, xx map_display_buffer.w, xx map_display_buffer.h, 0, -1, 1);
-        px, py := get_player_room();
-        map_camera.pos = .{xx SCREEN_TILE_WIDTH * (px + 0.5), xx SCREEN_TILE_HEIGHT * (py + 0.5)};
-        map_camera.zoom = 8;
-        map_view := camera_view_matrix(map_camera, xx map_display_buffer.w, xx map_display_buffer.h);
-        
-        use_shader(texture_shader);
-        shader_uniform(texture_shader, "view", map_view);
-        shader_uniform(texture_shader, "projection", disp_proj);
-        bind_texture(map_buffer.tex);
-        draw_texture(.{0, 0, xx map_buffer.w, xx map_buffer.h}, .{0, xx map_buffer.h, xx map_buffer.w, xx -map_buffer.h}, map_buffer.tex);
+    if editor.editing_level == false {
+        using map;
+        if display_map && display_minimap == false {
+            map_dest := Rect.{100, 100, 512, 512};
 
-        set_framebuffer(null);
-        shader_uniform(texture_shader, "view", Matrix4_Identity);
-        shader_uniform(texture_shader, "projection", projection);
-        bind_texture(map_display_buffer.tex);
-        fin_dest := Rect.{100, 100 + map_dest.h, xx map_display_buffer.w, xx -map_dest.h};
-        draw_texture(.{0, 0, xx map_display_buffer.w, xx map_display_buffer.h}, fin_dest, map_display_buffer.tex);
+            set_framebuffer(*map_display_buffer);
+            clear_framebuffer(0, 0, 1, 1);
+            disp_proj := orthographic_projection_matrix(0, map_dest.w, map_dest.h, 0, -1, 1);
+            map_view := camera_view_matrix(map_camera, xx map_dest.w, xx map_dest.h);
+            
+            use_shader(texture_shader);
+            shader_uniform(texture_shader, "view", map_view);
+            shader_uniform(texture_shader, "projection", disp_proj);
+            bind_texture(map_buffer.tex);
+            draw_texture(.{0, 0, xx map_buffer.w, xx map_buffer.h}, .{0, xx map_buffer.h, xx map_buffer.w, xx -map_buffer.h}, map_buffer.tex);
+
+            set_framebuffer(null);
+            shader_uniform(texture_shader, "view", Matrix4_Identity);
+            shader_uniform(texture_shader, "projection", projection);
+            bind_texture(map_display_buffer.tex);
+            fin_dest := Rect.{100, 100 + map_dest.h, xx map_dest.w, xx -map_dest.h};
+            draw_texture(.{0, 0, xx map_dest.w, xx map_dest.h}, fin_dest, map_display_buffer.tex);
+
+        } else if display_map && display_minimap {
+            px, py := get_player_room();
+            map_dest := Rect.{xx (WINDOW_WIDTH - 50 - 256), xx (WINDOW_HEIGHT - 50 - 256), 256, 256};
+
+            set_framebuffer(*map_display_buffer);
+            clear_framebuffer(0, 0, 1, 1);
+            disp_proj := orthographic_projection_matrix(0, map_dest.w, map_dest.h, 0, -1, 1);
+            map_view := camera_view_matrix(minimap_camera, xx map_dest.w, xx map_dest.h);
+
+            use_shader(texture_shader);
+            shader_uniform(texture_shader, "view", map_view);
+            shader_uniform(texture_shader, "projection", disp_proj);
+            bind_texture(map_buffer.tex);
+            draw_texture(.{0, 0, xx map_buffer.w, xx map_buffer.h}, .{0, xx map_buffer.h, xx map_buffer.w, xx -map_buffer.h}, map_buffer.tex);
+
+            set_framebuffer(null);
+            shader_uniform(texture_shader, "view", Matrix4_Identity);
+            shader_uniform(texture_shader, "projection", projection);
+            bind_texture(map_display_buffer.tex);
+            fin_dest := Rect.{map_dest.x, map_dest.y + map_dest.h, xx map_dest.w, xx -map_dest.h};
+            draw_texture(.{0, 0, xx map_display_buffer.w, xx map_display_buffer.h}, fin_dest, map_display_buffer.tex);
+        }
     }
 
     // Debug text

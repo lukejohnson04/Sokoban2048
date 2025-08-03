@@ -38,8 +38,8 @@ get_mouse_world_pos :: (camera: Camera2D) -> Vector2 {
     return worldPos;
 }
 
-camera_zoom :: (using camera: *Camera2D, zoom_into: Vector2, zoom_factor: float32) {
-    screen_half := Vector2.{ WINDOW_WIDTH * 0.5, WINDOW_HEIGHT * 0.5 };
+camera_zoom :: (using camera: *Camera2D, zoom_into: Vector2, zoom_factor: float32, camera_width := WINDOW_WIDTH, camera_height := WINDOW_HEIGHT) {
+    screen_half := Vector2.{ camera_width * 0.5, camera_height * 0.5 };
 
     world_before := camera.pos + (zoom_into - screen_half) * (1.0 / camera.zoom);
     camera.zoom *= zoom_factor;

@@ -39,7 +39,7 @@ poll_input :: (using input: *Input_State) {
     input.rmouse_just_pressed = false;
     input.rmouse_just_released = false;
     input.mwheel_just_pressed = false;
-    input.mwheel_just_pressed = false;
+    input.mwheel_just_released = false;
 
     input.just_closed_window = false;
     

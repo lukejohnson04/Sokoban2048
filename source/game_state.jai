@@ -34,8 +34,6 @@ Game_State :: struct {
 
     world_buffer : Framebuffer;
     floor_buffer : Framebuffer;
-    map_buffer : Framebuffer;
-    map_display_buffer : Framebuffer;
 
     photograph_song : *Mix_Chunk;
     
@@ -77,11 +75,8 @@ Game_State :: struct {
     bindings: Bindings;
 
     stats: Game_Stats;
-    
-    display_map := false;
-    display_minimap := false;
-    map_camera := Camera2D.{.{WORLD_ROOM_WIDTH*SCREEN_TILE_WIDTH*0.5, WORLD_ROOM_HEIGHT*SCREEN_TILE_HEIGHT*0.5}, 1};
-    
+
+    map: Map_State;    
 
     level_mesh_needs_update := false;
 
@@ -137,8 +132,7 @@ on_startup :: () {
 
     world_buffer = create_framebuffer(WINDOW_WIDTH, WINDOW_HEIGHT);
     floor_buffer = create_framebuffer(WINDOW_WIDTH, WINDOW_HEIGHT);
-    map_buffer = create_framebuffer(WORLD_ROOM_WIDTH*SCREEN_TILE_WIDTH, WORLD_ROOM_HEIGHT*SCREEN_TILE_HEIGHT);
-    map_display_buffer = create_framebuffer(512, 512);
+    map_init(*map);
 
     use_shader(texture_shader);
     shader_uniform(texture_shader, "texture1", 0);
