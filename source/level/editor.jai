@@ -123,7 +123,7 @@ draw_editor :: () {
                 editor.editing_level = true;
             }
         }
-                ImGui.InputText("##save", editor.save_level_field.data, MAX_LEVEL_NAME_LENGTH);
+        ImGui.InputText("##save", editor.save_level_field.data, MAX_LEVEL_NAME_LENGTH);
         ImGui.SameLine();
         if ImGui.Button("Save Level") {
             if editor.save_level_field[0] == 0 {
@@ -147,7 +147,7 @@ draw_editor :: () {
         if ImGui.Button("Edit Level") {
             editor.editing_level = true;
             loaded = load_level(*level, xx level.name, *game_state.field);
-            if loaded { 
+            if loaded {
                 clear_turn_memory(*turn_memory);
             }
         }
@@ -155,10 +155,7 @@ draw_editor :: () {
         if level.id != 0 {
             if ImGui.Button("Restart Level") {
                 loaded = load_level(*level, xx level.name, *game_state.field);
-                turn_count = 0;
-                if loaded {
-                    clear_turn_memory(*turn_memory);
-                }
+                level_on_play();
             }
         }
         return;
@@ -169,12 +166,8 @@ draw_editor :: () {
         } else {
             save_level(*level, xx level.name);
             loaded = load_level(*level, xx level.name, *game_state.field);
-            turn_count = 0;
-            camera.zoom = 1;
-            if loaded {
-                clear_turn_memory(*turn_memory);
-            }
             editor.editing_level = false;
+            level_on_play();
         }
     }
 

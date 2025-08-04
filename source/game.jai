@@ -454,7 +454,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
 
         } else if display_map && display_minimap {
             px, py := get_player_room();
-            map_dest := Rect.{xx (WINDOW_WIDTH - 50 - 256), xx (WINDOW_HEIGHT - 50 - 256), 256, 256};
+            map_dest := Rect.{xx (WINDOW_WIDTH - 50 - 256), 50, 256, 256};
 
             set_framebuffer(*map_display_buffer);
             clear_framebuffer(0, 0, 1, 1);

@@ -105,6 +105,20 @@ is_in_bounds :: (pos: v2i, level: *Level) -> bool {
     return pos.x >= 0 && pos.y >= 0 && pos.x < level.dimensions.x && pos.y < level.dimensions.y;
 }
 
+level_on_play :: () {
+    using context.game_state;
+
+    clear_turn_memory(*turn_memory);
+    turn_count = 0;
+    camera.zoom = 1;
+
+    map.display_map = true;
+    map.display_minimap = true;
+    stats = .{};
+
+    render_map();
+}
+
 
 MAX_LEVEL_NAME_LENGTH :: 16;
 

@@ -26,13 +26,9 @@ load_level :: (level: *Level, name: string, field: *Visibility_Field, log_errors
     memcpy(level, data.data, size_of(Level));
 
     level.player_pos = level.player_spawn_pos;
-
-    if field != null {
-        vfield_generate_flood_fill(level, field.*);
-    }
-
+    vfield_generate_flood_fill(level, field.*);
     generate_level_mesh();
-    
+
     return true;
 }
 
