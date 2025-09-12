@@ -36,10 +36,15 @@ Bindings :: struct {
     actions[DOWN].keys[0] =   SDL_SCANCODE_DOWN;
     actions[DOWN].keys[1] =   SDL_SCANCODE_S;
 
-    actions[LEFT].repeat_initial =  true; 
-    actions[RIGHT].repeat_initial = true;
-    actions[UP].repeat_initial =    true;
-    actions[DOWN].repeat_initial =  true;
+    // actions[LEFT].repeat_initial =  true; 
+    // actions[RIGHT].repeat_initial = true;
+    // actions[UP].repeat_initial =    true;
+    // actions[DOWN].repeat_initial =  true;
+
+    actions[LEFT].repeat_interval =  0.15;
+    actions[RIGHT].repeat_interval = 0.15;
+    actions[UP].repeat_interval =    0.15;
+    actions[DOWN].repeat_interval =  0.15;
 
     // actions[UNDO].repeat_initial =  false;
     // actions[REDO].repeat_initial =  false;
@@ -97,7 +102,7 @@ controls :: (input: *Input_State) {
                     }
                 }
             }
-            action.timer -= FRAME_TIME;
+            action.timer -= context.game_state.delta;
         }
     }
 }

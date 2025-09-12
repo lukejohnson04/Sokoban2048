@@ -128,16 +128,34 @@ draw_text :: (text: string, position: v2i, font: *Font, vao: GLuint, vbo: GLuint
 
 load_font :: (font: *Font, name: string, italic: bool, bold: bool, size: int) -> bool {
     font.size = size;
-    if !load_font_face(*font.normal, tprint("data/fonts/%.ttf", name), size) return false;
+    if !load_font_face(*font.normal, tprint("data/fonts/%.ttf", name), size) {
+        print("Error: failed to load normal font face for %.ttf\n", name);
+        return false;
+    }
+    
     if italic {
         // Workaround right now. In the future we will have dedicated files for each font face, but
         // for now it's generated as oblique instead.
-        if !load_font_face(*font.italic, tprint("data/fonts/%.ttf", name), size, true) return false;
+        if !load_font_face(*font.italic, tprint("data/fonts/%.ttf", name), size, true) {
+            print("Error: failed to load italic font face for %.ttf\n", name);
+            return false;
+        }
     }
+    
     if bold {
-        if !load_font_face(*font.bold, tprint("data/fonts/%-bold.ttf", name), size) return false;
+        if !load_font_face(*font.bold, tprint("data/fonts/%-bold.ttf", name), size) {
+            print("Error: failed to load bold font face for %.ttf\n", name);
+            return false;
+        }
     }
     return true;
+}
+
+check_gl_error :: (num: int) {
+    error := glGetError();
+    if error != GL_NO_ERROR {
+        print("OpenGL Error! Error: % num: %\n", error, num);
+    }
 }
 
 load_font_face :: (font_face: *Font_Face, path: string, size: int, oblique: bool = false) -> bool {
@@ -152,7 +170,6 @@ load_font_face :: (font_face: *Font_Face, path: string, size: int, oblique: bool
         print("Failed to load font face at path %!\n", path);
         return false;
     }
-
     FT_Set_Pixel_Sizes(face, 0, xx size);
     if oblique {
         matrix: FT_Matrix;
@@ -163,6 +180,7 @@ load_font_face :: (font_face: *Font_Face, path: string, size: int, oblique: bool
 
         FT_Set_Transform(face, *matrix, xx 0);
     }
+
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     glPixelStorei(GL_UNPACK_ROW_LENGTH, face.glyph.bitmap.pitch);
 
@@ -175,10 +193,6 @@ load_font_face :: (font_face: *Font_Face, path: string, size: int, oblique: bool
         texture: GLuint;
         glGenTextures(1, *texture);
         glBindTexture(GL_TEXTURE_2D, texture);
-        if glGetError() != GL_NO_ERROR {
-            print("OpenGL Error!\n");
-            return false;
-        }
 
         glTexImage2D(
             GL_TEXTURE_2D,
@@ -203,6 +217,7 @@ load_font_face :: (font_face: *Font_Face, path: string, size: int, oblique: bool
         character.bearing = .{face.glyph.bitmap_left, face.glyph.bitmap_top};
         character.advance = xx face.glyph.advance.x;
     }
+
     FT_Done_Face(face);
     FT_Done_FreeType(ft);
 
@@ -210,4 +225,3 @@ load_font_face :: (font_face: *Font_Face, path: string, size: int, oblique: bool
 
     return true;
 }
-

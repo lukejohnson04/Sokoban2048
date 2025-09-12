@@ -151,7 +151,6 @@ move_player :: (move: v2i) -> success: bool, combines_block: bool, activates_goa
                     level.grid[prev.x][prev.y] = new_block;
                     level.grid[pos.x][pos.y] = BLOCK_NONE;
                     success = true;
-                    print("Combination\n");
                     break;
                 }
             }

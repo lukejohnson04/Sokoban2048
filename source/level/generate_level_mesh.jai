@@ -10,6 +10,14 @@ Level_Mesh :: struct {
     light_buffer: Framebuffer;
 }
 
+level_mesh_init :: (using mesh: *Level_Mesh) {
+    mesh_init(*mesh.floor);
+    mesh_init(*mesh.tiles);
+    mesh_init(*mesh.gold);
+    mesh_init(*mesh.goal);
+    mesh_init(*mesh.timer);
+}
+
 generate_level_mesh :: () {
     using context.game_state;
 
@@ -20,12 +28,6 @@ generate_level_mesh :: () {
     mesh_free(*mesh.goal);
     mesh_free(*mesh.timer);
     
-    mesh_init(*mesh.floor);
-    mesh_init(*mesh.tiles);
-    mesh_init(*mesh.gold);
-    mesh_init(*mesh.goal);
-    mesh_init(*mesh.timer);
-
     light_count = 0;
 
     generate_mesh_of_layer :: (blocks: *type_of(Level.grid), mesh_layer: *Mesh, generate_lights: bool) #expand {
@@ -133,6 +135,12 @@ generate_level_mesh :: () {
         mesh.light_buffer = create_framebuffer(WINDOW_WIDTH, WINDOW_HEIGHT);
     }
 
+    render_map();
+}
+
+generate_portal_pairs :: () {
+    using context.game_state;
+    
     // Generate portal list so we don't have to search every time for corresponding portals
     portal_list.count = 0;
     for x: 0..level.dimensions.x-1 {
@@ -170,6 +178,4 @@ generate_level_mesh :: () {
         it += 1;
         portal_id += 1;
     }
-
-    render_map();
 }

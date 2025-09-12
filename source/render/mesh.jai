@@ -25,8 +25,8 @@ Mesh :: struct($T: Vertex_Component = .NONE) {
 mesh_free :: (mesh: *Mesh) {
     if mesh.vertices.count > 0 {
         mesh.vertices.count = 0;
-        glDeleteBuffers(1, *mesh.vbo);
-        glDeleteVertexArrays(1, *mesh.vao);
+        // glDeleteBuffers(1, *mesh.vbo);
+        // glDeleteVertexArrays(1, *mesh.vao);
     }
 }
 

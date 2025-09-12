@@ -72,11 +72,14 @@ Game_State :: struct {
 
     frame_number := 0;
 
+    delta: float32;
+    prev_frame_time: float64;
+
     bindings: Bindings;
 
     stats: Game_Stats;
 
-    map: Map_State;    
+    map: Map_State;
 
     level_mesh_needs_update := false;
 
@@ -109,9 +112,7 @@ on_startup :: () {
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-    mesh_init(*world_mesh.tiles);
-    mesh_init(*world_mesh.gold);
-    mesh_init(*world_mesh.goal);
+    level_mesh_init(*world_mesh);
     
 
     glGenVertexArrays(1, *color_vao);
@@ -142,7 +143,7 @@ on_startup :: () {
     shader_uniform(mask_shader, "mask_texture", 1);
 
     load_font(*font_arial, "arial", false, false, 48);
-    load_font(*font_m5x7, "m5x7", true, false, 60);
+    if !load_font(*font_m5x7, "m5x7", true, false, 60) print("huh\n");
 
     photograph_song = Mix_LoadWAV("data/audio/photograph_song.ogg");
     note_normal = Mix_LoadWAV("data/audio/note_normal.ogg");
@@ -168,8 +169,6 @@ on_startup :: () {
     }
     
     level_mesh_needs_update = true;
-    // vfield_generate_flood_fill(*level, field);
-    // generate_level_mesh();
 }
 
 REWIND_TIME :: 1.25;

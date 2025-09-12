@@ -133,6 +133,33 @@ Puzzle where two blocks can easily combine against another. But to actually get 
 Puzzle you have to complete in a certain number of moves
 
 
+Swap block mechanics - A block you push around, and then press a button to swap places with it. There can be puzzles where they're out in the open, but the way you activate the block is surprising. Then, when you discover how to swap, you suddenly realize there are many areas that you might have been able to use the swap block on.
+How do we activate the swap bock? It needs to be in a surprising way the player likely won't find out immediately on their own.
+
 
 
 Each room the player has been in will show up as a gray box on the map. The room the player is currently in will be a red box.
+
+
+
+
+Make the perfect game you want to play
+
+
+Things that would make it perfect:
+1. Great puzzles, with each one demonstrating a new concept, an expansion on a concept, or an edge case of a concept
+2. Intermissions with explicit messaging, that is expanded upon by the puzzles
+3. Several big "moments" that makes the player feel as if they just watched something insane happen
+
+
+
+
+Moments
+
+
+
+
+
+Don't walk into a kitchen asking "can this kitchen make me an omelette". Ask yourself, "what can this kitchen make for me today?"
+
+

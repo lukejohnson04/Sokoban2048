@@ -75,7 +75,7 @@ dialogue_update :: (dialogue_state: *Dialogue_Player_State, input: *Input_State)
 
     if dialogue_state.index < dialogue_state.buffer.size {
         using dialogue_state;
-        timer += FRAME_TIME;
+        timer += context.game_state.delta;
         if timer > timer_interval {
             timer -= timer_interval;
             index += 1;
@@ -307,6 +307,9 @@ generate_interaction_queue :: (state: *Dialogue_Player_State, block: Block) {
                     queue_text("I'll have to find a new family to take me in!");
                     queue_text("Well, I mean, I guess I don't have to do that. It's not like I'm a child or anything.");
                     queue_text("But still! This whole situation has got my britches in a bunch!");
+                }
+                case 2; {
+                    queue_text("Bring me what I require and you will be rewarded.");
                 }
             }
         }

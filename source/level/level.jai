@@ -116,6 +116,8 @@ level_on_play :: () {
     map.display_minimap = true;
     stats = .{};
 
+    generate_portal_pairs();
+    
     render_map();
 }
 

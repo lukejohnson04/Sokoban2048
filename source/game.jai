@@ -56,7 +56,6 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         undo_turn();
     }
 
-
     if !moved_this_turn && editor.editing_level == false && just_got_photograph == false && dialogue_state.open == false {
         // This is a shocking amount of code for how simple this task is
         for Bindings.Action_Type.[.LEFT, .RIGHT, .UP, .DOWN] {
@@ -100,7 +99,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
             if input.is_pressed[SDL_SCANCODE_LCTRL] == false {
                 rewinding = false;
             } else {
-                rewind_meter += FRAME_TIME;
+                rewind_meter += xx delta;
                 if rewind_meter > REWIND_TIME {
                     moved_this_turn = true;
                     rewind_meter = 0;
@@ -198,7 +197,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     shader_uniform(texture_shader, "colormult", 1.0);
     shader_uniform(texture_shader, "color_pass", Vector4.{1, 1, 1, 1});
 
-    resource_check_timer += FRAME_TIME;
+    resource_check_timer += delta;
     if resource_check_timer > 0.25 {
         check_resource_reload(*sprites);
         resource_check_timer = 0;
@@ -238,10 +237,12 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         }
     }
 
-    // Draw timer blocks
+    // Draw timer text
+    /*
     use_shader(text_shader);
     shader_uniform(text_shader, "view", view);
     shader_uniform(text_shader, "color", .{1, 1, 1, 1});
+
     for x: 0..level.dimensions.x-1 {
         for y: 0..level.dimensions.y-1 {
             timer := level.grid[x][y];
@@ -253,6 +254,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
             }
         }
     }
+    */
     use_shader(texture_shader);
 
 
@@ -498,7 +500,10 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     ImGui_ImplSdl_RenderDrawLists(ImGui.GetDrawData());
 
     SDL_GL_SwapWindow(window);
-    render_end_time := seconds_since_init();
+
+    curr_frame_time := seconds_since_init();
+    delta = xx (curr_frame_time - prev_frame_time);
+    prev_frame_time = curr_frame_time;
 
     reset_temporary_storage();
     return 1;
