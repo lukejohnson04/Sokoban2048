@@ -215,34 +215,35 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
 
     bind_texture(sprites);
 
-    draw_extra_mesh_layers :: () #expand {
+    draw_extra_mesh_layers :: (mesh: *Level_Mesh) #expand {
         shader_uniform(texture_shader, "colormult", 0.8);
         shader_uniform(texture_shader, "grayscale", 1);
-        mesh_draw(*world_mesh.goal);
+        mesh_draw(*mesh.goal);
         shader_uniform(texture_shader, "grayscale", 0);
         shader_uniform(texture_shader, "gold", 1);
-        mesh_draw(*world_mesh.gold);
+        mesh_draw(*mesh.gold);
         shader_uniform(texture_shader, "gold", 0);
         shader_uniform(texture_shader, "color_pass", Vector4.{1, 0.2, 0.2, 1});
-        mesh_draw(*world_mesh.timer);
+        mesh_draw(*mesh.timer);
         shader_uniform(texture_shader, "color_pass", Vector4.{1, 1, 1, 1});
         shader_uniform(texture_shader, "gold", 0);
         shader_uniform(texture_shader, "colormult", 1.0);
     }
     
+    mesh_to_draw := ifx movement_tween then *tween_mesh else *world_mesh;
     if editor.enabled == false || editor.show_both_layers {
         set_framebuffer(*floor_buffer);
-        mesh_draw(*world_mesh.floor);
+        mesh_draw(*mesh_to_draw.floor);
         set_framebuffer(*world_buffer);
-        mesh_draw(*world_mesh.tiles);
-        draw_extra_mesh_layers();
+        mesh_draw(*mesh_to_draw.tiles);
+        draw_extra_mesh_layers(mesh_to_draw);
     } else {
         if editor.layer == 0 {
-            mesh_draw(*world_mesh.tiles);
-            draw_extra_mesh_layers();
+            mesh_draw(*mesh_to_draw.tiles);
+            draw_extra_mesh_layers(mesh_to_draw);
         } else {
             set_framebuffer(*floor_buffer);
-            mesh_draw(*world_mesh.floor);
+            mesh_draw(*mesh_to_draw.floor);
             set_framebuffer(*world_buffer);
         }
     }
@@ -271,11 +272,12 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     if editor.editing_level == false {
         source := Rect.{16,0,16,16};
         dest: Rect;
+
+        time := seconds_since_init();
+        diff := time - time_of_last_move;
         if movement_tween {
             old_pos := turn_memory.curr.prev.move_delta.old_player_pos;
             new_pos := turn_memory.curr.prev.move_delta.new_player_pos;
-            time := seconds_since_init();
-            diff := time - time_of_last_move;
             dest.x = xx lerp(cast(float) old_pos.x, cast(float) new_pos.x, diff / MOVEMENT_TWEEN_LENGTH);
             dest.y = xx lerp(cast(float) old_pos.y, cast(float) new_pos.y, diff / MOVEMENT_TWEEN_LENGTH);
             dest.w = 64;
@@ -288,6 +290,24 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         }
         bind_texture(sprites);
         draw_texture(source, dest, *sprites);
+
+        if movement_tween {
+            delta_data := turn_memory.curr.prev.move_delta;
+            for 0..delta_data.tween_count-1 {
+                old_pos := delta_data.tween_changes[it].from;
+                new_pos := delta_data.tween_changes[it].to;
+                source = get_block_source(delta_data.tween_changes[it].value);
+
+                dest.x = xx lerp(cast(float) old_pos.x, cast(float) new_pos.x, diff / MOVEMENT_TWEEN_LENGTH);
+                dest.y = xx lerp(cast(float) old_pos.y, cast(float) new_pos.y, diff / MOVEMENT_TWEEN_LENGTH);
+                dest.w = 64;
+                dest.h = 64;
+
+                dest.x *= 64;
+                dest.y *= 64;
+                draw_texture(source, dest, *sprites);
+            }
+        }
     }
 
     editor_draw();

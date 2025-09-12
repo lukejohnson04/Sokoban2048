@@ -5,10 +5,18 @@ Move_Delta :: struct {
     new_value: Block;
 }
 
+Tween_Delta :: struct {
+    value: Block;
+    from: v2i;
+    to: v2i;
+}
+
 MAX_MOVE_DELTAS :: 16;
 Move_Delta_Data :: struct {
     count: s32;
     deltas: [MAX_MOVE_DELTAS] Move_Delta;
+    tween_count: s32;
+    tween_changes: [MAX_MOVE_DELTAS] Tween_Delta;
     // Change this to just one variable "new player delta"
     old_player_pos: v2i;
     new_player_pos: v2i;
@@ -148,6 +156,12 @@ move_player :: (move: v2i) -> success: bool, combines_block: bool, activates_goa
                     delta.old_value = curr_block;
                     delta.new_value = BLOCK_NONE;
 
+                    // For combining blocks
+                    delta_data.tween_changes[delta_data.tween_count] = .{prev_block, pos, prev};
+                    delta_data.tween_count += 1;
+                    delta_data.tween_changes[delta_data.tween_count] = .{prev_block, prev, prev};
+                    delta_data.tween_count += 1;
+
                     level.grid[prev.x][prev.y] = new_block;
                     level.grid[pos.x][pos.y] = BLOCK_NONE;
                     success = true;
@@ -177,7 +191,11 @@ move_player :: (move: v2i) -> success: bool, combines_block: bool, activates_goa
                     delta.old_value = level.grid[block_new_pos.x][block_new_pos.y];
                     delta.new_value = level.grid[pos.x][pos.y];
                     level.grid[block_new_pos.x][block_new_pos.y] = level.grid[pos.x][pos.y];
+
+                    delta_data.tween_changes[delta_data.tween_count] = .{level.grid[pos.x][pos.y], pos, block_new_pos};
+                    delta_data.tween_count += 1;
                 }
+
                 delta = add_move_delta(*delta_data);
                 delta.coord = pos;
                 delta.old_value = level.grid[pos.x][pos.y];
@@ -213,6 +231,6 @@ goto_last_checkpoint :: () -> bool {
     return false;
 }
 
-MOVEMENT_TWEEN_LENGTH :: 0.06;
+MOVEMENT_TWEEN_LENGTH :: 0.035;
 
 #load "turn.jai";

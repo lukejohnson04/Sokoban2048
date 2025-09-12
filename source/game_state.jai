@@ -22,7 +22,9 @@ Game_State :: struct {
     quad_vbo : GLuint;
     color_vao : GLuint;
     color_vbo : GLuint;
+
     world_mesh : Level_Mesh;
+    tween_mesh : Level_Mesh;
 
     sprites : Resource(Texture);
     sprites_imgui : Resource(Texture);
@@ -116,6 +118,7 @@ on_startup :: () {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     level_mesh_init(*world_mesh);
+    level_mesh_init(*tween_mesh);
     
 
     glGenVertexArrays(1, *color_vao);

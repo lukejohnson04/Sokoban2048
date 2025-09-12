@@ -10,6 +10,12 @@ Level_Mesh :: struct {
     light_buffer: Framebuffer;
 }
 
+
+// To tween movement of blocks we create two meshes
+// The first mesh is of all the tiles that haven't changed since the last move
+// The second mesh is all the tiles at the end of the movement animation (which is exactly what we have now)
+// Then, we just iterate through the move delta, pass proper uniforms, and draw each one at the tweened location 
+
 level_mesh_init :: (using mesh: *Level_Mesh) {
     mesh_init(*mesh.floor);
     mesh_init(*mesh.tiles);
@@ -18,19 +24,31 @@ level_mesh_init :: (using mesh: *Level_Mesh) {
     mesh_init(*mesh.timer);
 }
 
-generate_level_mesh :: () {
-    using context.game_state;
-
-    mesh: *Level_Mesh = *world_mesh;
+level_mesh_free :: (using mesh: *Level_Mesh) {
     mesh_free(*mesh.floor);
     mesh_free(*mesh.tiles);
     mesh_free(*mesh.gold);
     mesh_free(*mesh.goal);
     mesh_free(*mesh.timer);
-    
+}
+
+level_mesh_generate :: (using mesh: *Level_Mesh) {
+    mesh_generate(*mesh.floor);
+    mesh_generate(*mesh.tiles);
+    mesh_generate(*mesh.gold);
+    mesh_generate(*mesh.goal);
+    mesh_generate(*mesh.timer);
+}
+
+generate_level_mesh :: () {
+    using context.game_state;
+
+    level_mesh_free(*world_mesh);
+    level_mesh_free(*tween_mesh);
+
     light_count = 0;
 
-    generate_mesh_of_layer :: (blocks: *type_of(Level.grid), mesh_layer: *Mesh, generate_lights: bool) #expand {
+    generate_mesh_of_layer :: (blocks: *type_of(Level.grid), mesh: *Level_Mesh, mesh_layer: *Mesh, generate_lights: bool, tween: bool) #expand {
         for x: 0..level.dimensions.x-1 {
             for y: 0..level.dimensions.y-1 {
                 block := blocks.*[x][y];
@@ -66,6 +84,18 @@ generate_level_mesh :: () {
 
                 empty_block :: Block.{};
                 if block == empty_block continue;
+
+                if tween {
+                    delta_data := turn_memory.curr.prev.move_delta;
+                    tween_block := false;
+                    for 0..delta_data.count-1 {
+                        if delta_data.deltas[it].coord == .{x, y} {
+                            tween_block = true;
+                            break;
+                        }
+                    }
+                    if tween_block continue y;
+                }
 
                 if editor.editing_level == false && field[x][y].visible == false {
                     continue;
@@ -110,29 +140,28 @@ generate_level_mesh :: () {
                         } else {
                             array_add(*mesh.gold.vertices, it);
                         }
-                    } else {
-                        array_add(*mesh_layer.vertices, it);
+                        continue;
                     }
+                    array_add(*mesh_layer.vertices, it);
                 }
             }
         }
     }
 
-
-    generate_mesh_of_layer(*level.floor, *mesh.floor, false);
-    generate_mesh_of_layer(*level.grid, *mesh.tiles, false);
+    generate_mesh_of_layer(*level.floor, *world_mesh, *world_mesh.floor, false, false);
+    generate_mesh_of_layer(*level.grid, *world_mesh, *world_mesh.tiles, false, false);
+    if turn_memory.curr.prev {
+        generate_mesh_of_layer(*level.floor, *tween_mesh, *tween_mesh.floor, false, true);
+        generate_mesh_of_layer(*level.grid, *tween_mesh, *tween_mesh.tiles, false, true);
+    }
 
     // Note to self: the main performance issue I have identified so far is the light point compute time in the
     // "compute_light_points" procedure. Profile this procedure further. It might be faster to do all the
     // compute_light_point calls in one big batch because right now it could be a bit random when it does the calls.
-    mesh_generate(*mesh.floor);
-    mesh_generate(*mesh.tiles);
-    mesh_generate(*mesh.gold);
-    mesh_generate(*mesh.goal);
-    mesh_generate(*mesh.timer);
-
-    if mesh.light_buffer.id == 0 {
-        mesh.light_buffer = create_framebuffer(WINDOW_WIDTH, WINDOW_HEIGHT);
+    level_mesh_generate(*world_mesh);
+    level_mesh_generate(*tween_mesh);
+    if world_mesh.light_buffer.id == 0 {
+        world_mesh.light_buffer = create_framebuffer(WINDOW_WIDTH, WINDOW_HEIGHT);
     }
 
     render_map();
@@ -140,7 +169,7 @@ generate_level_mesh :: () {
 
 generate_portal_pairs :: () {
     using context.game_state;
-    
+
     // Generate portal list so we don't have to search every time for corresponding portals
     portal_list.count = 0;
     for x: 0..level.dimensions.x-1 {
