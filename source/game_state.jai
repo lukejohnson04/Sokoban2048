@@ -60,6 +60,9 @@ Game_State :: struct {
     turn_memory: Turn_Memory;
     turn_count := 0;
 
+    time_of_last_move: float64;
+    movement_tween: bool;
+
 
     resource_check_timer : float32;
 

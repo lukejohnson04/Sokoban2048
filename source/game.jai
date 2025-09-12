@@ -56,7 +56,14 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         undo_turn();
     }
 
-    if !moved_this_turn && editor.editing_level == false && just_got_photograph == false && dialogue_state.open == false {
+    if movement_tween {
+        time := seconds_since_init();
+        if time - time_of_last_move > MOVEMENT_TWEEN_LENGTH {
+            movement_tween = false;
+        }
+    }
+
+    if !moved_this_turn && editor.editing_level == false && just_got_photograph == false && dialogue_state.open == false && movement_tween == false{
         // This is a shocking amount of code for how simple this task is
         for Bindings.Action_Type.[.LEFT, .RIGHT, .UP, .DOWN] {
             if do_action(it) == false continue;
@@ -75,6 +82,9 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
                 success, combines_block, activates_goal_block := move_player(move);
                 if success {
                     moved_this_turn = true;
+                    movement_tween = true;
+                    time_of_last_move = seconds_since_init();
+
                     // play_sound_effect(footsteps[move_number % footsteps.count]);
                     if combines_block {
                         if activates_goal_block {
@@ -257,10 +267,25 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     */
     use_shader(texture_shader);
 
-
+    // Draw player
     if editor.editing_level == false {
         source := Rect.{16,0,16,16};
-        dest := Rect.{xx (level.player_pos.x*64), xx (level.player_pos.y*64), 64, 64};
+        dest: Rect;
+        if movement_tween {
+            old_pos := turn_memory.curr.prev.move_delta.old_player_pos;
+            new_pos := turn_memory.curr.prev.move_delta.new_player_pos;
+            time := seconds_since_init();
+            diff := time - time_of_last_move;
+            dest.x = xx lerp(cast(float) old_pos.x, cast(float) new_pos.x, diff / MOVEMENT_TWEEN_LENGTH);
+            dest.y = xx lerp(cast(float) old_pos.y, cast(float) new_pos.y, diff / MOVEMENT_TWEEN_LENGTH);
+            dest.w = 64;
+            dest.h = 64;
+
+            dest.x *= 64;
+            dest.y *= 64;
+        } else {
+            dest = Rect.{xx (level.player_pos.x*64), xx (level.player_pos.y*64), 64, 64};
+        }
         bind_texture(sprites);
         draw_texture(source, dest, *sprites);
     }
