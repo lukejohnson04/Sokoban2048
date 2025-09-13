@@ -84,6 +84,10 @@ angle_to_point :: (a: Vector2, b: Vector2) -> float {
     return atan2(a.y - b.y, a.x - b.x);
 }
 
+radians_to_vector :: (rad: float32) -> Vector2 {
+    return .{cos(rad), sin(rad)};
+}
+
 
 
 // ChatGPT code lol

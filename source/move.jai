@@ -231,6 +231,6 @@ goto_last_checkpoint :: () -> bool {
     return false;
 }
 
-MOVEMENT_TWEEN_LENGTH :: 0.035;
+MOVEMENT_TWEEN_LENGTH :: 0.05;
 
 #load "turn.jai";

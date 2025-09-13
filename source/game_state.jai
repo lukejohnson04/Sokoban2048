@@ -27,12 +27,15 @@ Game_State :: struct {
     tween_mesh : Level_Mesh;
 
     sprites : Resource(Texture);
+    sprite_particles : Resource(Texture);
     sprites_imgui : Resource(Texture);
     ui_sprites : Resource(Texture);
     spotlight : Resource(Texture);
     clockwise_arrow_texture : Resource(Texture);
     counter_clockwise_arrow_texture : Resource(Texture);
     dialogue_player_texture : Resource(Texture);
+
+    particle_system : Particle_System;
 
     world_buffer : Framebuffer;
     floor_buffer : Framebuffer;
@@ -74,6 +77,8 @@ Game_State :: struct {
     light_count: int;
 
     portal_list: [..] v2i;
+
+
 
     frame_number := 0;
 
@@ -125,6 +130,7 @@ on_startup :: () {
     glGenBuffers(1, *color_vbo);
 
     load_resource(*sprites, "data/art/sprites.png");
+    load_resource(*sprite_particles, "data/art/particles.png");
     load_resource(*sprites_imgui, "data/art/sprites.png");
     load_resource(*dialogue_player_texture, "data/art/dialoguebox.png");
     load_resource(*ui_sprites, "data/art/ui.png");

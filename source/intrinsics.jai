@@ -126,3 +126,4 @@ queue_is_empty :: (using queue: *Queue($T, $MAX_SIZE)) -> bool {
 }
 
 #load "time.jai";
+#load "random.jai";

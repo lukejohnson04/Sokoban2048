@@ -131,8 +131,6 @@ generate_level_mesh :: () {
                     .{dest.x+dest.w,    dest.y+dest.h,  0, u2, v2},
                 ];
 
-                vertex_directions := v2i.[.{0, 0}, .{1, 0}, .{1, 1}, .{0, 0}, .{0, 1}, .{1, 1}];
-
                 for *vertices {
                     if block_is_goal(block) {
                         if block.flags & .GOAL {

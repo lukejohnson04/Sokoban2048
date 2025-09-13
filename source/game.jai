@@ -24,6 +24,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     if just_reloaded_dll.* {
         gl_load(*gl);
         ImGui.SetCurrentContext(imgui_context);
+        
         level_mesh_needs_update = true;
         just_reloaded_dll.* = false;
     }
@@ -84,6 +85,19 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
                     moved_this_turn = true;
                     movement_tween = true;
                     time_of_last_move = seconds_since_init();
+
+                    particle := spawn_particle(*particle_system);
+
+                    old_ppos := turn_memory.curr.prev.move_delta.old_player_pos;
+                    particle.pos = Vector2.{xx (old_ppos.x * 64), xx (old_ppos.y* 64)};
+                    particle.pos += .{32, 32};
+                    particle.life_length = 0.3;
+                    particle.vel = Vector2.{xx -move.x, xx -move.y} * 50;
+                    rand_vec := random_unit_vector() * 10;
+                    particle.vel += rand_vec;
+                    particle.size_start = 1.00;
+                    particle.size_end = 0.35;
+                    particle.pos -= particle.vel * 0.25;
 
                     // play_sound_effect(footsteps[move_number % footsteps.count]);
                     if combines_block {
@@ -157,6 +171,10 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
 
     if editor.editing_level == false {
         update_map(input);
+    }
+
+    if input.just_pressed[SDL_SCANCODE_G] {
+        spawn_particle(*particle_system, Vector2.{xx (level.player_pos.x * 64), xx ((level.player_pos.y + 1)* 64), });
     }
 
     // Render begin
@@ -248,6 +266,11 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         }
     }
 
+    // particles
+    use_shader(texture_shader);
+    shader_uniform(texture_shader, "view", view);
+    particles_update_and_render(*particle_system);
+
     // Draw timer text
     /*
     use_shader(text_shader);
@@ -275,16 +298,14 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
 
         time := seconds_since_init();
         diff := time - time_of_last_move;
+        tween_value := min(diff / MOVEMENT_TWEEN_LENGTH, 1.0);
         if movement_tween {
-            old_pos := turn_memory.curr.prev.move_delta.old_player_pos;
-            new_pos := turn_memory.curr.prev.move_delta.new_player_pos;
-            dest.x = xx lerp(cast(float) old_pos.x, cast(float) new_pos.x, diff / MOVEMENT_TWEEN_LENGTH);
-            dest.y = xx lerp(cast(float) old_pos.y, cast(float) new_pos.y, diff / MOVEMENT_TWEEN_LENGTH);
+            old_pos := turn_memory.curr.prev.move_delta.old_player_pos * 64;
+            new_pos := turn_memory.curr.prev.move_delta.new_player_pos * 64;
+            dest.x = xx lerp(cast(float) old_pos.x, cast(float) new_pos.x, tween_value);
+            dest.y = xx lerp(cast(float) old_pos.y, cast(float) new_pos.y, tween_value);
             dest.w = 64;
             dest.h = 64;
-
-            dest.x *= 64;
-            dest.y *= 64;
         } else {
             dest = Rect.{xx (level.player_pos.x*64), xx (level.player_pos.y*64), 64, 64};
         }
@@ -294,17 +315,14 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         if movement_tween {
             delta_data := turn_memory.curr.prev.move_delta;
             for 0..delta_data.tween_count-1 {
-                old_pos := delta_data.tween_changes[it].from;
-                new_pos := delta_data.tween_changes[it].to;
+                old_pos := delta_data.tween_changes[it].from * 64;
+                new_pos := delta_data.tween_changes[it].to * 64;
                 source = get_block_source(delta_data.tween_changes[it].value);
 
-                dest.x = xx lerp(cast(float) old_pos.x, cast(float) new_pos.x, diff / MOVEMENT_TWEEN_LENGTH);
-                dest.y = xx lerp(cast(float) old_pos.y, cast(float) new_pos.y, diff / MOVEMENT_TWEEN_LENGTH);
+                dest.x = xx lerp(cast(float) old_pos.x, cast(float) new_pos.x, tween_value);
+                dest.y = xx lerp(cast(float) old_pos.y, cast(float) new_pos.y, tween_value);
                 dest.w = 64;
                 dest.h = 64;
-
-                dest.x *= 64;
-                dest.y *= 64;
                 draw_texture(source, dest, *sprites);
             }
         }
@@ -575,6 +593,7 @@ VSYNC :: true;
 #load "intrinsics.jai";
 #load "game_state.jai";
 #load "controls.jai";
+#load "particles.jai";
 
 #import "Windows";
 #import "Basic";
