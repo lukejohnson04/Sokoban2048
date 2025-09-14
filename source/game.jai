@@ -64,7 +64,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         }
     }
 
-    if !moved_this_turn && editor.editing_level == false && just_got_photograph == false && dialogue_state.open == false && movement_tween == false{
+    if !moved_this_turn && editor.editing_level == false && just_got_photograph == false && dialogue_state.open == false {
         // This is a shocking amount of code for how simple this task is
         for Bindings.Action_Type.[.LEFT, .RIGHT, .UP, .DOWN] {
             if do_action(it) == false continue;
@@ -91,24 +91,22 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
                     old_ppos := turn_memory.curr.prev.move_delta.old_player_pos;
                     particle.pos = Vector2.{xx (old_ppos.x * 64), xx (old_ppos.y* 64)};
                     particle.pos += .{32, 32};
-                    particle.life_length = 0.3;
-                    particle.vel = Vector2.{xx -move.x, xx -move.y} * 50;
-                    rand_vec := random_unit_vector() * 10;
-                    particle.vel += rand_vec;
+                    particle.life_length = 0.35;
+                    reverse_dir_vec := Vector2.{xx -move.x, xx -move.y};
+                    rand_vec := random_unit_vector();
+                    particle.vel = reverse_dir_vec * 60 + rand_vec * 10;
                     particle.size_start = 1.00;
                     particle.size_end = 0.35;
                     particle.pos -= particle.vel * 0.25;
 
-                    // play_sound_effect(footsteps[move_number % footsteps.count]);
-                    if combines_block {
-                        if activates_goal_block {
-                            play_sound_effect(note_echo);
-                        } else {
-                            play_sound_effect(note_normal);
-                        }
-                    }
-                    if just_got_photograph {
-                        Mix_PlayChannel(0, photograph_song, 0);
+                    for 0..3 {
+                        np := spawn_particle(*particle_system);
+                        np.pos = Vector2.{xx (old_ppos.x * 64), xx (old_ppos.y* 64)};
+                        np.pos += .{32, 32};
+                        np.life_length = 0.35;
+                        np.vel = reverse_dir_vec * 20 + random_unit_vector() * 10;
+                        particle.size_start = 0.5;
+                        particle.size_end = 0.15;
                     }
                 }
             }
