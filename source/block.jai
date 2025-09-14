@@ -114,8 +114,14 @@ Block :: struct {
         FLIPPED_X :: 4;
         FLIPPED_Y :: 8;
         TIMER :: 16;
+        LINKED :: 32;
     }
 }
+
+// Linked blocks work as follows:
+// If a block has the linked flag, it will link up with all blocks that have the same interaction id
+// If a linked block is pushed, it's linked block will also be pushed (if possible). If it's not possible
+// for the other block to be pushed, for example if it hits a wall, then only the initial block will move.
 
 BLOCK_NONE := Block.{};
 

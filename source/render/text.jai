@@ -151,12 +151,6 @@ load_font :: (font: *Font, name: string, italic: bool, bold: bool, size: int) ->
     return true;
 }
 
-check_gl_error :: (num: int) {
-    error := glGetError();
-    if error != GL_NO_ERROR {
-        print("OpenGL Error! Error: % num: %\n", error, num);
-    }
-}
 
 load_font_face :: (font_face: *Font_Face, path: string, size: int, oblique: bool = false) -> bool {
     ft: FT_Library;
@@ -197,15 +191,19 @@ load_font_face :: (font_face: *Font_Face, path: string, size: int, oblique: bool
         glTexImage2D(
             GL_TEXTURE_2D,
             0,
-            GL_ALPHA,
+            GL_R8,
             face.glyph.bitmap.width,
             face.glyph.bitmap.rows,
             0,
-            GL_ALPHA,
+            GL_RED,
             GL_UNSIGNED_BYTE,
             face.glyph.bitmap.buffer
         );
 
+        if check_gl_error(3) {
+            print("The error is most likely to do with the color channel the data is stored in. ");
+            print("In OpenGL Core 3.0 and above, GL_ALPHA is not a valid color channel for this. GL_RED is the most common alternative.\n");
+        }
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -224,4 +222,13 @@ load_font_face :: (font_face: *Font_Face, path: string, size: int, oblique: bool
     font_face.size = size;
 
     return true;
+}
+
+check_gl_error :: (num: int) -> bool {
+    error := glGetError();
+    if error != GL_NO_ERROR {
+        print("OpenGL Error! Error: % num: %\n", error, num);
+        return true;
+    }
+    return false;
 }
