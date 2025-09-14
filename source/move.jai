@@ -29,14 +29,12 @@ add_move_delta :: (data: *Move_Delta_Data) -> *Move_Delta {
 }
 
 
-move_player :: (move: v2i) -> success: bool, combines_block: bool, activates_goal_block: bool {
+move_player :: (move: v2i) -> success: bool {
     using context.game_state;
     using level;
     new_pos := player_pos + move;
 
     success := false;
-    combines_block := false;
-    activates_goal_block := false;
 
     delta_data : Move_Delta_Data;
     delta_data.old_player_pos = player_pos;
@@ -49,163 +47,72 @@ move_player :: (move: v2i) -> success: bool, combines_block: bool, activates_goa
     }
     // Off the map
     if new_pos.x < 0 || new_pos.x >= level.dimensions.x || new_pos.y < 0 || new_pos.y >= level.dimensions.y {
-        return false, false, false;
+        return false;
     // Player walks into interactable
     } else if new_pos_type == .INTERACTABLE {
         generate_interaction_queue(*dialogue_state, level.grid[new_pos.x][new_pos.y]);
         apply_turn();
-        return true, false, false;
+        return true;
     // Player walks into spike
     } else if new_pos_type == .SPIKED {
-        return false, false, false;
+        return false;
     // Player walks into air or onto barrier block. Easy case.
     } else if new_pos_type == .NONE || new_pos_type == .BLOCK_BARRIER {
         success = true;
         player_pos = new_pos;
     } else {
-        // Player walks into portal
         stack : Stack(v2i);
-
-        iter_pos := player_pos;
-
-        push_into_object := false;
-        destroy_block := false;
-
-        prev_block_portal := false;
-        // search for air block
-        while true {
-            iter_pos += move;
-            block := level.grid[iter_pos.x][iter_pos.y];
-            // Boundary break
-            if iter_pos.x < 0 || iter_pos.x >= level.dimensions.x || iter_pos.y < 0 || iter_pos.y >= level.dimensions.y {
-                break;
-            }
-            if block_is_goal(block) {
-                stack_push(*stack, iter_pos);
-                push_into_object = true;
-                break;
-            }
-
-            block_type := get_block_type(block);
-            if block_type == .SPIKED {
-                destroy_block = true;
-                success = true;
-                break;
-            }
-            if block_type == .WALL || block_type == .BLOCK_BARRIER || block_type == .INTERACTABLE {
-                push_into_object = true;
-                break;
-            }
-            if block_type == .PORTAL {
-                portal_pos := get_matching_portal(block, iter_pos);
-                iter_pos = portal_pos;
-                prev_block_portal = true;
-                continue;
-            }
-
-
-            // Encounter air block
-            if block_type == .NONE {
-                success = true;
-                break;
-            } else {
-                stack_push(*stack, iter_pos);
-            }
-            prev_block_portal = false;
-        }
-
-        if push_into_object {
-            prev := v2i.{-1, -1};
-            while stack_is_empty(*stack) == false {
-                pos := stack_pop(*stack);
-                defer prev = pos;
-                if prev == .{-1, -1} {
-                    continue;
-                }
-
-                curr_block := level.grid[pos.x][pos.y];
-                prev_block := level.grid[prev.x][prev.y];
-                // See if two blocks can be combined, and if so, combine them and replace one with air
-                curr_block_type := get_block_type(curr_block);
-                prev_block_type := get_block_type(prev_block);
-
-                if curr_block_type == .NUMBERED && prev_block_type == .NUMBERED && curr_block.id == prev_block.id  {
-                    new_block := prev_block;
-                    new_block.id += 1;
-                    combines_block = true;
-
-                    if block_is_goal(curr_block) || block_is_goal(prev_block) {
-                        // Goal block cleared
-                        activates_goal_block = true;
-
-                        if curr_block.flags & .VANISH_GOAL || prev_block.flags & .VANISH_GOAL {
-                            new_block = BLOCK_NONE;
-                        } else {
-                            new_block.flags &= ~Block.Flag.GOAL;
-                            new_block.flags &= ~Block.Flag.VANISH_GOAL;
-                        }
-                    }
-
-                    delta := add_move_delta(*delta_data);
-                    delta.coord = prev;
-                    delta.old_value = prev_block;
-                    delta.new_value = new_block;
-
-                    delta = add_move_delta(*delta_data);
-                    delta.coord = pos;
-                    delta.old_value = curr_block;
-                    delta.new_value = BLOCK_NONE;
-
-                    // For combining blocks
-                    delta_data.tween_changes[delta_data.tween_count] = .{prev_block, pos, prev};
-                    delta_data.tween_count += 1;
-                    delta_data.tween_changes[delta_data.tween_count] = .{prev_block, prev, prev};
-                    delta_data.tween_count += 1;
-
-                    level.grid[prev.x][prev.y] = new_block;
-                    level.grid[pos.x][pos.y] = BLOCK_NONE;
-                    success = true;
+        
+        // Iterate over all blocks being pushed to see what they're pushed into.
+        // A line of blocks can be pushed into air, a wall/barrier block/interactable, a portal, a goal block, or spikes.
+        //
+        // Air - all blocks are simply pushed by the move offset
+        // Wall - Combination of blocks is recursively tried later
+        // Spike - all blocks are moved and final block is destroyed
+        // Goal block - Combination of blocks is recursively tried later, including the goal block itself
+        // Portal - Black magic happens
+        links_moved : [..] Link_Struct;
+        links_moved.allocator = temp;
+        push_into_wall, destroy_block := push_block_recursively(player_pos, move, *stack, *delta_data, *success, *links_moved);
+        
+        for outter: 0..links_moved.count-1 {
+            for inner: outter+1..links_moved.count-1 {
+                if links_moved[outter] == links_moved[inner] {
+                    links_moved[outter] = links_moved[links_moved.count-1];
+                    links_moved[inner] = links_moved[links_moved.count-2];
+                    outter -= 1;
+                    print("removed\n");
                     break;
                 }
             }
-        } if success {
-            // This is for specifically when there's an air block or spiked block
-            // This includes combinations that create an air block
-            player_pos = new_pos;
-            while stack_is_empty(*stack) == false {
-                pos := stack_pop(*stack);
-                block_new_pos := pos + move;
-                if get_block_type(level.grid[block_new_pos.x][block_new_pos.y]) == .PORTAL {
-                    block_new_pos = get_matching_portal(level.grid[block_new_pos.x][block_new_pos.y], block_new_pos);
-                    block_new_pos += move;
+        }
+
+        print("count: %\n", links_moved.count);
+        for link: links_moved {
+            for x: 0..level.dimensions.x-1 {
+                for y: 0..level.dimensions.y-1 {
+                    if level.grid[x][y].interaction_id != link.id {
+                        continue;
+                    }
+                    if link.pos == .{x, y} continue;
+
+                    print("id: %\n", level.grid[x][y].interaction_id);
+
+                    stack_clear(*stack);
+                    cp := false;
+            
+                    links_moved_2 : [..] Link_Struct;
+                    links_moved_2.allocator = temp;
+                    push_block_recursively(.{x, y}, move, *stack, *delta_data, *cp, *links_moved_2);
+                    break x;
                 }
-
-                delta: *Move_Delta;
-
-                if destroy_block {
-                    // Remove this line to make an incinerator
-                    destroy_block = false;
-                } else {
-                    delta = add_move_delta(*delta_data);
-                    delta.coord = block_new_pos;
-                    delta.old_value = level.grid[block_new_pos.x][block_new_pos.y];
-                    delta.new_value = level.grid[pos.x][pos.y];
-                    level.grid[block_new_pos.x][block_new_pos.y] = level.grid[pos.x][pos.y];
-
-                    delta_data.tween_changes[delta_data.tween_count] = .{level.grid[pos.x][pos.y], pos, block_new_pos};
-                    delta_data.tween_count += 1;
-                }
-
-                delta = add_move_delta(*delta_data);
-                delta.coord = pos;
-                delta.old_value = level.grid[pos.x][pos.y];
-                delta.new_value = BLOCK_NONE;
-                level.grid[pos.x][pos.y] = BLOCK_NONE;
             }
         }
+
     }
 
     if success {
+        player_pos = new_pos;
         delta_data.new_player_pos = new_pos;
 
         turn_memory.curr.type = .MOVE;
@@ -223,7 +130,192 @@ move_player :: (move: v2i) -> success: bool, combines_block: bool, activates_goa
         stats.visited_room[room_x][room_y] = true;
     }
 
-    return success, combines_block, activates_goal_block;
+    return success;
+}
+
+
+// Success guaranteed indicates whether or not it's immediately possible to know the push will work and resolve.
+push_block_recursively :: (initial_pos: v2i, move: v2i, stack: *Stack(v2i), delta_data: *Move_Delta_Data, success_guaranteed: *bool, links_moved: *[..] Link_Struct) -> push_into_wall : bool, destroy_block : bool {
+    using context.game_state;
+    using level;
+
+    push_into_wall := false;
+    destroy_block := false;
+    prev_block_portal := false;
+
+    iter_pos := initial_pos;
+
+    while true {
+        iter_pos += move;
+        block := level.grid[iter_pos.x][iter_pos.y];
+        // Boundary break
+        if iter_pos.x < 0 || iter_pos.x >= level.dimensions.x || iter_pos.y < 0 || iter_pos.y >= level.dimensions.y {
+            break;
+        }
+
+        if block_is_goal(block) {
+            stack_push(stack, iter_pos);
+            push_into_wall = true;
+            break;
+        }
+
+        block_type := get_block_type(block);
+        if block_type == .SPIKED {
+            destroy_block = true;
+            success_guaranteed.* = true;
+            break;
+        }
+
+        if block_type == .WALL || block_type == .BLOCK_BARRIER || block_type == .INTERACTABLE {
+            push_into_wall = true;
+            break;
+        }
+
+        if block_type == .PORTAL {
+            portal_pos := get_matching_portal(block, iter_pos);
+            iter_pos = portal_pos;
+            prev_block_portal = true;
+            continue;
+        }
+
+        // Encounter air block
+        if block_type == .NONE {
+            success_guaranteed.* = true;
+            break;
+        } else {
+            stack_push(stack, iter_pos);
+        }
+        prev_block_portal = false;
+    }
+
+    if push_into_wall {
+        // Recursively try combining all blocks in the stack
+        prev := v2i.{-1, -1};
+        while stack_is_empty(stack) == false {
+            pos := stack_pop(stack);
+            defer prev = pos;
+            if prev == .{-1, -1} {
+                continue;
+            }
+
+            curr_block := level.grid[pos.x][pos.y];
+            prev_block := level.grid[prev.x][prev.y];
+            // See if two blocks can be combined, and if so, combine them and replace one with air
+            curr_block_type := get_block_type(curr_block);
+            prev_block_type := get_block_type(prev_block);
+
+            if !(curr_block_type == .NUMBERED && prev_block_type == .NUMBERED && curr_block.id == prev_block.id) {
+                continue;
+            }
+
+            new_block := prev_block;
+            new_block.id += 1;
+            // combines_block = true;
+
+            if block_is_goal(curr_block) || block_is_goal(prev_block) {
+                // Goal block cleared
+                // activates_goal_block = true;
+
+                if curr_block.flags & .VANISH_GOAL || prev_block.flags & .VANISH_GOAL {
+                    new_block = BLOCK_NONE;
+                } else {
+                    new_block.flags &= ~Block.Flag.GOAL;
+                    new_block.flags &= ~Block.Flag.VANISH_GOAL;
+                }
+            }
+
+            delta := add_move_delta(delta_data);
+            delta.coord = prev;
+            delta.old_value = prev_block;
+            delta.new_value = new_block;
+
+            delta = add_move_delta(delta_data);
+            delta.coord = pos;
+            delta.old_value = curr_block;
+            delta.new_value = BLOCK_NONE;
+
+            // For combining blocks
+            delta_data.tween_changes[delta_data.tween_count] = .{prev_block, pos, prev};
+            delta_data.tween_count += 1;
+            delta_data.tween_changes[delta_data.tween_count] = .{prev_block, prev, prev};
+            delta_data.tween_count += 1;
+
+            level.grid[prev.x][prev.y] = new_block;
+            level.grid[pos.x][pos.y] = BLOCK_NONE;
+            success_guaranteed.* = true;
+            break;
+        }
+    }
+
+    if success_guaranteed.* {
+        // This is for specifically when there's an air block or spiked block
+        // This includes combinations that create an air block
+
+        // Now we iterate through all the blocks we're pushing and actually offset them by the move in the grid
+        // We also add delta data for undo
+        include_initial_block := initial_pos != player_pos;
+        while stack_is_empty(stack) == false || include_initial_block {
+            if stack_is_empty(stack) && include_initial_block {
+                stack_push(stack, initial_pos);
+                include_initial_block = false;
+            }
+
+            pos := stack_pop(stack);
+            block_new_pos := pos + move;
+            if get_block_type(level.grid[block_new_pos.x][block_new_pos.y]) == .PORTAL {
+                block_new_pos = get_matching_portal(level.grid[block_new_pos.x][block_new_pos.y], block_new_pos);
+                block_new_pos += move;
+            }
+
+            delta: *Move_Delta;
+
+            if destroy_block {
+                destroy_block = false;
+            } else {
+                delta = add_move_delta(delta_data);
+                delta.coord = block_new_pos;
+                delta.old_value = level.grid[block_new_pos.x][block_new_pos.y];
+                delta.new_value = level.grid[pos.x][pos.y];
+                level.grid[block_new_pos.x][block_new_pos.y] = level.grid[pos.x][pos.y];
+
+                delta_data.tween_changes[delta_data.tween_count] = .{level.grid[pos.x][pos.y], pos, block_new_pos};
+                delta_data.tween_count += 1;
+            }
+
+            delta = add_move_delta(delta_data);
+            delta.coord = pos;
+            delta.old_value = level.grid[pos.x][pos.y];
+            delta.new_value = BLOCK_NONE;
+            level.grid[pos.x][pos.y] = BLOCK_NONE;
+
+            if level.grid[block_new_pos.x][block_new_pos.y].flags & .LINKED {                
+                array_add(links_moved, .{block_new_pos, level.grid[block_new_pos.x][block_new_pos.y].interaction_id});
+            }
+        }
+
+        // Push the initial block itself, as long as it's not the player.
+        // We used to just update the player position at the very end, but this
+        // procedure has been refactored to work for any block. Because of this
+        // we need to remember to update the block itself.
+        // if initial_pos != player_pos {
+        //     delta := add_move_delta(delta_data);
+        //     delta.coord = initial_pos;
+        //     delta.old_value = level.grid[initial_pos.x][initial_pos.y];
+        //     delta.new_value = BLOCK_NONE;
+        //     level.grid[initial_pos.x][initial_pos.y] = BLOCK_NONE;
+        // }
+    }
+
+    return push_into_wall, destroy_block;
+}
+
+Link_Struct :: struct {
+    pos: v2i;
+    id: u16;
+}
+
+operator == :: (link: Link_Struct, link2: Link_Struct) -> bool {
+    return link.pos == link2.pos && link.id == link2.id;
 }
 
 goto_last_checkpoint :: () -> bool {

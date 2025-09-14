@@ -40,8 +40,6 @@ particles_update_and_render :: (using system: *Particle_System) {
 
         particle.lifetime += delta;
         if particle.lifetime > particle.life_length || particle.life_length == 0 {
-            print("count: %\n", count);
-            print("lifetime: %\tlength: %\n", particle.lifetime, particle.life_length);
             particles[ind] = particles[count - 1];
             count -= 1;
             ind -= 1;

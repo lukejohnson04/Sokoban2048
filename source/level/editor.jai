@@ -386,6 +386,7 @@ draw_editor :: () {
     }
     ImGui.PushItemWidth(150);
     ImGui.InputInt("Turns on inanctive", *editor.turns_on_inactive);
+    
     if editor.tool == .SELECT && editor.select_start == editor.select_end {
         if is_in_bounds(editor.select_start, *level) {
             ImGui.SameLine();
@@ -406,6 +407,17 @@ draw_editor :: () {
     }
     editor.selected_block.turns_on_active = xx editor.turns_on_active;
     editor.selected_block.turns_on_inactive = xx editor.turns_on_inactive;
+
+
+    if editor.tool == .SELECT && editor.select_start == editor.select_end {
+        if ImGui.Button("Link") {
+            level.grid[editor.select_start.x][editor.select_start.y].flags |= .LINKED;
+        }
+        ImGui.SameLine();
+        if ImGui.Button("Unlink") {
+            level.grid[editor.select_start.x][editor.select_start.y].flags &= ~.LINKED;
+        }
+    }
 
     ImGui.SeparatorText("Controls");
     {

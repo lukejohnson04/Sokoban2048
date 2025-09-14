@@ -80,7 +80,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
             }
 
             if move != .{0, 0} {
-                success, combines_block, activates_goal_block := move_player(move);
+                success := move_player(move);
                 if success {
                     moved_this_turn = true;
                     movement_tween = true;
