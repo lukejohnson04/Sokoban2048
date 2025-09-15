@@ -91,7 +91,7 @@ move_player :: (move: v2i) -> success: bool {
         for link: links_moved {
             for x: 0..level.dimensions.x-1 {
                 for y: 0..level.dimensions.y-1 {
-                    if level.grid[x][y].interaction_id != link.id {
+                    if level.grid[x][y].interaction_id != link.id || !(level.grid[x][y].flags & .LINKED) {
                         continue;
                     }
                     if link.pos == .{x, y} continue;
@@ -100,7 +100,7 @@ move_player :: (move: v2i) -> success: bool {
 
                     stack_clear(*stack);
                     cp := false;
-            
+
                     links_moved_2 : [..] Link_Struct;
                     links_moved_2.allocator = temp;
                     push_block_recursively(.{x, y}, move, *stack, *delta_data, *cp, *links_moved_2);
@@ -144,6 +144,14 @@ push_block_recursively :: (initial_pos: v2i, move: v2i, stack: *Stack(v2i), delt
     prev_block_portal := false;
 
     iter_pos := initial_pos;
+
+    // Push the initial block itself, as long as it's not the player.
+    // We used to just update the player position at the very end, but this
+    // procedure has been refactored to work for any block. Because of this
+    // we need to remember to update the block itself.
+    if initial_pos != player_pos {
+        stack_push(stack, initial_pos);
+    }
 
     while true {
         iter_pos += move;
@@ -189,6 +197,7 @@ push_block_recursively :: (initial_pos: v2i, move: v2i, stack: *Stack(v2i), delt
     }
 
     if push_into_wall {
+        print("Pushed into wall! Stack size: %\n", stack.count);
         // Recursively try combining all blocks in the stack
         prev := v2i.{-1, -1};
         while stack_is_empty(stack) == false {
@@ -215,9 +224,31 @@ push_block_recursively :: (initial_pos: v2i, move: v2i, stack: *Stack(v2i), delt
             if block_is_goal(curr_block) || block_is_goal(prev_block) {
                 // Goal block cleared
                 // activates_goal_block = true;
-
                 if curr_block.flags & .VANISH_GOAL || prev_block.flags & .VANISH_GOAL {
                     new_block = BLOCK_NONE;
+                    curr_is_linked_goal := curr_block.flags & .LINKED && curr_block.flags &.VANISH_GOAL;
+                    prev_is_linked_goal := prev_block.flags & .LINKED && prev_block.flags &.VANISH_GOAL;
+                    if curr_is_linked_goal || prev_is_linked_goal {
+                        goal := ifx curr_is_linked_goal then curr_block else prev_block;
+                        goal_pos := ifx curr_is_linked_goal then pos else prev;
+                        for x: 0..level.dimensions.x-1 {
+                            for y: 0..level.dimensions.y-1 {
+                                if level.grid[x][y].interaction_id != goal.interaction_id || !(level.grid[x][y].flags & .LINKED) {
+                                    continue;
+                                }
+                                if goal_pos == .{x, y} continue;
+
+                                // Remove matching goal block
+                                delta := add_move_delta(delta_data);
+                                delta.coord = .{x, y};
+                                delta.old_value = level.grid[x][y];
+                                delta.new_value = BLOCK_NONE;
+                                level.grid[x][y] = BLOCK_NONE;
+
+                                break x;
+                            }
+                        }
+                    }
                 } else {
                     new_block.flags &= ~Block.Flag.GOAL;
                     new_block.flags &= ~Block.Flag.VANISH_GOAL;
@@ -253,12 +284,7 @@ push_block_recursively :: (initial_pos: v2i, move: v2i, stack: *Stack(v2i), delt
 
         // Now we iterate through all the blocks we're pushing and actually offset them by the move in the grid
         // We also add delta data for undo
-        include_initial_block := initial_pos != player_pos;
-        while stack_is_empty(stack) == false || include_initial_block {
-            if stack_is_empty(stack) && include_initial_block {
-                stack_push(stack, initial_pos);
-                include_initial_block = false;
-            }
+        while stack_is_empty(stack) == false {
 
             pos := stack_pop(stack);
             block_new_pos := pos + move;
@@ -289,21 +315,11 @@ push_block_recursively :: (initial_pos: v2i, move: v2i, stack: *Stack(v2i), delt
             level.grid[pos.x][pos.y] = BLOCK_NONE;
 
             if level.grid[block_new_pos.x][block_new_pos.y].flags & .LINKED {                
-                array_add(links_moved, .{block_new_pos, level.grid[block_new_pos.x][block_new_pos.y].interaction_id});
+                link : Link_Struct;
+                link = .{block_new_pos, level.grid[block_new_pos.x][block_new_pos.y].interaction_id, false};
+                array_add(links_moved, link);
             }
         }
-
-        // Push the initial block itself, as long as it's not the player.
-        // We used to just update the player position at the very end, but this
-        // procedure has been refactored to work for any block. Because of this
-        // we need to remember to update the block itself.
-        // if initial_pos != player_pos {
-        //     delta := add_move_delta(delta_data);
-        //     delta.coord = initial_pos;
-        //     delta.old_value = level.grid[initial_pos.x][initial_pos.y];
-        //     delta.new_value = BLOCK_NONE;
-        //     level.grid[initial_pos.x][initial_pos.y] = BLOCK_NONE;
-        // }
     }
 
     return push_into_wall, destroy_block;
@@ -312,6 +328,7 @@ push_block_recursively :: (initial_pos: v2i, move: v2i, stack: *Stack(v2i), delt
 Link_Struct :: struct {
     pos: v2i;
     id: u16;
+    destroy: bool;
 }
 
 operator == :: (link: Link_Struct, link2: Link_Struct) -> bool {
