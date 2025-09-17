@@ -164,9 +164,75 @@ Don't walk into a kitchen asking "can this kitchen make me an omelette". Ask you
 
 
 
-Creative ways to use linked blocks
+Notes on linked blocks
+
+The mirror rooms blocked off visually are hard to process mentally.
+You need to keep track of the blocks that exist in the second room but not the first, as well as keep track of the position
+of the linked block. All while not being able to see the second room at all. This is a lot of mental strain.
+
+This can be simplified in several ways. The first is by simply always making the second room visible. The floor already communicates
+what is in the second room, so we might as well cut the middle man and just let the player see the second room.
+
+The second simplfiication could be having the linked blocks glow through walls in this context (or maybe all contexts).
+They could always glow or they could just glow when they're moved. Glowing only on move could be a nice compromise that helps
+the player keep track of where the block is, but since it only happens when the tile moves the player won't be overly
+reliant on it as an indicator. I'm not yet sure if this is good or bad though.
 
 
 
 
+
+
+BUG?!?! When a linked block pushes a linked block, it doesn't push it's corresponding linked block
+
+The goal of the first build is to get feedback on the various mechanics, on the puzzle, and on what works and doesn't
+work with the enivornmental design. We want to test out lots of ideas to see which direction to take the game. Who will play
+in the playtest? I'm not sure. 
+
+
+Things to do for first build:
+
+Make 5-6 full puzzle areas. Include multiple environmental puzzles throughout the world that unlock parts of the map.
+Make a win condition. Maybe it could be linking all the portals, and you get led to an end area.
+Main menu (keep very ugly and do not design)
+Do the art for the game. We're doing a playtest, we might as well get feedback for the art as early as possible.
+
+
+
+
+
+Do a second interation on the puzzles for each area. This includes:
+
+The environmental introductory puzzle
+Pulling out bad levels, and deciding to rework or remove them entirely
+Creating a new batch of puzzles and working the best of them in
+
+We'll rework the intro area LAST
+
+
+Areas to iterate on:
+
+Portal area
+1 block area
+X block area
+Intro area
+
+Areas to implement:
+
+Linked block area
+Barrior block area
+
+
+
+Environmental puzzles
+
+The entrance to each area is an environmental puzzle that teaches the player the mechanic of the puzzles
+
+Let's face the truth: pretty much none of the enivornmental puzzles I have made have had any real substance.
+
+
+The bulk of the work is in designing the puzzles of each area, and making sure they are all high quality. Rigorous playtesting is required.
+
+We already know the good and bad of the puzzles we've made so far. Every single puzzle has been playtested. We need to do a second round of design for each area.
+We did a first round of design for all of them, and we have a decent amount of feedback. Now we need to pull out the worst of the levels, rework them or remove them entirely.
 
