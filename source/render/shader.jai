@@ -7,27 +7,31 @@ use_shader :: (shader: Shader) {
     glUseProgram(shader.id);
 }
 
-shader_uniform :: (shader: Shader, name: *u8, a: Matrix4, transpose := true) {
+uniform :: (shader: Shader, name: *u8, a: Matrix4, transpose := true) {
+    use_shader(shader);
     loc := glGetUniformLocation(shader.id, name);
     if loc < 0 print("Unknown parameter: '%'\n", to_string(name));
     if loc >= 0 glUniformMatrix4fv(loc, 1, xx transpose, *a._11);
 }
 
-shader_uniform :: (using shader: Shader, name: *u8, a: s32) {
+uniform :: (using shader: Shader, name: *u8, a: s32) {
+    use_shader(shader);
     loc := glGetUniformLocation(id, name);
     if loc < 0 print("Unknown parameter: '%'\n", to_string(name));
     if loc >= 0
         glUniform1i(loc, a);
 }
 
-shader_uniform :: (using shader: Shader, name: *u8, a: float32) {
+uniform :: (using shader: Shader, name: *u8, a: float32) {
+    use_shader(shader);
     loc := glGetUniformLocation(id, name);
     if loc < 0 print("Unknown parameter: '%'\n", to_string(name));
     if loc >= 0
         glUniform1f(loc, a);
 }
 
-shader_uniform :: (using shader: Shader, name: *u8, a: Vector4) {
+uniform :: (using shader: Shader, name: *u8, a: Vector4) {
+    use_shader(shader);
     loc := glGetUniformLocation(id, name);
     if loc < 0 print("Unknown parameter: '%'\n", to_string(name));
     if loc >= 0
@@ -65,15 +69,23 @@ compile_shader :: (source: string, type: GLenum) -> id: GLuint {
     return shader;
 }
 
-create_shader :: (using shader: *Shader, vert_path: string, frag_path: string) {
-    id = create_shader_program(vert_path, frag_path);
+create_shader :: (using shader: *Shader, vert_path: string, frag_path: string) -> bool {
+    n_id, success := create_shader_program(vert_path, frag_path);
+    if success {
+        id = n_id;
+    }
+    return success;
 }
 
-create_shader_program :: (vert_path: string, frag_path: string) -> GLuint {
+create_shader_program :: (vert_path: string, frag_path: string) -> GLuint, bool {
 
-    vert_code := read_entire_file(vert_path);
-    frag_code := read_entire_file(frag_path);
+    vert_code, vert_success := read_entire_file(vert_path, log_errors = false);
+    frag_code, frag_success := read_entire_file(frag_path, log_errors = false);
     
+    if !vert_success || !frag_success {
+        return 0, false;
+    }
+
     vert_shader := compile_shader(vert_code, GL_VERTEX_SHADER);
     frag_shader := compile_shader(frag_code, GL_FRAGMENT_SHADER);
 
@@ -91,5 +103,5 @@ create_shader_program :: (vert_path: string, frag_path: string) -> GLuint {
     glDeleteShader(vert_shader);
     glDeleteShader(frag_shader);
 
-    return shader_program;
+    return shader_program, true;
 }

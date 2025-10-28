@@ -236,3 +236,19 @@ The bulk of the work is in designing the puzzles of each area, and making sure t
 We already know the good and bad of the puzzles we've made so far. Every single puzzle has been playtested. We need to do a second round of design for each area.
 We did a first round of design for all of them, and we have a decent amount of feedback. Now we need to pull out the worst of the levels, rework them or remove them entirely.
 
+
+
+
+Art design constraints
+
+Tile based
+
+
+Eaten by a giant leviathan
+
+Eaten by a giant robot or monster or something
+
+
+
+
+

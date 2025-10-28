@@ -172,7 +172,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     }
 
     if input.just_pressed[SDL_SCANCODE_G] {
-        spawn_particle(*particle_system, Vector2.{xx (level.player_pos.x * 64), xx ((level.player_pos.y + 1)* 64), });
+        spawn_particle(*particle_system, Vector2.{xx (level.player_pos.x * 64), xx ((level.player_pos.y + 1)* 64) });
     }
 
     // Render begin
@@ -200,50 +200,43 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     view := camera_view_matrix(camera);
     projection := orthographic_projection_matrix(0, WINDOW_WIDTH, WINDOW_HEIGHT, 0, -1, 1);
 
-    use_shader(color_shader);
-    shader_uniform(color_shader, "projection", projection);
-    shader_uniform(color_shader, "view", view);
+    uniform(color_shader, "projection", projection);
+    uniform(color_shader, "view", view);
 
-    use_shader(text_shader);
-    shader_uniform(text_shader, "projection", projection);
-    shader_uniform(text_shader, "view", Matrix4_Identity);
+    uniform(text_shader, "projection", projection);
+    uniform(text_shader, "view", Matrix4_Identity);
 
-    use_shader(mask_shader);
-    shader_uniform(mask_shader, "projection", projection);
-    shader_uniform(mask_shader, "view", Matrix4_Identity);
-    shader_uniform(mask_shader, "dim_level", 0);
-    shader_uniform(mask_shader, "blend_alpha", 0);
-    shader_uniform(mask_shader, "blend_rgb", 0);
+    uniform(mask_shader, "projection", projection);
+    uniform(mask_shader, "view", Matrix4_Identity);
+    uniform(mask_shader, "dim_level", 0);
+    uniform(mask_shader, "blend_alpha", 0);
+    uniform(mask_shader, "blend_rgb", 0);
 
-    use_shader(texture_shader);
-    shader_uniform(texture_shader, "projection", projection);
-    shader_uniform(texture_shader, "view", view);
-    shader_uniform(texture_shader, "grayscale", 0);
-    shader_uniform(texture_shader, "gold", 0);
-    shader_uniform(texture_shader, "colormult", 1.0);
-    shader_uniform(texture_shader, "color_pass", Vector4.{1, 1, 1, 1});
+    uniform(texture_shader, "projection", projection);
+    uniform(texture_shader, "view", view);
+    uniform(texture_shader, "grayscale", 0);
+    uniform(texture_shader, "gold", 0);
+    uniform(texture_shader, "colormult", 1.0);
+    uniform(texture_shader, "color_pass", Vector4.{1, 1, 1, 1});
 
-    resource_check_timer += delta;
-    if resource_check_timer > 0.25 {
-        check_resource_reload(*sprites);
-        resource_check_timer = 0;
-    }
+    resource_tracker_reload_resources(*resource_tracker, delta);
+
 
     bind_texture(sprites);
 
     draw_extra_mesh_layers :: (mesh: *Level_Mesh) #expand {
-        shader_uniform(texture_shader, "colormult", 0.8);
-        shader_uniform(texture_shader, "grayscale", 1);
+        uniform(texture_shader, "colormult", 0.8);
+        uniform(texture_shader, "grayscale", 1);
         mesh_draw(*mesh.goal);
-        shader_uniform(texture_shader, "grayscale", 0);
-        shader_uniform(texture_shader, "gold", 1);
+        uniform(texture_shader, "grayscale", 0);
+        uniform(texture_shader, "gold", 1);
         mesh_draw(*mesh.gold);
-        shader_uniform(texture_shader, "gold", 0);
-        shader_uniform(texture_shader, "color_pass", Vector4.{1, 0.2, 0.2, 1});
+        uniform(texture_shader, "gold", 0);
+        uniform(texture_shader, "color_pass", Vector4.{1, 0.2, 0.2, 1});
         mesh_draw(*mesh.timer);
-        shader_uniform(texture_shader, "color_pass", Vector4.{1, 1, 1, 1});
-        shader_uniform(texture_shader, "gold", 0);
-        shader_uniform(texture_shader, "colormult", 1.0);
+        uniform(texture_shader, "color_pass", Vector4.{1, 1, 1, 1});
+        uniform(texture_shader, "gold", 0);
+        uniform(texture_shader, "colormult", 1.0);
     }
     
     mesh_to_draw := ifx movement_tween then *tween_mesh else *world_mesh;
@@ -265,15 +258,14 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     }
 
     // particles
-    use_shader(texture_shader);
-    shader_uniform(texture_shader, "view", view);
+    uniform(texture_shader, "view", view);
     particles_update_and_render(*particle_system);
 
     // Draw timer text
     /*
     use_shader(text_shader);
-    shader_uniform(text_shader, "view", view);
-    shader_uniform(text_shader, "color", .{1, 1, 1, 1});
+    uniform(text_shader, "view", view);
+    uniform(text_shader, "color", .{1, 1, 1, 1});
 
     for x: 0..level.dimensions.x-1 {
         for y: 0..level.dimensions.y-1 {
@@ -329,8 +321,8 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     editor_draw();
     
     use_shader(color_shader);
-    shader_uniform(color_shader, "color", Vector4.{1, 0, 0, 1});
-    shader_uniform(color_shader, "view", view);
+    uniform(color_shader, "color", Vector4.{1, 0, 0, 1});
+    uniform(color_shader, "view", view);
 
     level_screen_width := level.dimensions.x / SCREEN_TILE_WIDTH;
     level_screen_height := level.dimensions.y / SCREEN_TILE_HEIGHT;
@@ -359,8 +351,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     if lighting_enabled == false || editor.editing_level {
         set_framebuffer(null);
         
-        use_shader(texture_shader);
-        shader_uniform(texture_shader, "view", Matrix4_Identity);
+        uniform(texture_shader, "view", Matrix4_Identity);
         bind_texture(floor_buffer.tex);
         draw_texture(Rect.{0, 0, WINDOW_WIDTH, WINDOW_HEIGHT}, .{0, WINDOW_HEIGHT, WINDOW_WIDTH, -WINDOW_HEIGHT}, floor_buffer.tex);
         bind_texture(world_buffer.tex);
@@ -399,11 +390,10 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
 
             fb_projection := orthographic_projection_matrix(0, xx light.shadow_buffer.w, xx light.shadow_buffer.h, 0, -1, 1);
 
-            use_shader(color_shader);
-            shader_uniform(color_shader, "projection", *fb_projection);
+            uniform(color_shader, "projection", *fb_projection);
             light_color := Vector4.{1, 1, 1, 1};
-            shader_uniform(color_shader, "color", light_color);
-            shader_uniform(color_shader, "view", Matrix4_Identity);
+            uniform(color_shader, "color", light_color);
+            uniform(color_shader, "view", Matrix4_Identity);
 
             glBindVertexArray(intermediate_vao);
             glBindBuffer(GL_ARRAY_BUFFER, intermediate_vbo);
@@ -415,12 +405,11 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
             glBindBuffer(GL_ARRAY_BUFFER, 0);
             glDrawArrays(GL_TRIANGLE_FAN, 0, xx light.mesh.count);
 
-            use_shader(mask_shader);
-            shader_uniform(mask_shader, "projection", fb_projection);
-            shader_uniform(mask_shader, "view", Matrix4_Identity);
-            shader_uniform(mask_shader, "dim_level", 0);
-            shader_uniform(mask_shader, "blend_alpha", 1);
-            shader_uniform(mask_shader, "blend_rgb", 1);
+            uniform(mask_shader, "projection", fb_projection);
+            uniform(mask_shader, "view", Matrix4_Identity);
+            uniform(mask_shader, "dim_level", 0);
+            uniform(mask_shader, "blend_alpha", 1);
+            uniform(mask_shader, "blend_rgb", 1);
 
             set_framebuffer(*light.light_buffer);
             clear_framebuffer(0, 0, 0, 0);
@@ -429,14 +418,13 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
             draw_mask_textures(sh_rect, sh_dest, sh_rect, sh_dest, *light.shadow_buffer.tex, *spotlight);
 
 
-            use_shader(texture_shader);
-            shader_uniform(texture_shader, "view", view);
-            shader_uniform(texture_shader, "color_pass", light.color);
+            uniform(texture_shader, "view", view);
+            uniform(texture_shader, "color_pass", light.color);
             set_framebuffer(*world_mesh.light_buffer);
             light_src := buffer_rect(light.light_buffer);
             light_rect := get_light_rect(light);
             draw_texture(light_src, light_rect, light.light_buffer.tex);
-            shader_uniform(texture_shader, "color_pass", Vector4.{1,1,1,1});
+            uniform(texture_shader, "color_pass", Vector4.{1,1,1,1});
         }
 
         set_framebuffer(null);
@@ -447,43 +435,38 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         screen_dest := final_buffer_dest;
         flip_rect(*screen_dest);
         flip_rect(*final_buffer_dest);
-        use_shader(mask_shader);
         dim_level := 0.5;
-        shader_uniform(mask_shader, "projection", projection);
-        shader_uniform(mask_shader, "dim_level", dim_level);
-        shader_uniform(mask_shader, "blend_alpha", 0);
-        shader_uniform(mask_shader, "view", Matrix4_Identity);
-        shader_uniform(mask_shader, "blend_rgb", 0);
+        uniform(mask_shader, "projection", projection);
+        uniform(mask_shader, "dim_level", dim_level);
+        uniform(mask_shader, "blend_alpha", 0);
+        uniform(mask_shader, "view", Matrix4_Identity);
+        uniform(mask_shader, "blend_rgb", 0);
 
         draw_mask_textures(screen_source, screen_dest, final_buffer_src, final_buffer_dest, *floor_buffer.tex, *world_mesh.light_buffer.tex);
 
-        use_shader(texture_shader);
-        shader_uniform(texture_shader, "view", Matrix4_Identity);
-        shader_uniform(texture_shader, "colormult", 1.0);
+        uniform(texture_shader, "view", Matrix4_Identity);
+        uniform(texture_shader, "colormult", 1.0);
         bind_texture(world_buffer.tex);
         draw_texture(screen_source, screen_dest, world_buffer.tex);
-        shader_uniform(texture_shader, "colormult", 1.0);
+        uniform(texture_shader, "colormult", 1.0);
     }
 
     // GUI Elements
     // Draw dialogue player
     if rewinding {
-        use_shader(texture_shader);
-        shader_uniform(texture_shader, "view", Matrix4_Identity);
+        uniform(texture_shader, "view", Matrix4_Identity);
         bind_texture(ui_sprites);
         radius : float32 = 32;
         draw_radial_texture(.{0, 0, 32, 32}, .{WINDOW_WIDTH - radius*2, radius*2}, radius, rewind_meter / REWIND_TIME, *ui_sprites, intermediate_vao, intermediate_vbo);
     }
 
     if dialogue_state.open {
-        use_shader(texture_shader);
-        shader_uniform(texture_shader, "view", Matrix4_Identity);
+        uniform(texture_shader, "view", Matrix4_Identity);
         bind_texture(dialogue_player_texture);
         draw_texture(.{0, 0, 320, 180}, .{0, 0, WINDOW_WIDTH, WINDOW_HEIGHT}, *dialogue_player_texture, intermediate_vao, intermediate_vbo);
 
-        use_shader(text_shader);
-        shader_uniform(text_shader, "view", Matrix4_Identity);
-        shader_uniform(text_shader, "color", .{1, 1, 1, 1});
+        uniform(text_shader, "view", Matrix4_Identity);
+        uniform(text_shader, "color", .{1, 1, 1, 1});
         
         str: string;
         str.data = dialogue_state.buffer.memory.data;
@@ -502,15 +485,14 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
             disp_proj := orthographic_projection_matrix(0, map_dest.w, map_dest.h, 0, -1, 1);
             map_view := camera_view_matrix(map_camera, xx map_dest.w, xx map_dest.h);
             
-            use_shader(texture_shader);
-            shader_uniform(texture_shader, "view", map_view);
-            shader_uniform(texture_shader, "projection", disp_proj);
+            uniform(texture_shader, "view", map_view);
+            uniform(texture_shader, "projection", disp_proj);
             bind_texture(map_buffer.tex);
             draw_texture(.{0, 0, xx map_buffer.w, xx map_buffer.h}, .{0, xx map_buffer.h, xx map_buffer.w, xx -map_buffer.h}, map_buffer.tex);
 
             set_framebuffer(null);
-            shader_uniform(texture_shader, "view", Matrix4_Identity);
-            shader_uniform(texture_shader, "projection", projection);
+            uniform(texture_shader, "view", Matrix4_Identity);
+            uniform(texture_shader, "projection", projection);
             bind_texture(map_display_buffer.tex);
             fin_dest := Rect.{100, 100 + map_dest.h, xx map_dest.w, xx -map_dest.h};
             draw_texture(.{0, 0, xx map_dest.w, xx map_dest.h}, fin_dest, map_display_buffer.tex);
@@ -524,15 +506,14 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
             disp_proj := orthographic_projection_matrix(0, map_dest.w, map_dest.h, 0, -1, 1);
             map_view := camera_view_matrix(minimap_camera, xx map_dest.w, xx map_dest.h);
 
-            use_shader(texture_shader);
-            shader_uniform(texture_shader, "view", map_view);
-            shader_uniform(texture_shader, "projection", disp_proj);
+            uniform(texture_shader, "view", map_view);
+            uniform(texture_shader, "projection", disp_proj);
             bind_texture(map_buffer.tex);
             draw_texture(.{0, 0, xx map_buffer.w, xx map_buffer.h}, .{0, xx map_buffer.h, xx map_buffer.w, xx -map_buffer.h}, map_buffer.tex);
 
             set_framebuffer(null);
-            shader_uniform(texture_shader, "view", Matrix4_Identity);
-            shader_uniform(texture_shader, "projection", projection);
+            uniform(texture_shader, "view", Matrix4_Identity);
+            uniform(texture_shader, "projection", projection);
             bind_texture(map_display_buffer.tex);
             fin_dest := Rect.{map_dest.x, map_dest.y + map_dest.h, xx map_dest.w, xx -map_dest.h};
             draw_texture(.{0, 0, xx map_display_buffer.w, xx map_display_buffer.h}, fin_dest, map_display_buffer.tex);
@@ -543,9 +524,8 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     #if true {
 
         if editor.editing_level {
-            use_shader(text_shader);
-            shader_uniform(text_shader, "view", Matrix4_Identity);
-            shader_uniform(text_shader, "color", .{1, 0, 0, 1});
+            uniform(text_shader, "view", Matrix4_Identity);
+            uniform(text_shader, "color", .{1, 0, 0, 1});
             if is_in_bounds(editor.mouse_tile, *level) {
                 tile := level.grid[editor.mouse_tile.x][editor.mouse_tile.y];
                 if tile == BLOCK_NONE || (editor.show_both_layers == false && editor.layer == 1) {

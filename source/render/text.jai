@@ -17,6 +17,9 @@ Font :: struct {
     normal: Font_Face;
     italic: Font_Face;
     bold: Font_Face;
+
+    has_italic: bool;
+    has_bold: bool;
 }
 
 draw_text :: (text: string, position: v2i, font: *Font, vao: GLuint, vbo: GLuint, max_width: int = 0, fancy_format: bool = false) {
@@ -126,27 +129,29 @@ draw_text :: (text: string, position: v2i, font: *Font, vao: GLuint, vbo: GLuint
     }
 }
 
-load_font :: (font: *Font, name: string, italic: bool, bold: bool, size: int) -> bool {
+load_font :: (font: *Font, path: string, italic_path: string, bold_path: string, size: int) -> bool {
     font.size = size;
-    if !load_font_face(*font.normal, tprint("data/fonts/%.ttf", name), size) {
-        print("Error: failed to load normal font face for %.ttf\n", name);
+    if !load_font_face(*font.normal, path, size) {
+        print("Error: failed to load normal font face for %.ttf\n", path);
         return false;
     }
     
-    if italic {
+    if italic_path.count > 0 {
         // Workaround right now. In the future we will have dedicated files for each font face, but
         // for now it's generated as oblique instead.
-        if !load_font_face(*font.italic, tprint("data/fonts/%.ttf", name), size, true) {
-            print("Error: failed to load italic font face for %.ttf\n", name);
+        if !load_font_face(*font.italic, italic_path, size, true) {
+            print("Error: failed to load italic font face for %.ttf\n", italic_path);
             return false;
         }
+        font.has_italic = true;
     }
     
-    if bold {
-        if !load_font_face(*font.bold, tprint("data/fonts/%-bold.ttf", name), size) {
-            print("Error: failed to load bold font face for %.ttf\n", name);
+    if bold_path.count > 0 {
+        if !load_font_face(*font.bold, bold_path, size) {
+            print("Error: failed to load bold font face for %.ttf\n", bold_path);
             return false;
         }
+        font.has_bold = true;
     }
     return true;
 }

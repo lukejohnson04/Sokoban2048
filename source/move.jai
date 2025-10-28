@@ -81,13 +81,11 @@ move_player :: (move: v2i) -> success: bool {
                     links_moved[outter] = links_moved[links_moved.count-1];
                     links_moved[inner] = links_moved[links_moved.count-2];
                     outter -= 1;
-                    print("removed\n");
                     break;
                 }
             }
         }
 
-        print("count: %\n", links_moved.count);
         for link: links_moved {
             for x: 0..level.dimensions.x-1 {
                 for y: 0..level.dimensions.y-1 {
@@ -95,8 +93,6 @@ move_player :: (move: v2i) -> success: bool {
                         continue;
                     }
                     if link.pos == .{x, y} continue;
-
-                    print("id: %\n", level.grid[x][y].interaction_id);
 
                     stack_clear(*stack);
                     cp := false;
@@ -197,7 +193,6 @@ push_block_recursively :: (initial_pos: v2i, move: v2i, stack: *Stack(v2i), delt
     }
 
     if push_into_wall {
-        print("Pushed into wall! Stack size: %\n", stack.count);
         // Recursively try combining all blocks in the stack
         prev := v2i.{-1, -1};
         while stack_is_empty(stack) == false {

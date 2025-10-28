@@ -471,12 +471,12 @@ update_editor :: (input: *Input_State) {
                             new_block.flags |= Block.Flag.GOAL;
                         } else if input.mwheel_pressed || input.is_pressed[SDL_SCANCODE_LALT] {
                             new_block.flags |= Block.Flag.VANISH_GOAL;
-                        } if input.is_pressed[SDL_SCANCODE_LCTRL] {
-                            new_block.flags |= Block.Flag.TIMER;
-                            new_block.timer_turns_left = 0;
-                            new_block.turns_on_active = cast(u8)editor.turns_on_active;
-                            new_block.turns_on_inactive = cast(u8)editor.turns_on_inactive;
-                            new_block.timer_is_solid = true;
+                        // } if input.is_pressed[SDL_SCANCODE_LCTRL] {
+                        //     new_block.flags |= Block.Flag.TIMER;
+                        //     new_block.timer_turns_left = 0;
+                        //     new_block.turns_on_active = cast(u8)editor.turns_on_active;
+                        //     new_block.turns_on_inactive = cast(u8)editor.turns_on_inactive;
+                        //     new_block.timer_is_solid = true;
                         }
                         if blocks.*[mouse_tile.x][mouse_tile.y] != new_block {
                             blocks.*[mouse_tile.x][mouse_tile.y] = new_block;
@@ -617,7 +617,7 @@ editor_draw :: () {
                 color = Vector4.{1, 0, 0, 1};
             }
         }
-        shader_uniform(color_shader, "color", color);
+        uniform(color_shader, "color", color);
 
         start, end : v2i;
         start.x = min(editor.select_end.x, editor.select_start.x);
@@ -678,7 +678,7 @@ editor_draw :: () {
 
 draw_portal_connections :: () {
     using context.game_state;
-    shader_uniform(color_shader, "color", Vector4.{0, 0, 1, 1});
+    uniform(color_shader, "color", Vector4.{0, 0, 1, 1});
     for 0..portal_list.count-1 {
         defer it += 1;
         first := portal_list[it];

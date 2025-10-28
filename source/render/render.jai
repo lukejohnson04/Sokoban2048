@@ -10,7 +10,7 @@ load_texture :: (path: string, log_errors := false) -> Texture, bool {
 
     data := stbi_load(path.data, *tex.width, *tex.height, *tex.channels, 0);
     if data == null {
-        print("At path \"%\" Error: %\n", path, to_string(stbi_failure_reason()));
+        //print("At path \"%\" Error: %\n", path, to_string(stbi_failure_reason()));
         return tex, false;
     }
     
@@ -133,10 +133,12 @@ draw_line :: (p1: Vector2, p2: Vector2, vao: GLuint, vbo: GLuint) {
 }
 
 draw_texture :: (source: Rect, dest: Rect, tex: *Texture) {
+    use_shader(context.game_state.texture_shader);
     draw_texture(source, dest, tex, context.game_state.intermediate_vao, context.game_state.intermediate_vbo);
 }
 
 draw_texture :: (source: Rect, dest: Rect, tex: *Texture, vao: GLuint, vbo: GLuint) {
+    use_shader(context.game_state.texture_shader);
     bind_texture(tex.id);
     draw_texture(source, dest, .{xx tex.width, xx tex.height}, vao, vbo);
 }

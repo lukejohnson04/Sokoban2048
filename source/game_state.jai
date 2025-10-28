@@ -11,10 +11,10 @@ We can do audio later but I"m not 100% definite we'll stick with SDL mixer
 
 
 Game_State :: struct {
-    texture_shader : Shader;
-    text_shader : Shader;
-    color_shader : Shader;
-    mask_shader : Shader;
+    texture_shader : Resource(Shader);
+    text_shader : Resource(Shader);
+    color_shader : Resource(Shader);
+    mask_shader : Resource(Shader);
 
     intermediate_vao : GLuint;
     intermediate_vbo : GLuint;
@@ -25,6 +25,8 @@ Game_State :: struct {
 
     world_mesh : Level_Mesh;
     tween_mesh : Level_Mesh;
+
+    resource_tracker: Resource_Tracker;
 
     sprites : Resource(Texture);
     sprite_particles : Resource(Texture);
@@ -46,8 +48,8 @@ Game_State :: struct {
     note_echo : *Mix_Chunk;
     footsteps : [7]*Mix_Chunk;
 
-    font_arial: Font;
-    font_m5x7: Font;
+    font_arial: Resource(Font);
+    font_m5x7: Resource(Font);
 
     level : Level;
     field : Visibility_Field;
@@ -67,9 +69,6 @@ Game_State :: struct {
 
     time_of_last_move: float64;
     movement_tween: bool;
-
-
-    resource_check_timer : float32;
 
     lighting_enabled := true;
 
@@ -129,33 +128,33 @@ on_startup :: () {
     glGenVertexArrays(1, *color_vao);
     glGenBuffers(1, *color_vbo);
 
-    load_resource(*sprites, "data/art/sprites.png");
-    load_resource(*sprite_particles, "data/art/particles.png");
-    load_resource(*sprites_imgui, "data/art/sprites.png");
-    load_resource(*dialogue_player_texture, "data/art/dialoguebox.png");
-    load_resource(*ui_sprites, "data/art/ui.png");
-    load_resource(*spotlight, "data/art/spotlight.png");
-    load_resource(*clockwise_arrow_texture, "data/art/clockwisearrow.png");
-    load_resource(*counter_clockwise_arrow_texture, "data/art/counterclockwisearrow.png");
+    load_texture_from_disk(*sprites, "data/art/sprites.png");
+    load_texture_from_disk(*sprite_particles, "data/art/particles.png");
+    load_texture_from_disk(*sprites_imgui, "data/art/sprites.png");
+    load_texture_from_disk(*dialogue_player_texture, "data/art/dialoguebox.png");
+    load_texture_from_disk(*ui_sprites, "data/art/ui.png");
+    load_texture_from_disk(*spotlight, "data/art/spotlight.png");
+    load_texture_from_disk(*clockwise_arrow_texture, "data/art/clockwisearrow.png");
+    load_texture_from_disk(*counter_clockwise_arrow_texture, "data/art/counterclockwisearrow.png");
 
-    create_shader(*texture_shader, "data/shaders/texture.vert", "data/shaders/texture.frag");
-    create_shader(*text_shader, "data/shaders/text.vert", "data/shaders/text.frag");
-    create_shader(*color_shader, "data/shaders/color.vert", "data/shaders/color.frag");
-    create_shader(*mask_shader, "data/shaders/mask.vert", "data/shaders/mask.frag");
+    load_shader_from_disk(*texture_shader, "data/shaders/texture.vert", "data/shaders/texture.frag");
+    load_shader_from_disk(*text_shader, "data/shaders/text.vert", "data/shaders/text.frag");
+    load_shader_from_disk(*color_shader, "data/shaders/color.vert", "data/shaders/color.frag");
+    load_shader_from_disk(*mask_shader, "data/shaders/mask.vert", "data/shaders/mask.frag");
 
     world_buffer = create_framebuffer(WINDOW_WIDTH, WINDOW_HEIGHT);
     floor_buffer = create_framebuffer(WINDOW_WIDTH, WINDOW_HEIGHT);
     map_init(*map);
 
     use_shader(texture_shader);
-    shader_uniform(texture_shader, "texture1", 0);
+    uniform(texture_shader, "texture1", 0);
 
     use_shader(mask_shader);
-    shader_uniform(mask_shader, "texture1", 0);
-    shader_uniform(mask_shader, "mask_texture", 1);
+    uniform(mask_shader, "texture1", 0);
+    uniform(mask_shader, "mask_texture", 1);
 
-    load_font(*font_arial, "arial", false, false, 48);
-    if !load_font(*font_m5x7, "m5x7", true, false, 60) print("huh\n");
+    load_font_from_disk(*font_arial, "data/fonts/arial.ttf", "", "", 48);
+    if !load_font_from_disk(*font_m5x7, "data/fonts/m5x7.ttf", "data/fonts/m5x7.ttf", "", 60) print("huh\n");
 
     photograph_song = Mix_LoadWAV("data/audio/photograph_song.ogg");
     note_normal = Mix_LoadWAV("data/audio/note_normal.ogg");
