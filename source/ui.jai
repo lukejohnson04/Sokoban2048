@@ -39,14 +39,30 @@ Layout_Fit_Sizing :: (head: *UIElement) {
     height_total := head.height;
     for *child: head.children {
         Layout_Fit_Sizing(child);
-        if head.width == UI_FIT {
-            width_total += child.width;
-            height_total = max(height_total, child.height + head.padding.y * 2);
+        if head.main_axis == .X_AXIS {
+            if head.width == UI_FIT {
+                width_total += child.width;
+                height_total = max(height_total, child.height + head.padding.y * 2);
+            }
+        } else {
+            if head.height == UI_FIT {
+                height_total += child.height;
+                width_total = max(width_total, child.width + head.padding.x * 2);
+            }
         }
     }
-    if head.children.count > 0 && head.width == UI_FIT {
-        width_total += (head.children.count - 1) * head.child_gap;
-        width_total += head.padding.x * 2;
+    if head.children.count > 0 {
+        if head.main_axis == .X_AXIS {
+            if head.width == UI_FIT {
+                width_total += (head.children.count - 1) * head.child_gap;
+                width_total += head.padding.x * 2;
+            }
+        } else {
+            if head.height == UI_FIT {
+                height_total += (head.children.count - 1) * head.child_gap;
+                height_total += head.padding.y * 2;
+            }
+        }
     }
     head.width = width_total;
     head.height = height_total;
@@ -54,23 +70,48 @@ Layout_Fit_Sizing :: (head: *UIElement) {
 
 Layout_Grow_Sizing :: (head: *UIElement) {
     remaining_width := head.width;
+    remaining_height := head.height;
     grow_count := 0;
     for *child: head.children {
-        if child.width > 0 {
-            remaining_width -= child.width;
-        }
-        if child.width == UI_GROW {
-            grow_count += 1;
+        if head.main_axis == .X_AXIS {
+            if child.width > 0 {
+                remaining_width -= child.width;
+            } if child.width == UI_GROW {
+                grow_count += 1;
+            }
+        } else {
+            if child.height > 0 {
+                remaining_height -= child.height;
+            } if child.height == UI_GROW {
+                grow_count += 1;
+            }
         }
     }
-    remaining_width -= head.padding.x * 2;
-    if head.children.count > 0 {
-        remaining_width -= head.child_gap * (head.children.count - 1);
+    if head.main_axis == .X_AXIS {
+        remaining_width -= head.padding.x * 2;
+        if head.children.count > 0 {
+            remaining_width -= head.child_gap * (head.children.count - 1);
+        }
+    } else {
+        remaining_height -= head.padding.y * 2;
+        if head.children.count > 0 {
+            remaining_height -= head.child_gap * (head.children.count - 1);
+        }
     }
     // Distribute the remaining width across all grow children
     for *child: head.children {
-        if child.width == UI_GROW {
-            child.width = remaining_width / grow_count;
+        if head.main_axis == .X_AXIS {
+            if child.width == UI_GROW {
+                child.width = remaining_width / grow_count;
+            } if child.height == UI_GROW {
+                child.height = head.height - head.padding.y * 2;
+            }
+        } else {
+            if child.height == UI_GROW {
+                child.height = remaining_height / grow_count;
+            } if child.width == UI_GROW {
+                child.width = head.width - head.padding.x * 2;
+            }
         }
     }
     for *child: head.children {
@@ -106,25 +147,11 @@ Layout_Draw :: (head: *UIElement, position := Vector2.{0, 0}) {
 }
 
 Layout_Test :: () -> UIElement {
-    panel := UIElement.{background_color = .{0.6, 0.7, 0.9, 1}, child_gap = 20, padding = .{15, 15}, size = .{700, 500}};
-    left_panel := UIElement.{background_color = .{0.85, 0.9, 0.95, 1}, child_gap = 10, padding = .{10, 10}, size = .{500, 400}};
-    right_panel := UIElement.{background_color = .{0.95, 0.85, 0.85, 1}, child_gap = 10, padding = .{10, 10}, size = .{UI_GROW, 300}};
+    panel := UIElement.{background_color = .{0.6, 0.7, 0.9, 1}, child_gap = 20, padding = .{15, 15}, size = .{UI_FIT, UI_FIT}, main_axis = .Y_AXIS};
     for 0..4 {
-        add_child(*left_panel, .{background_color = .{0.95, 1.0, 0.98, 1.0}, size = .{40, 200}});
+        button := UIElement.{background_color = .{1, 1, 1, 1}, size = .{200, 45}, padding = .{5, 5}};
+        add_child(*panel, button);
     }
-    add_child(*left_panel, .{background_color = .{0.95, 1.0, 0.98, 1.0}, size = .{UI_GROW, 200}});
-    child := UIElement.{background_color = .{1.0, 0.8, 0.98, 1.0}, size = .{UI_FIT, 200}, padding = .{10, 10}, child_gap = 10};
-    add_child(*child, .{background_color = .{1, 0.9, 0.9, 1.0}, size = .{40, 50}});
-    add_child(*child, .{background_color = .{1, 0.9, 0.9, 1.0}, size = .{70, 75}});
-    add_child(*left_panel, child);
-
-    add_child(*panel, left_panel);
-    add_child(*panel, right_panel);
-    // add_child(*component, UIElement.{size = .{0, 0}, background_color = .{0, 1, 0, 1}});
-    // add_child(*component, UIElement.{size = .{0, 0}, background_color = .{0, 1, 0, 1}});
-    // add_child(*component, UIElement.{size = .{0, 0}, background_color = .{1, 1, 0, 1}});
-    // add_child(*component, UIElement.{size = .{0, 0}, background_color = .{1, 1, 0, 1}});
-    // add_child(*component, UIElement.{size = .{0, 0}, background_color = .{1, 1, 0, 1}});
 
     Layout_Fit_Sizing(*panel);
     Layout_Grow_Sizing(*panel);
