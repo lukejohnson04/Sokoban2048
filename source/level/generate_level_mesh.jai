@@ -98,7 +98,7 @@ generate_level_mesh :: () {
                 }
 
                 if editor.editing_level == false && field[x][y].visible == false {
-                    continue;
+                    // continue;
                 }
 
                 source, dest: Rect;

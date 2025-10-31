@@ -28,6 +28,17 @@ UIElement :: struct {
         width: float;
         height: float;
     }
+
+    using Element_Type;
+    Element_Type :: enum {
+        RECT;
+        IMAGE;
+        LABEL;
+    }
+    type := Element_Type.RECT;
+
+    // In case it's a label
+    texture: Texture;
 }
 
 add_child :: (component: *UIElement, child: UIElement) {
@@ -40,12 +51,12 @@ Layout_Fit_Sizing :: (head: *UIElement) {
     for *child: head.children {
         Layout_Fit_Sizing(child);
         if head.main_axis == .X_AXIS {
-            if head.width == UI_FIT {
+            if head.width == UI_FIT || head.width == UI_GROW {
                 width_total += child.width;
                 height_total = max(height_total, child.height + head.padding.y * 2);
             }
         } else {
-            if head.height == UI_FIT {
+            if head.height == UI_FIT || head.height == UI_GROW {
                 height_total += child.height;
                 width_total = max(width_total, child.width + head.padding.x * 2);
             }
@@ -53,12 +64,12 @@ Layout_Fit_Sizing :: (head: *UIElement) {
     }
     if head.children.count > 0 {
         if head.main_axis == .X_AXIS {
-            if head.width == UI_FIT {
+            if head.width == UI_FIT || head.width == UI_GROW {
                 width_total += (head.children.count - 1) * head.child_gap;
                 width_total += head.padding.x * 2;
             }
         } else {
-            if head.height == UI_FIT {
+            if head.height == UI_FIT || head.height == UI_GROW {
                 height_total += (head.children.count - 1) * head.child_gap;
                 height_total += head.padding.y * 2;
             }
@@ -110,7 +121,7 @@ Layout_Grow_Sizing :: (head: *UIElement) {
             if child.height == UI_GROW {
                 child.height = remaining_height / grow_count;
             } if child.width == UI_GROW {
-                child.width = head.width - head.padding.x * 2;
+                child.width = max(child.width, head.width - head.padding.x * 2);
             }
         }
     }
@@ -138,18 +149,36 @@ Layout_Determine_Positions :: (head: *UIElement) {
 
 
 Layout_Draw :: (head: *UIElement, position := Vector2.{0, 0}) {
-    uniform(context.game_state.color_shader, "color", head.background_color);
-    draw_rect(Rect.{p1 = position, p2 = position + head.size});
+    if head.background_color.w != 0 {
+        uniform(context.game_state.color_shader, "color", head.background_color);
+        draw_rect(Rect.{p1 = position, p2 = position + head.size});
+    }
+    if head.type == .LABEL {
+        draw_texture(.{0, 0, xx head.texture.width, xx head.texture.height}, .{position.x, position.y + head.texture.height, xx head.texture.width, xx -head.texture.height}, *head.texture, context.game_state.intermediate_vao, context.game_state.intermediate_vbo);
+    }
 
     for *head.children {
         Layout_Draw(it, position + it.position);
     }
 }
 
+UILabel :: (label: *UIElement, text: string) {
+    using context.game_state;
+    label.texture = bake_text(text, *font_m5x7, intermediate_vao, intermediate_vbo);
+    label.size = .{xx label.texture.width, xx label.texture.height};
+    label.type = .LABEL;
+}
+
 Layout_Test :: () -> UIElement {
+    using context.game_state;
+
+    // panel := UIElement.{background_color = .{0.6, 0.7, 0.9, 1}, child_gap = 20, padding = .{15, 15}, size = .{500, 500}, main_axis = .Y_AXIS};
     panel := UIElement.{background_color = .{0.6, 0.7, 0.9, 1}, child_gap = 20, padding = .{15, 15}, size = .{UI_FIT, UI_FIT}, main_axis = .Y_AXIS};
     for 0..4 {
-        button := UIElement.{background_color = .{1, 1, 1, 1}, size = .{200, 45}, padding = .{5, 5}};
+        button := UIElement.{background_color = .{1, 1, 1, 1}, size = .{UI_GROW, UI_GROW}, padding = .{5, 5}};
+        label := UIElement.{background_color = .{1, 1, 0, 1}, size = .{0, 0}, padding = .{5, 5}};
+        UILabel(*label, ifx it == 3 then "Long ahh button!" else "Button");
+        add_child(*button, label);
         add_child(*panel, button);
     }
 
@@ -158,23 +187,3 @@ Layout_Test :: () -> UIElement {
     Layout_Determine_Positions(*panel);
     return panel;
 }
-
-// Layout :: (element: UIElement, code: Code = {}) {
-//     OpenElement(element);
-//     #insert code;
-//     CloseElement();
-// }
-
-// // Main menu
-// Rect
-//     Rect (header rect)
-//         Text
-//
-//     Rect (buttons rect)
-//         Rect
-//             Text
-//         Rect
-//             Text
-//         Rect
-//             Text
-//

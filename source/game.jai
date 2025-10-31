@@ -536,7 +536,10 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
             }
         }
     }
-    
+
+    // uniform(color_shader, "view", Matrix4_Identity);
+    // Layout_Draw(*ui_node, .{100, 100});
+
     ImGui.Render();
     ImGui_ImplSdl_RenderDrawLists(ImGui.GetDrawData());
 
