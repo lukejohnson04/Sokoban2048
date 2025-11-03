@@ -20,6 +20,8 @@ Move_Delta_Data :: struct {
     // Change this to just one variable "new player delta"
     old_player_pos: v2i;
     new_player_pos: v2i;
+    old_player_flip: bool;
+    new_player_flip: bool;
 }
 
 add_move_delta :: (data: *Move_Delta_Data) -> *Move_Delta {
@@ -110,6 +112,9 @@ move_player :: (move: v2i) -> success: bool {
     if success {
         player_pos = new_pos;
         delta_data.new_player_pos = new_pos;
+        delta_data.old_player_flip = player_flip;
+        delta_data.new_player_flip = ifx move.x > 0 then false else ifx move.x < 0 then true else player_flip;
+        player_flip = delta_data.new_player_flip;
 
         turn_memory.curr.type = .MOVE;
         turn_memory.curr.move_delta = delta_data;

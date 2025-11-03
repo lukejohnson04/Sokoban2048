@@ -283,12 +283,14 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
 
     // Draw player
     if editor.editing_level == false {
-        source := Rect.{16,0,16,16};
+        source := Rect.{192,96,16,16};
         dest: Rect;
 
         time := seconds_since_init();
         diff := time - time_of_last_move;
         tween_value := min(diff / MOVEMENT_TWEEN_LENGTH, 1.0);
+
+        player_animation_timer += delta;
         if movement_tween {
             old_pos := turn_memory.curr.prev.move_delta.old_player_pos * 64;
             new_pos := turn_memory.curr.prev.move_delta.new_player_pos * 64;
@@ -296,8 +298,16 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
             dest.y = xx lerp(cast(float) old_pos.y, cast(float) new_pos.y, tween_value);
             dest.w = 64;
             dest.h = 64;
+            player_animation_timer = MOVEMENT_TWEEN_LENGTH;
         } else {
             dest = Rect.{xx (level.player_pos.x*64), xx (level.player_pos.y*64), 64, 64};
+        }
+        if player_animation_timer < 0.16 {
+            source.x += 16 * ((turn_count % 2) + 1);
+        }
+        if player_flip {
+            source.x += 16;
+            source.w *= -1;
         }
         bind_texture(sprites);
         draw_texture(source, dest, *sprites);

@@ -91,8 +91,11 @@ Game_State :: struct {
     map: Map_State;
 
     ui_node: UIElement;
+    player_animation_timer: float;
 
     level_mesh_needs_update := false;
+
+    player_flip := false;
 
     memory_initialized := false;
 }
