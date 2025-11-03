@@ -302,7 +302,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         } else {
             dest = Rect.{xx (level.player_pos.x*64), xx (level.player_pos.y*64), 64, 64};
         }
-        if player_animation_timer < 0.16 {
+        if player_animation_timer < 0.12 {
             source.x += 16 * ((turn_count % 2) + 1);
         }
         if player_flip {
