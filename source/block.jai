@@ -71,6 +71,10 @@ get_block_type :: (block: Block) -> Block_Type {
     if (block.id >= 32 && block.id < 40) || (block.id >= 48 && block.id < 50) {
         return .WALL;
     }
+    if (block.id >= 12 && block.id <= 15) || (block.id >= 28 && block.id <= 31) ||
+        (block.id >= 44 && block.id <= 47) || (block.id >= 60 && block.id <= 63) {
+            return .WALL;
+        }
 
     if block.id >= 48 && block.id < 96 {
         return .NONE;
