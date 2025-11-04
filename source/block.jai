@@ -17,7 +17,7 @@ block_blocks_light :: (block: Block) -> bool {
     return type == .WALL || type == .BOULDER || type == .INTERACTABLE || type == .NUMBERED;
 }
 
-block_number :: (block: Block) -> u8 {
+block_number :: (block: Block) -> u16 {
     return block.id - FIRST_NUMBERED_BLOCK_ID;
 }
 
@@ -99,7 +99,7 @@ is make sure that it works exactly as it did before, except with the id instead 
 
 
 Block :: struct {
-    id: u8;
+    id: u16;
     flags: Flag;
     interaction_id: u16;
     
@@ -175,7 +175,7 @@ Block_Type :: enum u8 #specified {
 // We can do this by removing the Block_Type field and replacing it with a Tile_Id field.
 // Then, we hardcode the necessary lookups in some method.
 
-FIRST_NUMBERED_BLOCK_ID : u8 : 8;
+FIRST_NUMBERED_BLOCK_ID : u16 : 8;
 
 /*
  Block struct overview

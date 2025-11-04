@@ -15,10 +15,29 @@ Old_Level :: struct {
     dialogue_data: Dialogue_Data;
 }
 
+
 Old_Block :: struct {
     id: u8;
-    flags: Block.Flag;
+    flags: Flag;
     interaction_id: u16;
+    
+    union {
+        struct {
+            turns_on_active: u8;
+            turns_on_inactive: u8;
+            timer_turns_left: u8;
+            timer_is_solid: bool;
+        }
+    }
+
+    Flag :: enum u8 #specified {
+        GOAL :: 1;
+        VANISH_GOAL :: 2;
+        FLIPPED_X :: 4;
+        FLIPPED_Y :: 8;
+        TIMER :: 16;
+        LINKED :: 32;
+    }
 }
 
 one_time_conversion :: (level_name: string) {
@@ -51,8 +70,15 @@ level_format_converter :: (level: *Level, old_level: *Old_Level) {
         for y: 0..level.dimensions.y-1 {
             level.grid[x][y] = .{};
             level.floor[x][y] = .{};
-            memcpy(*level.grid[x][y], *old_level.grid[x][y], size_of(Old_Block));
-            memcpy(*level.floor[x][y], *old_level.floor[x][y], size_of(Old_Block));
+            level.grid[x][y].id = xx old_level.grid[x][y].id;
+            level.grid[x][y].flags = xx old_level.grid[x][y].flags;
+
+            level.grid[x][y].interaction_id = old_level.grid[x][y].interaction_id;
+
+            level.grid[x][y].turns_on_active = old_level.grid[x][y].turns_on_active;
+            level.grid[x][y].turns_on_inactive = old_level.grid[x][y].turns_on_inactive;
+            level.grid[x][y].timer_turns_left = old_level.grid[x][y].timer_turns_left;
+            level.grid[x][y].timer_is_solid = old_level.grid[x][y].timer_is_solid;
         }
     }
 }

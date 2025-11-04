@@ -85,7 +85,9 @@ generate_level_mesh :: () {
                 empty_block :: Block.{};
                 if block == empty_block continue;
 
-                if tween {
+                // Tweening is disabled because of dialogue blocks. For some reason they have a delta_data.count-1 of 1969889353
+                // Fix this!
+                if tween && false {
                     delta_data := turn_memory.curr.prev.move_delta;
                     tween_block := false;
                     for 0..delta_data.count-1 {

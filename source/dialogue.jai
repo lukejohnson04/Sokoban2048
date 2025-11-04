@@ -274,6 +274,9 @@ generate_interaction_queue :: (state: *Dialogue_Player_State, block: Block) {
                     queue_text("I knocked another time and she started yelling, and name calling.");
                     queue_text("It hurts to care so much for someone and have them throw it in your face.");
                 }
+                case 150; {
+                    queue_text("I just want to go home.");
+                }
             }
         }
 
@@ -392,3 +395,15 @@ generate_interaction_queue :: (state: *Dialogue_Player_State, block: Block) {
         // queue_text(")
     }
 }
+
+// There's something strange about this place...
+// If you stuck around for a while you'd see what I mean.
+// Things don't quite work the same in here as they do out there.
+
+// Oron falls overboard and wakes up in a lost city underwater. He got swallowed by a massive whale.
+
+// The longer you spend down here, the more you realize it's not just the puzzles that come to life.
+// The city itself is alive, too.
+
+// 
+
