@@ -80,6 +80,7 @@ Game_State :: struct {
 
 
     frame_number := 0;
+    global_timer: float64;
 
     delta: float32;
     prev_frame_time: float64;

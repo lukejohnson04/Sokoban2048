@@ -4,6 +4,12 @@ get_block_source :: (block: Block) -> Rect {
     stride := cast(int)(context.game_state.sprites.width / 16.0);
     source = Rect.{xx ((block.id % stride) * 16), xx ((block.id / stride) * 16), 16, 16};
 
+    if block.id == 138 {
+        using context.game_state;
+        frame_time := 0.5;
+        source.x += (cast(s32)(global_timer / frame_time) % 3) * 16;
+    }
+
     return source;
 }
 

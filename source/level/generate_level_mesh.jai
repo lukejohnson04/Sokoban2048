@@ -40,111 +40,132 @@ level_mesh_generate :: (using mesh: *Level_Mesh) {
     mesh_generate(*mesh.timer);
 }
 
-generate_level_mesh :: () {
+
+generate_screen_mesh :: () {
+
+}
+
+generate_screen_mesh :: (screen_pos: v2i, blocks: *type_of(Level.grid), mesh: *Level_Mesh, mesh_layer: *Mesh, generate_lights: bool, tween: bool) {
+    using context.game_state;
+    start_x := SCREEN_TILE_WIDTH * screen_pos.x;
+    start_y := SCREEN_TILE_HEIGHT * screen_pos.y;
+    for x: start_x..(SCREEN_TILE_WIDTH + start_x - 1) {
+        for y: start_y..(SCREEN_TILE_HEIGHT + start_y - 1) {
+            block := blocks.*[x][y];
+            if block.flags & .TIMER {
+                if timer_is_active(block) == false {
+                    continue;
+                }
+            }
+            // Empty block
+            is_player := level.player_pos.x == xx x && level.player_pos.y == xx y;
+            if block.id == 0 && is_player == false continue;
+            if generate_lights {
+                if is_player || block_is_light_source(block) {
+                    light := *lights[light_count];
+
+                    light_pos := (Vector2.{xx x, xx y} + Vector2.{0.5, 0.5}) * 64;
+                    color := ifx is_player then Vector4.{1,1,1,1} else Vector4.{1,1,0,1};
+                    init_light(light, light_pos, 5.5 * 64, color);
+
+                    compute_light_points(light);
+                    
+                    array_add(*light.mesh, light.mesh[1]);
+                    for *corner: light.mesh {
+                        corner.x -= light.pos.x;
+                        corner.y -= light.pos.y;
+                        corner.x += light.radius;
+                        corner.y += light.radius;
+                    }
+
+                    light_count += 1;
+                }
+            }
+
+            empty_block :: Block.{};
+            if block == empty_block continue;
+
+            // Tweening is disabled because of dialogue blocks. For some reason they have a delta_data.count-1 of 1969889353
+            // Fix this!
+            if tween && false {
+                delta_data := turn_memory.curr.prev.move_delta;
+                tween_block := false;
+                for 0..delta_data.count-1 {
+                    if delta_data.deltas[it].coord == .{x, y} {
+                        tween_block = true;
+                        break;
+                    }
+                }
+                if tween_block continue y;
+            }
+
+            if editor.editing_level == false && field[x][y].visible == false {
+                // continue;
+            }
+
+            source, dest: Rect;
+
+            source = get_block_source(blocks.*[x][y]);
+            dest = Rect.{xx (x * 64), xx (y * 64), 64, 64};
+            
+            u1, u2, v1, v2 : float32;
+            u1 = source.x / sprites.width;
+            u2 = (source.x + source.w) / sprites.width;
+            v1 = source.y / sprites.height;
+            v2 = (source.y + source.h) / sprites.height;
+
+            if block.flags & .FLIPPED_X {
+                dest.x += dest.w;
+                dest.w *= -1;
+            }
+            if block.flags & .FLIPPED_Y {
+                dest.y += dest.h;
+                dest.h *= -1;
+            }
+
+            vertices := Vertex.[
+                .{dest.x,           dest.y,         0, u1, v1},
+                .{dest.x+dest.w,    dest.y,         0, u2, v1},
+                .{dest.x+dest.w,    dest.y+dest.h,  0, u2, v2},
+
+                .{dest.x,           dest.y,         0, u1, v1},
+                .{dest.x,           dest.y+dest.h,  0, u1, v2},
+                .{dest.x+dest.w,    dest.y+dest.h,  0, u2, v2},
+            ];
+
+            for *vertices {
+                if block_is_goal(block) {
+                    if block.flags & .GOAL {
+                        array_add(*mesh.goal.vertices, it);
+                    } else {
+                        array_add(*mesh.gold.vertices, it);
+                    }
+                    continue;
+                }
+                array_add(*mesh_layer.vertices, it);
+            }
+        }
+    }
+}
+
+generate_level_mesh :: (just_current_screen := false) {
     using context.game_state;
 
     level_mesh_free(*world_mesh);
     level_mesh_free(*tween_mesh);
 
     light_count = 0;
-
-    generate_mesh_of_layer :: (blocks: *type_of(Level.grid), mesh: *Level_Mesh, mesh_layer: *Mesh, generate_lights: bool, tween: bool) #expand {
-        for x: 0..level.dimensions.x-1 {
-            for y: 0..level.dimensions.y-1 {
-                block := blocks.*[x][y];
-                if block.flags & .TIMER {
-                    if timer_is_active(block) == false {
-                        continue;
-                    }
-                }
-                // Empty block
-                is_player := level.player_pos.x == xx x && level.player_pos.y == xx y;
-                if block.id == 0 && is_player == false continue;
-                if generate_lights {
-                    if is_player || block_is_light_source(block) {
-                        light := *lights[light_count];
     
-                        light_pos := (Vector2.{xx x, xx y} + Vector2.{0.5, 0.5}) * 64;
-                        color := ifx is_player then Vector4.{1,1,1,1} else Vector4.{1,1,0,1};
-                        init_light(light, light_pos, 5.5 * 64, color);
-
-                        compute_light_points(light);
-                        
-                        array_add(*light.mesh, light.mesh[1]);
-                        for *corner: light.mesh {
-                            corner.x -= light.pos.x;
-                            corner.y -= light.pos.y;
-                            corner.x += light.radius;
-                            corner.y += light.radius;
-                        }
-
-                        light_count += 1;
-                    }
-                }
-
-                empty_block :: Block.{};
-                if block == empty_block continue;
-
-                // Tweening is disabled because of dialogue blocks. For some reason they have a delta_data.count-1 of 1969889353
-                // Fix this!
-                if tween && false {
-                    delta_data := turn_memory.curr.prev.move_delta;
-                    tween_block := false;
-                    for 0..delta_data.count-1 {
-                        if delta_data.deltas[it].coord == .{x, y} {
-                            tween_block = true;
-                            break;
-                        }
-                    }
-                    if tween_block continue y;
-                }
-
-                if editor.editing_level == false && field[x][y].visible == false {
-                    // continue;
-                }
-
-                source, dest: Rect;
-
-                source = get_block_source(blocks.*[x][y]);
-                dest = Rect.{xx (x * 64), xx (y * 64), 64, 64};
-                
-                u1, u2, v1, v2 : float32;
-                u1 = source.x / sprites.width;
-                u2 = (source.x + source.w) / sprites.width;
-                v1 = source.y / sprites.height;
-                v2 = (source.y + source.h) / sprites.height;
-
-                if block.flags & .FLIPPED_X {
-                    dest.x += dest.w;
-                    dest.w *= -1;
-                }
-                if block.flags & .FLIPPED_Y {
-                    dest.y += dest.h;
-                    dest.h *= -1;
-                }
-
-                vertices := Vertex.[
-                    .{dest.x,           dest.y,         0, u1, v1},
-                    .{dest.x+dest.w,    dest.y,         0, u2, v1},
-                    .{dest.x+dest.w,    dest.y+dest.h,  0, u2, v2},
-
-                    .{dest.x,           dest.y,         0, u1, v1},
-                    .{dest.x,           dest.y+dest.h,  0, u1, v2},
-                    .{dest.x+dest.w,    dest.y+dest.h,  0, u2, v2},
-                ];
-
-                for *vertices {
-                    if block_is_goal(block) {
-                        if block.flags & .GOAL {
-                            array_add(*mesh.goal.vertices, it);
-                        } else {
-                            array_add(*mesh.gold.vertices, it);
-                        }
-                        continue;
-                    }
-                    array_add(*mesh_layer.vertices, it);
+    generate_mesh_of_layer :: (blocks: *type_of(Level.grid), mesh: *Level_Mesh, mesh_layer: *Mesh, generate_lights: bool, tween: bool) #expand {
+        if just_current_screen == false {
+            for x: 0..(Level.MAX_WIDTH / SCREEN_TILE_WIDTH)-1 {
+                for y: 0..(Level.MAX_HEIGHT / SCREEN_TILE_HEIGHT)-1 {
+                    generate_screen_mesh(.{x, y}, blocks, mesh, mesh_layer, generate_lights, tween);
                 }
             }
+        } else {
+            current_screen := get_current_screen_coord(*context.game_state.level);
+            generate_screen_mesh(current_screen, blocks, mesh, mesh_layer, generate_lights, tween);
         }
     }
 

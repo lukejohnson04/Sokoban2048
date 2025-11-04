@@ -252,3 +252,9 @@ Eaten by a giant robot or monster or something
 
 
 
+For the engine to be able to handle tile animations, we are going to need to make some changes.
+
+We are going to have to split up the level mesh generation based on the tile and animation.
+There are animated tiles, non animated tiles, tweened animated tiles, and tween non animated tiles.
+At this point I'm not sure if I want each animated tile to have its own timer, or if we can just have every water tile for example be on the same timer.
+Let's do it twice.

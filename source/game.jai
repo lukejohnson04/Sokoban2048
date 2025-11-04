@@ -159,11 +159,16 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     }
 
 
-    if level_mesh_needs_update {
+    if level_mesh_needs_update || editor.editing_level == false {
         if editor.editing_level == false {
-            vfield_generate_flood_fill(*level, field);
+            // Disabled flood fill for now because we will have to rework the visibilty system anyways to account for walls
+            // vfield_generate_flood_fill(*level, field);
         }
-        generate_level_mesh();
+        if editor.editing_level == false {
+            generate_level_mesh(true);
+        } else {
+            generate_level_mesh();
+        }
         level_mesh_needs_update = false;
     }
 
@@ -559,6 +564,17 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     delta = xx (curr_frame_time - prev_frame_time);
     prev_frame_time = curr_frame_time;
 
+    target_delta : float64 = (1.0 / FPS_MAX);
+    if delta < target_delta {
+        ms := (target_delta - delta) * 1000.0;
+        SDL_Delay(xx ms);
+        prev_frame_time = seconds_since_init();
+    }
+    delta = xx target_delta;
+
+    global_timer += xx delta;
+
+
     reset_temporary_storage();
     return 1;
 }
@@ -575,7 +591,8 @@ GAME_SIZE :: v2i.{GAME_WIDTH, GAME_HEIGHT};
 SCREEN_TILE_WIDTH :: GAME_WIDTH / 16;
 SCREEN_TILE_HEIGHT :: GAME_HEIGHT / 16;
 SCREEN_TILE_SIZE :: v2i.{SCREEN_TILE_WIDTH, SCREEN_TILE_HEIGHT};
-VSYNC :: true;
+VSYNC :: false;
+FPS_MAX : float64 : 60.0;
 
 #load "render/render.jai";
 #load "render/text.jai";

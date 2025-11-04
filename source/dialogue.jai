@@ -405,5 +405,5 @@ generate_interaction_queue :: (state: *Dialogue_Player_State, block: Block) {
 // The longer you spend down here, the more you realize it's not just the puzzles that come to life.
 // The city itself is alive, too.
 
-// 
+// It's an island where the sun never rises
 
