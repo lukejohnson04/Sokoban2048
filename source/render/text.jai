@@ -152,7 +152,7 @@ draw_text :: (text: string, position: v2i, font: *Font, vao: GLuint, vbo: GLuint
     }
 }
 
-bake_text :: (text: string, font: *Font, vao: GLuint, vbo: GLuint, max_width: int = 0, fancy_format: bool = false) -> Texture {
+bake_text :: (text: string, font: *Font, vao: GLuint, vbo: GLuint, max_width: int = 0, fancy_format: bool = false, color := Vector4.{0, 0, 0, 1}) -> Texture {
     uniform(context.game_state.text_shader, "view", Matrix4_Identity);
     uniform(context.game_state.text_shader, "color", .{1, 0, 0, 1});
 
@@ -273,7 +273,7 @@ bake_text :: (text: string, font: *Font, vao: GLuint, vbo: GLuint, max_width: in
     projection := orthographic_projection_matrix(0, xx size.x, xx size.y, 0, -1, 1);
     uniform(context.game_state.text_shader, "projection", projection);
     uniform(context.game_state.text_shader, "view", Matrix4_Identity);
-    uniform(context.game_state.text_shader, "color", .{1, 0, 0, 1});
+    uniform(context.game_state.text_shader, "color", color);
     while stack_is_empty(*draw_stack) == false {
         call := stack_pop(*draw_stack);
         using call;

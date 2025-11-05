@@ -86,27 +86,19 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
                     movement_tween = true;
                     time_of_last_move = seconds_since_init();
 
-                    particle := spawn_particle(*particle_system);
 
                     old_ppos := turn_memory.curr.prev.move_delta.old_player_pos;
-                    particle.pos = Vector2.{xx (old_ppos.x * 64), xx (old_ppos.y* 64)};
-                    particle.pos += .{32, 32};
-                    particle.life_length = 0.2;
                     reverse_dir_vec := Vector2.{xx -move.x, xx -move.y};
-                    rand_vec := random_unit_vector();
-                    particle.vel = reverse_dir_vec * 80 + rand_vec * 20;
-                    particle.size_start = 2.00;
-                    particle.size_end = 0.5;
-                    particle.pos -= particle.vel * 0.25;
 
                     for 0..5 {
                         np := spawn_particle(*particle_system);
                         np.pos = Vector2.{xx (old_ppos.x * 64), xx (old_ppos.y* 64)};
                         np.pos += .{32, 32};
+                        np.pos -= reverse_dir_vec * 30;
                         np.life_length = 0.35;
-                        np.vel = reverse_dir_vec * 40 + random_unit_vector() * 10;
-                        particle.size_start = 1.0;
-                        particle.size_end = 0.5;
+                        np.vel = reverse_dir_vec * 60 + random_unit_vector() * 20;
+                        np.size_start = 1.0;
+                        np.size_end = 0.0;
                     }
                 }
             }

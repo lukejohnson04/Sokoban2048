@@ -82,7 +82,6 @@ update_map :: (input: *Input_State) {
         px, py := get_player_room();
         map_camera.pos = .{xx SCREEN_TILE_WIDTH * (px + 0.5), xx SCREEN_TILE_HEIGHT * (py + 0.5)};
         map_camera.zoom = 1;
-        print("Display regular map\n");
     }
 
     minimap :: () #expand {

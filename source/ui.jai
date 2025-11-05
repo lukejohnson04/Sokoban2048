@@ -16,18 +16,25 @@ UIElement :: struct {
     main_axis := X_AXIS;
 
     position: Vector2;
-
     size: Vector2;
-
-    padding: Vector2;
-    background_color: Vector4;
-    child_gap: float;
-
     #place size;
     struct {
         width: float;
         height: float;
     }
+
+    grow: Vector2;
+
+    padding: Vector2;
+
+    background_color: Vector4;
+    child_gap: float;
+
+    type := Element_Type.RECT;
+
+    // In case it's a label
+    texture: Texture;
+
 
     using Element_Type;
     Element_Type :: enum {
@@ -35,10 +42,6 @@ UIElement :: struct {
         IMAGE;
         LABEL;
     }
-    type := Element_Type.RECT;
-
-    // In case it's a label
-    texture: Texture;
 }
 
 add_child :: (component: *UIElement, child: UIElement) {
@@ -87,13 +90,13 @@ Layout_Grow_Sizing :: (head: *UIElement) {
         if head.main_axis == .X_AXIS {
             if child.width > 0 {
                 remaining_width -= child.width;
-            } if child.width == UI_GROW {
+            } if child.grow.x == UI_GROW {
                 grow_count += 1;
             }
         } else {
             if child.height > 0 {
                 remaining_height -= child.height;
-            } if child.height == UI_GROW {
+            } if child.grow.y == UI_GROW {
                 grow_count += 1;
             }
         }
@@ -114,13 +117,13 @@ Layout_Grow_Sizing :: (head: *UIElement) {
         if head.main_axis == .X_AXIS {
             if child.width == UI_GROW {
                 child.width = remaining_width / grow_count;
-            } if child.height == UI_GROW {
-                child.height = head.height - head.padding.y * 2;
+            } if child.grow.y == UI_GROW {
+                child.height = max(child.height, head.height - head.padding.y * 2);
             }
         } else {
             if child.height == UI_GROW {
                 child.height = remaining_height / grow_count;
-            } if child.width == UI_GROW {
+            } if child.grow.x == UI_GROW {
                 child.width = max(child.width, head.width - head.padding.x * 2);
             }
         }
@@ -162,9 +165,9 @@ Layout_Draw :: (head: *UIElement, position := Vector2.{0, 0}) {
     }
 }
 
-UILabel :: (label: *UIElement, text: string) {
+UILabel :: (label: *UIElement, text: string, color: Vector4 = .{0, 0, 0, 1}) {
     using context.game_state;
-    label.texture = bake_text(text, *font_m5x7, intermediate_vao, intermediate_vbo);
+    label.texture = bake_text(text, *font_m5x7, intermediate_vao, intermediate_vbo, color = color);
     label.size = .{xx label.texture.width, xx label.texture.height};
     label.type = .LABEL;
 }
@@ -174,11 +177,21 @@ Layout_Test :: () -> UIElement {
 
     // panel := UIElement.{background_color = .{0.6, 0.7, 0.9, 1}, child_gap = 20, padding = .{15, 15}, size = .{500, 500}, main_axis = .Y_AXIS};
     panel := UIElement.{background_color = .{0.6, 0.7, 0.9, 1}, child_gap = 20, padding = .{15, 15}, size = .{UI_FIT, UI_FIT}, main_axis = .Y_AXIS};
+    panel.grow.x = UI_FIT;
+    panel.grow.y = UI_FIT;
     for 0..4 {
-        button := UIElement.{background_color = .{1, 1, 1, 1}, size = .{UI_GROW, UI_GROW}, padding = .{5, 5}};
-        label := UIElement.{background_color = .{1, 1, 0, 1}, size = .{0, 0}, padding = .{5, 5}};
+        button := UIElement.{background_color = .{1, 0.8, 1, 1}, size = .{UI_GROW, UI_GROW}, padding = .{5, 5}};
+        button.grow.x = UI_GROW;
+        button.grow.y = UI_GROW;
+        inner_rect := UIElement.{background_color = .{0.5, 0.5, 0.5, 1}, size = .{UI_GROW, UI_GROW}, padding = .{5, 5}};
+        inner_rect.grow.x = UI_GROW;
+        inner_rect.grow.y = UI_GROW;
+        label := UIElement.{size = .{UI_GROW, UI_GROW}, padding = .{5, 5}};
+        label.grow.x = UI_GROW;
+        label.grow.y = UI_GROW;
         UILabel(*label, ifx it == 3 then "Long ahh button!" else "Button");
-        add_child(*button, label);
+        add_child(*inner_rect, label);
+        add_child(*button, inner_rect);
         add_child(*panel, button);
     }
 
