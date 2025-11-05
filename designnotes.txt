@@ -258,3 +258,12 @@ We are going to have to split up the level mesh generation based on the tile and
 There are animated tiles, non animated tiles, tweened animated tiles, and tween non animated tiles.
 At this point I'm not sure if I want each animated tile to have its own timer, or if we can just have every water tile for example be on the same timer.
 Let's do it twice.
+
+
+
+
+Instead of a linear set of puzzles where one puzzle leads directly to the next, it could be a big area where each puzzle does something specific.
+
+One puzzle could unblock a hallway that leads to more puzzles. One puzzle could link a machine to the mainframe. One puzzle could let you talk to an NPC. Etc.
+
+Medusa head where her snakes get shorter and shorter and then she shoots a medusa laser

@@ -86,7 +86,6 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
                     movement_tween = true;
                     time_of_last_move = seconds_since_init();
 
-
                     old_ppos := turn_memory.curr.prev.move_delta.old_player_pos;
                     reverse_dir_vec := Vector2.{xx -move.x, xx -move.y};
 
@@ -278,49 +277,71 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     */
     use_shader(texture_shader);
 
-    // Draw player
     if editor.editing_level == false {
-        source := Rect.{192,96,16,16};
-        dest: Rect;
-
+        // Draw player
         time := seconds_since_init();
-        diff := time - time_of_last_move;
-        tween_value := min(diff / MOVEMENT_TWEEN_LENGTH, 1.0);
+        time_since_last_move := time - time_of_last_move;
+        {
 
-        player_animation_timer += delta;
-        if movement_tween {
-            old_pos := turn_memory.curr.prev.move_delta.old_player_pos * 64;
-            new_pos := turn_memory.curr.prev.move_delta.new_player_pos * 64;
-            dest.x = xx lerp(cast(float) old_pos.x, cast(float) new_pos.x, tween_value);
-            dest.y = xx lerp(cast(float) old_pos.y, cast(float) new_pos.y, tween_value);
-            dest.w = 64;
-            dest.h = 64;
-            player_animation_timer = MOVEMENT_TWEEN_LENGTH;
-        } else {
-            dest = Rect.{xx (level.player_pos.x*64), xx (level.player_pos.y*64), 64, 64};
-        }
-        if player_animation_timer < 0.12 {
-            source.x += 16 * ((turn_count % 2) + 1);
-        }
-        if player_flip {
-            source.x += 16;
-            source.w *= -1;
-        }
-        bind_texture(sprites);
-        draw_texture(source, dest, *sprites);
+            source := Rect.{192,96,16,16};
+            dest: Rect;
 
-        if movement_tween {
-            delta_data := turn_memory.curr.prev.move_delta;
-            for 0..delta_data.tween_count-1 {
-                old_pos := delta_data.tween_changes[it].from * 64;
-                new_pos := delta_data.tween_changes[it].to * 64;
-                source = get_block_source(delta_data.tween_changes[it].value);
+            tween_value := min(time_since_last_move / MOVEMENT_TWEEN_LENGTH, 1.0);
 
+            player_animation_timer += delta;
+            if movement_tween {
+                old_pos := turn_memory.curr.prev.move_delta.old_player_pos * 64;
+                new_pos := turn_memory.curr.prev.move_delta.new_player_pos * 64;
                 dest.x = xx lerp(cast(float) old_pos.x, cast(float) new_pos.x, tween_value);
                 dest.y = xx lerp(cast(float) old_pos.y, cast(float) new_pos.y, tween_value);
                 dest.w = 64;
                 dest.h = 64;
+                player_animation_timer = MOVEMENT_TWEEN_LENGTH;
+            } else {
+                dest = Rect.{xx (level.player_pos.x*64), xx (level.player_pos.y*64), 64, 64};
+            }
+            if player_animation_timer < 0.12 {
+                source.x += 16 * ((turn_count % 2) + 1);
+            }
+            if player_flip {
+                source.x += 16;
+                source.w *= -1;
+            }
+            bind_texture(sprites);
+            draw_texture(source, dest, *sprites);
+
+            if movement_tween {
+                delta_data := turn_memory.curr.prev.move_delta;
+                for 0..delta_data.tween_count-1 {
+                    old_pos := delta_data.tween_changes[it].from * 64;
+                    new_pos := delta_data.tween_changes[it].to * 64;
+                    source = get_block_source(delta_data.tween_changes[it].value);
+
+                    dest.x = xx lerp(cast(float) old_pos.x, cast(float) new_pos.x, tween_value);
+                    dest.y = xx lerp(cast(float) old_pos.y, cast(float) new_pos.y, tween_value);
+                    dest.w = 64;
+                    dest.h = 64;
+                    draw_texture(source, dest, *sprites);
+                }
+            }
+        }
+        // Draw medusa firings
+        MEDUSA_FIRE_ANIM_TIME :: 0.15;
+        if medusa_firings.count > 0 && time_since_last_move < MEDUSA_FIRE_ANIM_TIME {
+            for 0..medusa_firings.count-1 {
+                firing := medusa_firings.data[it];
+                source := Rect.{96, 144, 16, 16};
+                dest := Rect.{xx (firing.origin.x * 64), xx (firing.origin.y * 64), 64, 64};
                 draw_texture(source, dest, *sprites);
+
+                if firing.length > 0 {
+                    // Draw laser
+                    source = .{112, 144, 16, 16};
+                    for 0..firing.length {
+                        dest.x += 64;
+                        draw_texture(source, dest, *sprites);
+                    }
+                }
             }
         }
     }

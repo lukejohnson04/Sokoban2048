@@ -4,10 +4,14 @@ get_block_source :: (block: Block) -> Rect {
     stride := cast(int)(context.game_state.sprites.width / 16.0);
     source = Rect.{xx ((block.id % stride) * 16), xx ((block.id / stride) * 16), 16, 16};
 
-    if block.id == 138 {
+    if block.id == 138 || block.id == 139 || block.id == 140 {
         using context.game_state;
         frame_time := 0.5;
-        source.x += (cast(s32)(global_timer / frame_time) % 3) * 16;
+
+        offset := block.id - 138;
+        frame_num := ((cast(s32)((global_timer / frame_time)) % 3) + offset) % 3;
+        source.x -= offset * 16;
+        source.x += frame_num * 16;
     }
 
     return source;
@@ -56,6 +60,11 @@ get_block_type :: (block: Block) -> Block_Type {
             return .NONE;
         }
     }
+
+    if block.id >= MEDUSA_ID_BEGIN && block.id <= MEDUSA_ID_END {
+        return .MEDUSA_CANNON;
+    }
+
     if block.id == {
         case 0; return .NONE;
         case 2; return .BOULDER;
@@ -66,6 +75,9 @@ get_block_type :: (block: Block) -> Block_Type {
         case 7; return .INTERACTABLE; // Save point specifically
         case 9; return .SPIKED;
         case 10; return .PORTAL;
+
+        case 144; return .WALL;
+        case 145; return .BOULDER;
     }
 
     if (block.id >= 24 && block.id < 32) || (block.id >= 40 && block.id < 48) {
@@ -168,7 +180,10 @@ Block_Type :: enum u8 #specified {
     INTERACTABLE :: 7;
     SPIKED :: 8;
     PORTAL :: 9;
+    MEDUSA_CANNON :: 10;
 }
+
+
 
 // New_Block :: struct {
 //     id: u8;
@@ -182,6 +197,8 @@ Block_Type :: enum u8 #specified {
 // Then, we hardcode the necessary lookups in some method.
 
 FIRST_NUMBERED_BLOCK_ID : u16 : 8;
+MEDUSA_ID_BEGIN :: 146;
+MEDUSA_ID_END :: 150;
 
 /*
  Block struct overview

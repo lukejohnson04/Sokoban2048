@@ -129,6 +129,7 @@ move_player :: (move: v2i) -> success: bool {
         room_y := player_pos.y / SCREEN_TILE_HEIGHT;
 
         stats.visited_room[room_x][room_y] = true;
+        update_medusa_cannons();
     }
 
     return success;
@@ -343,3 +344,4 @@ goto_last_checkpoint :: () -> bool {
 MOVEMENT_TWEEN_LENGTH :: 0.05;
 
 #load "turn.jai";
+#load "medusa.jai";

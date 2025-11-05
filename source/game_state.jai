@@ -98,6 +98,7 @@ Game_State :: struct {
 
     player_flip := false;
 
+    medusa_firings: Medusa_Fire_Array;
     memory_initialized := false;
 }
 
