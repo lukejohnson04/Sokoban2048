@@ -92,7 +92,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
                     for 0..5 {
                         np := spawn_particle(*particle_system);
                         np.pos = Vector2.{xx (old_ppos.x * 64), xx (old_ppos.y* 64)};
-                        np.pos += .{32, 32};
+                        np.pos += .{32, 72};
                         np.pos -= reverse_dir_vec * 30;
                         np.life_length = 0.35;
                         np.vel = reverse_dir_vec * 60 + random_unit_vector() * 20;
@@ -307,6 +307,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
                 source.x += 16;
                 source.w *= -1;
             }
+            dest.y += 24;
             bind_texture(sprites);
             draw_texture(source, dest, *sprites);
 
@@ -321,6 +322,10 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
                     dest.y = xx lerp(cast(float) old_pos.y, cast(float) new_pos.y, tween_value);
                     dest.w = 64;
                     dest.h = 64;
+                    if get_block_type(delta_data.tween_changes[it].value) == .NUMBERED {
+                        source.h += 9;
+                        dest.h += 9 * 4;
+                    }
                     draw_texture(source, dest, *sprites);
                 }
             }

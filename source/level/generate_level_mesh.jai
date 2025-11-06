@@ -87,7 +87,7 @@ generate_screen_mesh :: (screen_pos: v2i, blocks: *type_of(Level.grid), mesh: *L
 
             // Tweening is disabled because of dialogue blocks. For some reason they have a delta_data.count-1 of 1969889353
             // Fix this!
-            if tween && false {
+            if tween {
                 delta_data := turn_memory.curr.prev.move_delta;
                 tween_block := false;
                 for 0..delta_data.count-1 {
@@ -107,7 +107,11 @@ generate_screen_mesh :: (screen_pos: v2i, blocks: *type_of(Level.grid), mesh: *L
 
             source = get_block_source(blocks.*[x][y]);
             dest = Rect.{xx (x * 64), xx (y * 64), 64, 64};
-            
+            if get_block_type(blocks.*[x][y]) == .NUMBERED {
+                source.h += 9;
+                dest.h += 9 * 4;
+            }
+
             u1, u2, v1, v2 : float32;
             u1 = source.x / sprites.width;
             u2 = (source.x + source.w) / sprites.width;

@@ -12,6 +12,23 @@ get_block_source :: (block: Block) -> Rect {
         frame_num := ((cast(s32)((global_timer / frame_time)) % 3) + offset) % 3;
         source.x -= offset * 16;
         source.x += frame_num * 16;
+    } if block.id == 128 {
+        using context.game_state;
+
+        frame_1_len :: 3.0;
+        frame_2_len :: 0.125;
+        frame_3_len :: 0.125;
+        frame_time :: frame_1_len + frame_2_len + frame_3_len;
+
+        cycles := cast(s32)((global_timer / frame_time));
+        time_delta := global_timer - (cycles * frame_time);
+        if time_delta > frame_1_len {
+            if time_delta > frame_1_len + frame_2_len {
+                source.x += 32;
+            } else {
+                source.x += 16;
+            } 
+        }
     }
 
     return source;
