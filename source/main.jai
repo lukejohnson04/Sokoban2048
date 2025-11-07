@@ -98,9 +98,11 @@ main :: () {
         }
 
         if need_to_refresh && curr_time - last_dll_time > 0.1 {
-            print("Loaded dll\n");
+            print("Unloading dll\n");
             UnloadGameCode(*global_game_code);
+            // print("Loading dll\n");
             LoadGameCode(*global_game_code);
+            // print("Loaded dll\n");
             just_reloaded_dll = true;
             need_to_refresh = false;
         }
@@ -127,7 +129,7 @@ GAME_SIZE :: v2i.{GAME_WIDTH, GAME_HEIGHT};
 SCREEN_TILE_WIDTH :: GAME_WIDTH / 16;
 SCREEN_TILE_HEIGHT :: GAME_HEIGHT / 16;
 SCREEN_TILE_SIZE :: v2i.{SCREEN_TILE_WIDTH, SCREEN_TILE_HEIGHT};
-VSYNC :: false;
+VSYNC :: true;
 
 #import "Windows";
 #import "String";

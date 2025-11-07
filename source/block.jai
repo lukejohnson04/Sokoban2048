@@ -1,4 +1,23 @@
 
+// Immediate mode animation??
+// run_animation :: () -> Animation {
+//     anim: Animation;
+//     anim.frames = [0.1, 0.2, 0.35]
+//     anim.rects = {..., ..., ...}
+//     anim.id = RUN_ANIM
+//     return anim
+// }
+// do_animation (#run run_animation())
+//
+// do_animation :: (block: Block, anim: Animation) {
+//      if block.anim != anim.id {
+//          block.timer = 0
+//          block.anim = anim;
+//      }
+//      // Normal iterate through frametimes and pick frame to set
+// }
+
+
 get_block_source :: (block: Block) -> Rect {
     source : Rect;
     stride := cast(int)(context.game_state.sprites.width / 16.0);
@@ -12,22 +31,41 @@ get_block_source :: (block: Block) -> Rect {
         frame_num := ((cast(s32)((global_timer / frame_time)) % 3) + offset) % 3;
         source.x -= offset * 16;
         source.x += frame_num * 16;
+        
     } if block.id == 128 {
         using context.game_state;
 
-        frame_1_len :: 3.0;
-        frame_2_len :: 0.125;
-        frame_3_len :: 0.125;
-        frame_time :: frame_1_len + frame_2_len + frame_3_len;
+        if dialogue_state.open && dialogue_line_finished() == false {
+            frame_1_len :: 0.25;
+            frame_2_len :: 0.2;
+            frame_3_len :: 0.15;
+            frame_time :: frame_1_len + frame_2_len + frame_3_len;
+            cycles := cast(s32)((global_timer / frame_time));
+            time_delta := global_timer - (cycles * frame_time);
+            source.x = 48;
+            if time_delta > frame_1_len {
+                if time_delta > frame_1_len + frame_2_len {
+                    source.x += 32;
+                } else {
+                    source.x += 16;
+                } 
+            }
+        } else {
+            // Blink animation
+            frame_1_len :: 3.0;
+            frame_2_len :: 0.125;
+            frame_3_len :: 0.125;
+            frame_time :: frame_1_len + frame_2_len + frame_3_len;
 
-        cycles := cast(s32)((global_timer / frame_time));
-        time_delta := global_timer - (cycles * frame_time);
-        if time_delta > frame_1_len {
-            if time_delta > frame_1_len + frame_2_len {
-                source.x += 32;
-            } else {
-                source.x += 16;
-            } 
+            cycles := cast(s32)((global_timer / frame_time));
+            time_delta := global_timer - (cycles * frame_time);
+            if time_delta > frame_1_len {
+                if time_delta > frame_1_len + frame_2_len {
+                    source.x += 32;
+                } else {
+                    source.x += 16;
+                } 
+            }
         }
     }
 
@@ -92,6 +130,7 @@ get_block_type :: (block: Block) -> Block_Type {
         case 7; return .INTERACTABLE; // Save point specifically
         case 9; return .SPIKED;
         case 10; return .PORTAL;
+        case 128; return .INTERACTABLE;
 
         case 144; return .WALL;
         case 145; return .BOULDER;

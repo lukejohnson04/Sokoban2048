@@ -98,6 +98,8 @@ Game_State :: struct {
 
     player_flip := false;
 
+    character_draw_buffer: Stack(Character_Draw_Params, 512);
+
     medusa_firings: Medusa_Fire_Array;
     memory_initialized := false;
 }
@@ -108,6 +110,7 @@ on_startup :: () {
     using context.game_state;
 
     gl_load(*gl);
+    SDL_GL_SetSwapInterval(cast(s32) VSYNC);
 
     {
         time := current_time_monotonic();
@@ -161,7 +164,7 @@ on_startup :: () {
     uniform(mask_shader, "mask_texture", 1);
 
     load_font_from_disk(*font_arial, "data/fonts/arial.ttf", "", "", 48);
-    if !load_font_from_disk(*font_m5x7, "data/fonts/m5x7.ttf", "data/fonts/m5x7.ttf", "", 60) print("huh\n");
+    if !load_font_from_disk(*font_m5x7, "data/fonts/m5x7.ttf", "data/fonts/m5x7.ttf", "", 80) print("huh\n");
 
     photograph_song = Mix_LoadWAV("data/audio/photograph_song.ogg");
     note_normal = Mix_LoadWAV("data/audio/note_normal.ogg");

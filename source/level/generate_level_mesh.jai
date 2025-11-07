@@ -45,6 +45,8 @@ generate_screen_mesh :: () {
 
 }
 
+CHARACTER_DRAW_OFFSET :: 24;
+
 generate_screen_mesh :: (screen_pos: v2i, blocks: *type_of(Level.grid), mesh: *Level_Mesh, mesh_layer: *Mesh, generate_lights: bool, tween: bool) {
     using context.game_state;
     start_x := SCREEN_TILE_WIDTH * screen_pos.x;
@@ -87,13 +89,15 @@ generate_screen_mesh :: (screen_pos: v2i, blocks: *type_of(Level.grid), mesh: *L
 
             // Tweening is disabled because of dialogue blocks. For some reason they have a delta_data.count-1 of 1969889353
             // Fix this!
-            if tween {
+            if tween && turn_memory.curr.prev && false {
                 delta_data := turn_memory.curr.prev.move_delta;
                 tween_block := false;
-                for 0..delta_data.count-1 {
-                    if delta_data.deltas[it].coord == .{x, y} {
-                        tween_block = true;
-                        break;
+                if delta_data.count > 0 {
+                    for 0..delta_data.count-1 {
+                        if delta_data.deltas[it].coord == .{x, y} {
+                            tween_block = true; 
+                            break;
+                        }
                     }
                 }
                 if tween_block continue y;
@@ -103,13 +107,16 @@ generate_screen_mesh :: (screen_pos: v2i, blocks: *type_of(Level.grid), mesh: *L
                 // continue;
             }
 
+            // Section for changing how the rendering based on the type of the block
             source, dest: Rect;
-
-            source = get_block_source(blocks.*[x][y]);
+            source = get_block_source(block);
             dest = Rect.{xx (x * 64), xx (y * 64), 64, 64};
-            if get_block_type(blocks.*[x][y]) == .NUMBERED {
+            if get_block_type(block) == .NUMBERED {
                 source.h += 9;
                 dest.h += 9 * 4;
+            }
+            if block.id == 128 {
+                dest.y += CHARACTER_DRAW_OFFSET;
             }
 
             u1, u2, v1, v2 : float32;
@@ -176,6 +183,7 @@ generate_level_mesh :: (just_current_screen := false) {
     generate_mesh_of_layer(*level.floor, *world_mesh, *world_mesh.floor, false, false);
     generate_mesh_of_layer(*level.grid, *world_mesh, *world_mesh.tiles, false, false);
     if turn_memory.curr.prev {
+        // We need a way of disabling tweening
         generate_mesh_of_layer(*level.floor, *tween_mesh, *tween_mesh.floor, false, true);
         generate_mesh_of_layer(*level.grid, *tween_mesh, *tween_mesh.tiles, false, true);
     }

@@ -22,6 +22,11 @@ Font :: struct {
     has_bold: bool;
 }
 
+Character_Draw_Params :: struct {
+    texture: GLuint;
+    x, y, w, h: int;
+}
+
 
 draw_text :: (text: string, position: v2i, font: *Font, vao: GLuint, vbo: GLuint, max_width: int = 0, fancy_format: bool = false) {
     base_x  := position.x;
@@ -45,13 +50,9 @@ draw_text :: (text: string, position: v2i, font: *Font, vao: GLuint, vbo: GLuint
         return (fancy_format && char == #char "\n") || char == #char "\\" || char == #char " ";
     }
 
-    Character_Draw_Params :: struct {
-        texture: GLuint;
-        x, y, w, h: int;
-    }
-    draw_stack: Stack(Character_Draw_Params);
-    texture_size: Vector2;
 
+    texture_size: Vector2;
+    stack_clear(*context.game_state.character_draw_buffer);
     while i < text.count {
         if text[i] == #char "\\" {
             text_state.italic = !text_state.italic;
@@ -114,7 +115,7 @@ draw_text :: (text: string, position: v2i, font: *Font, vao: GLuint, vbo: GLuint
             x := xpos + ch.bearing.x;
             y := ypos - ch.bearing.y;
 
-            stack_push(*draw_stack, Character_Draw_Params.{ch.texture, x, y, w, h});
+            stack_push(*context.game_state.character_draw_buffer, Character_Draw_Params.{ch.texture, x, y, w, h});
             texture_size.x = max(texture_size.x, xx (x + w));
             texture_size.y = max(texture_size.y, xx (y + h));
             // glBindTexture(GL_TEXTURE_2D, ch.texture);
@@ -139,8 +140,8 @@ draw_text :: (text: string, position: v2i, font: *Font, vao: GLuint, vbo: GLuint
         }
     }
 
-    while stack_is_empty(*draw_stack) == false {
-        call := stack_pop(*draw_stack);
+    while stack_is_empty(*context.game_state.character_draw_buffer) == false {
+        call := stack_pop(*context.game_state.character_draw_buffer);
         using call;
         glBindTexture(GL_TEXTURE_2D, texture);
         draw_texture(

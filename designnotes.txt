@@ -267,3 +267,22 @@ Instead of a linear set of puzzles where one puzzle leads directly to the next, 
 One puzzle could unblock a hallway that leads to more puzzles. One puzzle could link a machine to the mainframe. One puzzle could let you talk to an NPC. Etc.
 
 Medusa head where her snakes get shorter and shorter and then she shoots a medusa laser
+
+
+
+Technical todo
+
+
+Make auto game .ini file loading not godawful
+
+Level editor
+    Selecting multiple tiles in the editor at the same time and placing them all at once (dragging the selection rectangle)
+    Rotate tiles in all 4 directions
+    Draw ordering - How can we make things render in the right order?
+    
+    Further reflect on how tile data is stored (e.g. which tiles are solid, which tiles are interactable, etc)
+
+Animation system
+
+Tween system
+

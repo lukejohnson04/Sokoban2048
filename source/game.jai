@@ -83,7 +83,9 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
                 success := move_player(move);
                 if success {
                     moved_this_turn = true;
-                    movement_tween = true;
+                    if dialogue_state.open == false {
+                        movement_tween = true;
+                    }
                     time_of_last_move = seconds_since_init();
 
                     old_ppos := turn_memory.curr.prev.move_delta.old_player_pos;
@@ -307,26 +309,29 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
                 source.x += 16;
                 source.w *= -1;
             }
-            dest.y += 24;
+            dest.y += CHARACTER_DRAW_OFFSET;
             bind_texture(sprites);
             draw_texture(source, dest, *sprites);
 
-            if movement_tween {
+            if movement_tween && turn_memory.curr.prev {
                 delta_data := turn_memory.curr.prev.move_delta;
-                for 0..delta_data.tween_count-1 {
-                    old_pos := delta_data.tween_changes[it].from * 64;
-                    new_pos := delta_data.tween_changes[it].to * 64;
-                    source = get_block_source(delta_data.tween_changes[it].value);
+                if delta_data.tween_count > 0 {
+                    for 0..delta_data.tween_count-1 {
+                        tween_change :=  delta_data.tween_changes[it];
+                        old_pos := tween_change.from * 64;
+                        new_pos := tween_change.to * 64;
+                        source = get_block_source(tween_change.value);
 
-                    dest.x = xx lerp(cast(float) old_pos.x, cast(float) new_pos.x, tween_value);
-                    dest.y = xx lerp(cast(float) old_pos.y, cast(float) new_pos.y, tween_value);
-                    dest.w = 64;
-                    dest.h = 64;
-                    if get_block_type(delta_data.tween_changes[it].value) == .NUMBERED {
-                        source.h += 9;
-                        dest.h += 9 * 4;
+                        dest.x = xx lerp(cast(float) old_pos.x, cast(float) new_pos.x, tween_value);
+                        dest.y = xx lerp(cast(float) old_pos.y, cast(float) new_pos.y, tween_value);
+                        dest.w = 64;
+                        dest.h = 64;
+                        if get_block_type(tween_change.value) == .NUMBERED {
+                            source.h += 9;
+                            dest.h += 9 * 4;
+                        }
+                        draw_texture(source, dest, *sprites);
                     }
-                    draw_texture(source, dest, *sprites);
                 }
             }
         }
@@ -485,7 +490,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     }
 
     // GUI Elements
-    // Draw dialogue player
+    // Radial rewind texture
     if rewinding {
         uniform(texture_shader, "view", Matrix4_Identity);
         bind_texture(ui_sprites);
@@ -493,6 +498,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         draw_radial_texture(.{0, 0, 32, 32}, .{WINDOW_WIDTH - radius*2, radius*2}, radius, rewind_meter / REWIND_TIME, *ui_sprites, intermediate_vao, intermediate_vbo);
     }
 
+    // Draw dialogue player
     if dialogue_state.open {
         uniform(texture_shader, "view", Matrix4_Identity);
         bind_texture(dialogue_player_texture);
@@ -504,7 +510,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         str: string;
         str.data = dialogue_state.buffer.memory.data;
         str.count = dialogue_state.index;
-        draw_text(str, .{64, 100}, *font_m5x7, intermediate_vao, intermediate_vbo, WINDOW_WIDTH - 200);
+        draw_text(str, .{64, 120}, *font_m5x7, intermediate_vao, intermediate_vbo, WINDOW_WIDTH - 200);
     }
 
     // Map
@@ -575,20 +581,19 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
 
     ImGui.Render();
     ImGui_ImplSdl_RenderDrawLists(ImGui.GetDrawData());
-
     SDL_GL_SwapWindow(window);
 
     curr_frame_time := seconds_since_init();
     delta = xx (curr_frame_time - prev_frame_time);
     prev_frame_time = curr_frame_time;
 
-    target_delta : float64 = (1.0 / FPS_MAX);
-    if delta < target_delta {
-        ms := (target_delta - delta) * 1000.0;
-        SDL_Delay(xx ms);
-        prev_frame_time = seconds_since_init();
-    }
-    delta = xx target_delta;
+    // target_delta : float64 = (1.0 / FPS_MAX);
+    // if delta < target_delta {
+    //     ms := (target_delta - delta) * 1000.0;
+    //     SDL_Delay(xx ms);
+    //     prev_frame_time = seconds_since_init();
+    // }
+    // delta = xx target_delta;
 
     global_timer += xx delta;
 
@@ -609,7 +614,7 @@ GAME_SIZE :: v2i.{GAME_WIDTH, GAME_HEIGHT};
 SCREEN_TILE_WIDTH :: GAME_WIDTH / 16;
 SCREEN_TILE_HEIGHT :: GAME_HEIGHT / 16;
 SCREEN_TILE_SIZE :: v2i.{SCREEN_TILE_WIDTH, SCREEN_TILE_HEIGHT};
-VSYNC :: false;
+VSYNC :: true;
 FPS_MAX : float64 : 60.0;
 
 #load "render/render.jai";

@@ -49,6 +49,10 @@ Dialogue_Data_Delta :: struct {
 // When you interact with a tile, the counter for the specific block and interaction id
 // is incremented. For example a tile with number 5 and interaction id 3 would be incremented.
 // To do this, we need a way to hash both numbers together with zero collisions.
+dialogue_line_finished :: () -> bool {
+    return context.game_state.dialogue_state.index == context.game_state.dialogue_state.buffer.size;
+}
+
 dialogue_update :: (dialogue_state: *Dialogue_Player_State, input: *Input_State) {
     if dialogue_state.buffer == null {
         dialogue_state.open = false;
@@ -63,10 +67,20 @@ dialogue_update :: (dialogue_state: *Dialogue_Player_State, input: *Input_State)
         return;
     }
 
-    line_finished := dialogue_state.index == dialogue_state.buffer.size;
     if do_action(.REDO) {
-        if line_finished {
+        print("Line finished: %\n", dialogue_line_finished());
+
+        if dialogue_line_finished() {
+            interaction_len := 0;
+            iter := context.game_state.turn_memory.curr.next;
+            while iter {
+                interaction_len += 1;
+                iter = iter.next;
+            }
+            print("Len %\n", interaction_len);
+
             apply_turn();
+            print("applied turn\n");
         } else {
             dialogue_state.index = dialogue_state.buffer.size;
             return;
@@ -155,6 +169,10 @@ generate_interaction_queue :: (state: *Dialogue_Player_State, block: Block) {
 
     count := level.dialogue_data.interaction_count[block.id][block.interaction_id];
     if block.id == {
+        case 128; {
+            queue_text("You're welcome in my home as long as you don't smell of sewage.");
+            queue_text("My ex wife smelt like sewage all the time, and it really ruined the scent for me.");
+        }
         // Guy in hidden house
         case 112; {
             queue_text("Oh my goodness! Thank heavens you rescued me!");

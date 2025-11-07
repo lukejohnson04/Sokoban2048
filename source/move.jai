@@ -41,6 +41,7 @@ move_player :: (move: v2i) -> success: bool {
     delta_data : Move_Delta_Data;
     delta_data.old_player_pos = player_pos;
 
+    dialogue_interaction := false;
     new_pos_type := get_block_type(level.grid[new_pos.x][new_pos.y]);
     if new_pos_type == .PORTAL {
         portal_pos := get_matching_portal(level.grid[new_pos.x][new_pos.y], new_pos);
@@ -54,6 +55,9 @@ move_player :: (move: v2i) -> success: bool {
     } else if new_pos_type == .INTERACTABLE {
         generate_interaction_queue(*dialogue_state, level.grid[new_pos.x][new_pos.y]);
         apply_turn();
+        dialogue_interaction = true;
+
+        new_pos = player_pos;
         return true;
     // Player walks into spike
     } else if new_pos_type == .SPIKED {
@@ -118,12 +122,12 @@ move_player :: (move: v2i) -> success: bool {
 
         turn_memory.curr.type = .MOVE;
         turn_memory.curr.move_delta = delta_data;
+        assert(delta_data.count < 16);
         turn_memory.curr.next = turn_memory.curr + 1;
         turn_memory.curr += 1;
         turn_memory.curr.prev = turn_memory.curr - 1;
         turn_memory.curr.next = null;
         turn_count += 1;
-
 
         room_x := player_pos.x / SCREEN_TILE_WIDTH;
         room_y := player_pos.y / SCREEN_TILE_HEIGHT;
