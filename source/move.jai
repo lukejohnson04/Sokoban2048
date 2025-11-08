@@ -50,18 +50,17 @@ move_player :: (move: v2i) -> success: bool {
     }
     // Off the map
     if new_pos.x < 0 || new_pos.x >= level.dimensions.x || new_pos.y < 0 || new_pos.y >= level.dimensions.y {
-        return false;
+        success = false;
     // Player walks into interactable
     } else if new_pos_type == .INTERACTABLE {
         generate_interaction_queue(*dialogue_state, level.grid[new_pos.x][new_pos.y]);
         apply_turn();
         dialogue_interaction = true;
-
         new_pos = player_pos;
         return true;
     // Player walks into spike
     } else if new_pos_type == .SPIKED {
-        return false;
+        success = false;
     // Player walks into air or onto barrier block. Easy case.
     } else if new_pos_type == .NONE || new_pos_type == .BLOCK_BARRIER {
         success = true;

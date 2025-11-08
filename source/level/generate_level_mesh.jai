@@ -45,9 +45,9 @@ generate_screen_mesh :: () {
 
 }
 
-CHARACTER_DRAW_OFFSET :: 24;
+CHARACTER_DRAW_OFFSET :: 18;
 
-generate_screen_mesh :: (screen_pos: v2i, blocks: *type_of(Level.grid), mesh: *Level_Mesh, mesh_layer: *Mesh, generate_lights: bool, tween: bool) {
+generate_screen_mesh :: (screen_pos: v2i, blocks: *type_of(Level.grid), mesh: *Level_Mesh, mesh_layer: *Mesh, generate_lights: bool, generate_tween: bool) {
     using context.game_state;
     start_x := SCREEN_TILE_WIDTH * screen_pos.x;
     start_y := SCREEN_TILE_HEIGHT * screen_pos.y;
@@ -87,20 +87,23 @@ generate_screen_mesh :: (screen_pos: v2i, blocks: *type_of(Level.grid), mesh: *L
             empty_block :: Block.{};
             if block == empty_block continue;
 
-            // Tweening is disabled because of dialogue blocks. For some reason they have a delta_data.count-1 of 1969889353
-            // Fix this!
-            if tween && turn_memory.curr.prev && false {
-                delta_data := turn_memory.curr.prev.move_delta;
-                tween_block := false;
-                if delta_data.count > 0 {
-                    for 0..delta_data.count-1 {
-                        if delta_data.deltas[it].coord == .{x, y} {
-                            tween_block = true; 
-                            break;
+            if generate_tween {
+                if turn_memory.curr.prev {
+                    assert(turn_memory.curr.prev.type == .MOVE);
+                    delta_data := turn_memory.curr.prev.move_delta;
+                    tween_block := false;
+                    if delta_data.count > 0 {
+                        // print("Blocks be moving!\n");
+                        for 0..delta_data.count-1 {
+                            if delta_data.deltas[it].coord == .{x, y} {
+                                tween_block = true;
+                                // print("Tween at coord: %, %\n", x, y);
+                                break;
+                            }
                         }
                     }
+                    if tween_block continue y;
                 }
-                if tween_block continue y;
             }
 
             if editor.editing_level == false && field[x][y].visible == false {
@@ -112,7 +115,8 @@ generate_screen_mesh :: (screen_pos: v2i, blocks: *type_of(Level.grid), mesh: *L
             source = get_block_source(block);
             dest = Rect.{xx (x * 64), xx (y * 64), 64, 64};
             if get_block_type(block) == .NUMBERED {
-                source.h += 9;
+                source.h = 22;
+                dest.h -= 3 * 4;
                 dest.h += 9 * 4;
             }
             if block.id == 128 {
@@ -134,14 +138,15 @@ generate_screen_mesh :: (screen_pos: v2i, blocks: *type_of(Level.grid), mesh: *L
                 dest.h *= -1;
             }
 
+            z_pos := -(1.0 - (dest.y / (512 * 64.0)));
             vertices := Vertex.[
-                .{dest.x,           dest.y,         0, u1, v1},
-                .{dest.x+dest.w,    dest.y,         0, u2, v1},
-                .{dest.x+dest.w,    dest.y+dest.h,  0, u2, v2},
+                .{dest.x,           dest.y,         z_pos, u1, v1},
+                .{dest.x+dest.w,    dest.y,         z_pos, u2, v1},
+                .{dest.x+dest.w,    dest.y+dest.h,  z_pos, u2, v2},
 
-                .{dest.x,           dest.y,         0, u1, v1},
-                .{dest.x,           dest.y+dest.h,  0, u1, v2},
-                .{dest.x+dest.w,    dest.y+dest.h,  0, u2, v2},
+                .{dest.x,           dest.y,         z_pos, u1, v1},
+                .{dest.x,           dest.y+dest.h,  z_pos, u1, v2},
+                .{dest.x+dest.w,    dest.y+dest.h,  z_pos, u2, v2},
             ];
 
             for *vertices {
@@ -180,12 +185,12 @@ generate_level_mesh :: (just_current_screen := false) {
         }
     }
 
+    generate_tween := turn_memory.curr.prev && turn_memory.curr.prev.type == .MOVE;
     generate_mesh_of_layer(*level.floor, *world_mesh, *world_mesh.floor, false, false);
     generate_mesh_of_layer(*level.grid, *world_mesh, *world_mesh.tiles, false, false);
     if turn_memory.curr.prev {
-        // We need a way of disabling tweening
-        generate_mesh_of_layer(*level.floor, *tween_mesh, *tween_mesh.floor, false, true);
-        generate_mesh_of_layer(*level.grid, *tween_mesh, *tween_mesh.tiles, false, true);
+        generate_mesh_of_layer(*level.floor, *tween_mesh, *tween_mesh.floor, false, generate_tween);
+        generate_mesh_of_layer(*level.grid, *tween_mesh, *tween_mesh.tiles, false, generate_tween);
     }
 
     // Note to self: the main performance issue I have identified so far is the light point compute time in the

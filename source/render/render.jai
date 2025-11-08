@@ -150,11 +150,12 @@ draw_texture :: (source: Rect, dest: Rect, texture_size: v2i, vao: GLuint, vbo: 
     v1 = source.y / texture_size.y;
     v2 = (source.y + source.h) / texture_size.y;
 
+    z_pos := -(1.0 - (dest.y / (512 * 64.0)));
     vertices := float32.[
-        dest.x,         dest.y,         0,  u1, v1,
-        dest.x+dest.w,  dest.y,         0,  u2, v1,
-        dest.x+dest.w,  dest.y+dest.h,  0,  u2, v2,
-        dest.x,         dest.y+dest.h,  0,  u1, v2
+        dest.x,         dest.y,         z_pos,  u1, v1,
+        dest.x+dest.w,  dest.y,         z_pos,  u2, v1,
+        dest.x+dest.w,  dest.y+dest.h,  z_pos,  u2, v2,
+        dest.x,         dest.y+dest.h,  z_pos,  u1, v2
     ];
 
     glBindVertexArray(vao);
@@ -404,7 +405,7 @@ set_framebuffer :: (buffer: *Framebuffer = null) {
 
 clear_framebuffer :: (r: float, g: float, b: float, a: float) {
     glClearColor(r, g, b, a);
-    glClear(GL_COLOR_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 create_framebuffer :: (width: s32, height: s32) -> Framebuffer {
@@ -415,7 +416,16 @@ create_framebuffer :: (width: s32, height: s32) -> Framebuffer {
     glGenFramebuffers(1, *buffer.id);
     glBindFramebuffer(GL_FRAMEBUFFER, buffer.id);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, buffer.tex.id, 0);
+
+    // Depth buffer
+    depthRBO: GLuint;
+    glGenRenderbuffers(1, *depthRBO);
+    glBindRenderbuffer(GL_RENDERBUFFER, depthRBO);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, xx width, xx height);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthRBO);
+
     glBindFramebuffer(GL_FRAMEBUFFER,0);
+
 
     buffer.w = width;
     buffer.h = height;

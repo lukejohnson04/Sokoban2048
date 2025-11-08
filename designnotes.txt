@@ -282,7 +282,24 @@ Level editor
     
     Further reflect on how tile data is stored (e.g. which tiles are solid, which tiles are interactable, etc)
 
+    Note: We still don't know the exact requirements of the level editor! So we need to be careful not to over engineer.
+
+    When editing levels, we want to be able to:
+        - Draw new tiles in aseprite
+        - Set the tiles to be solid, interactable, or nonsolid within the editor
+        - Increase size of sprites.png without having to change anything in code
+        - Undo and redo!!!
+
 Animation system
 
 Tween system
 
+Change the move stack system to not be a linked list. It makes it so confusing.
+    - Undo limit can be much much smaller. We can consider clearing the move stack when changing screens.
+    - We can also consider resetting rooms when changing screens, except for puzzles that you have already solved + dialogue state being persistent.
+
+
+Renderer rewrite
+    - Render individual screens as well as make it possible to render everything visible on screen for the editor
+        - For the editor, we could maybe just render once every time a block is changed so we don't need to rerender every frame
+    - 

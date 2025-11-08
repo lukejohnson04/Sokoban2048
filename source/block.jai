@@ -22,6 +22,9 @@ get_block_source :: (block: Block) -> Rect {
     source : Rect;
     stride := cast(int)(context.game_state.sprites.width / 16.0);
     source = Rect.{xx ((block.id % stride) * 16), xx ((block.id / stride) * 16), 16, 16};
+    if get_block_type(block) == .NUMBERED {
+        source.y += 3;
+    }
 
     if block.id == 138 || block.id == 139 || block.id == 140 {
         using context.game_state;

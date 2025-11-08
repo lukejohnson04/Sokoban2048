@@ -185,7 +185,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     }
 
     // Rendering
-    glDisable(GL_DEPTH_TEST);
+    glEnable(GL_DEPTH_TEST);
     set_framebuffer(null);
     clear_framebuffer(1, 1, 1, 1);
     set_framebuffer(*floor_buffer);
@@ -259,32 +259,13 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     uniform(texture_shader, "view", view);
     particles_update_and_render(*particle_system);
 
-    // Draw timer text
-    /*
-    use_shader(text_shader);
-    uniform(text_shader, "view", view);
-    uniform(text_shader, "color", .{1, 1, 1, 1});
-
-    for x: 0..level.dimensions.x-1 {
-        for y: 0..level.dimensions.y-1 {
-            timer := level.grid[x][y];
-            if timer.flags & .TIMER {
-                left := timer_turns_left(timer);
-                struct_str := tprint("%", left);
-                draw_text(struct_str, .{x * 64 + 24, y * 64 + 44}, *font_m5x7, intermediate_vao, intermediate_vbo);
-                break;
-            }
-        }
-    }
-    */
     use_shader(texture_shader);
 
     if editor.editing_level == false {
-        // Draw player
         time := seconds_since_init();
         time_since_last_move := time - time_of_last_move;
         {
-
+            // Draw player
             source := Rect.{192,96,16,16};
             dest: Rect;
 
@@ -313,24 +294,38 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
             bind_texture(sprites);
             draw_texture(source, dest, *sprites);
 
-            if movement_tween && turn_memory.curr.prev {
-                delta_data := turn_memory.curr.prev.move_delta;
-                if delta_data.tween_count > 0 {
-                    for 0..delta_data.tween_count-1 {
-                        tween_change :=  delta_data.tween_changes[it];
-                        old_pos := tween_change.from * 64;
-                        new_pos := tween_change.to * 64;
-                        source = get_block_source(tween_change.value);
+            // Draw tweened blocks
+            if movement_tween {
+                print("tween!\n");
+                if turn_memory.curr.prev {
+                    print("prev!\n");
+                    if turn_memory.curr.prev.type == .MOVE {
+                        print("move!\n");
+                        delta_data := turn_memory.curr.prev.move_delta;
+                        if delta_data.tween_count > 0 {
+                            for 0..delta_data.tween_count-1 {
+                                tween_change := delta_data.tween_changes[it];
+                                old_pos := tween_change.from * 64;
+                                new_pos := tween_change.to * 64;
+                                source = get_block_source(tween_change.value);
 
-                        dest.x = xx lerp(cast(float) old_pos.x, cast(float) new_pos.x, tween_value);
-                        dest.y = xx lerp(cast(float) old_pos.y, cast(float) new_pos.y, tween_value);
-                        dest.w = 64;
-                        dest.h = 64;
-                        if get_block_type(tween_change.value) == .NUMBERED {
-                            source.h += 9;
-                            dest.h += 9 * 4;
+                                dest = Rect.{0, 0, 64, 64};
+                                dest.x = xx lerp(cast(float) old_pos.x, cast(float) new_pos.x, tween_value);
+                                dest.y = xx lerp(cast(float) old_pos.y, cast(float) new_pos.y, tween_value);
+                                if get_block_type(tween_change.value) == .NUMBERED {
+                                    source.h = 22;
+                                    dest.h -= 3 * 4;
+                                    dest.h += 9 * 4;
+                                }
+                                // if get_block_type(tween_change.value) == .NUMBERED {
+                                //     source.h += 9;
+                                //     dest.h += 9 * 4;
+                                // }
+                                draw_texture(source, dest, *sprites);
+                            }
                         }
-                        draw_texture(source, dest, *sprites);
+                    } else {
+                        print("Move type is: %\n", turn_memory.curr.type);
                     }
                 }
             }
@@ -388,6 +383,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
 
     if lighting_enabled == false || editor.editing_level {
         set_framebuffer(null);
+        glDisable(GL_DEPTH_TEST);
         
         uniform(texture_shader, "view", Matrix4_Identity);
         bind_texture(floor_buffer.tex);
@@ -396,108 +392,10 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         draw_texture(Rect.{0, 0, WINDOW_WIDTH, WINDOW_HEIGHT}, .{0, WINDOW_HEIGHT, WINDOW_WIDTH, -WINDOW_HEIGHT}, world_buffer.tex);
 
     } else {
-        /*
-        
-            Our goal is to take the full screen resolution output render of the entire world.
-            Then, we want to draw a low brightness version of that render. When drawing this
-            version, we want to use a mask layer as well. For all values that are white in the
-            mask, we want to draw the world layer at full brightness. Otherwise, we want to use
-            a dim brightness.
-
-            To do this, we draw the entire world. We also pass the mask and the uv of the mask
-            to the shader. For all the pixels within the mask portion, we multiply it with the uv.
-            Otherwise, the default value is the dim light, which is a uniform.
-
-            So in short, we have a uniform for the texture, a uniform for the mask, a uv for the
-            texture, a uv for the mask, and finally a uniform for the dim light.
-
-            To generate the light mask texture, we first start with the full texture of the shadow
-            layer. Then, we go onto a new framebuffer texture, and render the spotlight with the
-            shadow layer as a mask.
-        */
-        // Lighting
-        glDisable(GL_DEPTH_TEST);
-        set_framebuffer(*world_mesh.light_buffer);
-        clear_framebuffer(1, 1, 1, 0);
-
-        for index: 0..light_count-1 {
-            light := *lights[index];
-
-            set_framebuffer(*light.shadow_buffer);
-            clear_framebuffer(0, 0, 0, 0);
-
-            fb_projection := orthographic_projection_matrix(0, xx light.shadow_buffer.w, xx light.shadow_buffer.h, 0, -1, 1);
-
-            uniform(color_shader, "projection", *fb_projection);
-            light_color := Vector4.{1, 1, 1, 1};
-            uniform(color_shader, "color", light_color);
-            uniform(color_shader, "view", Matrix4_Identity);
-
-            glBindVertexArray(intermediate_vao);
-            glBindBuffer(GL_ARRAY_BUFFER, intermediate_vbo);
-            glBufferData(GL_ARRAY_BUFFER, size_of(Vertex(.UV_DISABLED)) * light.mesh.count, light.mesh.data, GL_STATIC_DRAW);
-            // position
-            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * size_of(float32), null);
-            glEnableVertexAttribArray(0);
-
-            glBindBuffer(GL_ARRAY_BUFFER, 0);
-            glDrawArrays(GL_TRIANGLE_FAN, 0, xx light.mesh.count);
-
-            uniform(mask_shader, "projection", fb_projection);
-            uniform(mask_shader, "view", Matrix4_Identity);
-            uniform(mask_shader, "dim_level", 0);
-            uniform(mask_shader, "blend_alpha", 1);
-            uniform(mask_shader, "blend_rgb", 1);
-
-            set_framebuffer(*light.light_buffer);
-            clear_framebuffer(0, 0, 0, 0);
-            sh_rect := Rect.{0, 0, xx light.light_buffer.tex.width, xx light.light_buffer.tex.height};
-            sh_dest := Rect.{0, 0, xx light.light_buffer.tex.width, xx light.light_buffer.tex.height};
-            draw_mask_textures(sh_rect, sh_dest, sh_rect, sh_dest, *light.shadow_buffer.tex, *spotlight);
-
-
-            uniform(texture_shader, "view", view);
-            uniform(texture_shader, "color_pass", light.color);
-            set_framebuffer(*world_mesh.light_buffer);
-            light_src := buffer_rect(light.light_buffer);
-            light_rect := get_light_rect(light);
-            draw_texture(light_src, light_rect, light.light_buffer.tex);
-            uniform(texture_shader, "color_pass", Vector4.{1,1,1,1});
-        }
-
-        set_framebuffer(null);
-        clear_framebuffer(0,0,0,1);
-        final_buffer_src := buffer_rect(world_mesh.light_buffer);
-        final_buffer_dest := final_buffer_src;
-        screen_source := buffer_rect(floor_buffer);
-        screen_dest := final_buffer_dest;
-        flip_rect(*screen_dest);
-        flip_rect(*final_buffer_dest);
-        dim_level := 0.5;
-        uniform(mask_shader, "projection", projection);
-        uniform(mask_shader, "dim_level", dim_level);
-        uniform(mask_shader, "blend_alpha", 0);
-        uniform(mask_shader, "view", Matrix4_Identity);
-        uniform(mask_shader, "blend_rgb", 0);
-
-        draw_mask_textures(screen_source, screen_dest, final_buffer_src, final_buffer_dest, *floor_buffer.tex, *world_mesh.light_buffer.tex);
-
-        uniform(texture_shader, "view", Matrix4_Identity);
-        uniform(texture_shader, "colormult", 1.0);
-        bind_texture(world_buffer.tex);
-        draw_texture(screen_source, screen_dest, world_buffer.tex);
-        uniform(texture_shader, "colormult", 1.0);
+        draw_lighting();
     }
 
     // GUI Elements
-    // Radial rewind texture
-    if rewinding {
-        uniform(texture_shader, "view", Matrix4_Identity);
-        bind_texture(ui_sprites);
-        radius : float32 = 32;
-        draw_radial_texture(.{0, 0, 32, 32}, .{WINDOW_WIDTH - radius*2, radius*2}, radius, rewind_meter / REWIND_TIME, *ui_sprites, intermediate_vao, intermediate_vbo);
-    }
-
     // Draw dialogue player
     if dialogue_state.open {
         uniform(texture_shader, "view", Matrix4_Identity);
@@ -576,9 +474,6 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         }
     }
 
-    // uniform(color_shader, "view", Matrix4_Identity);
-    // Layout_Draw(*ui_node, .{100, 100});
-
     ImGui.Render();
     ImGui_ImplSdl_RenderDrawLists(ImGui.GetDrawData());
     SDL_GL_SwapWindow(window);
@@ -586,15 +481,6 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     curr_frame_time := seconds_since_init();
     delta = xx (curr_frame_time - prev_frame_time);
     prev_frame_time = curr_frame_time;
-
-    // target_delta : float64 = (1.0 / FPS_MAX);
-    // if delta < target_delta {
-    //     ms := (target_delta - delta) * 1000.0;
-    //     SDL_Delay(xx ms);
-    //     prev_frame_time = seconds_since_init();
-    // }
-    // delta = xx target_delta;
-
     global_timer += xx delta;
 
 
