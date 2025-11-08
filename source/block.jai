@@ -23,7 +23,7 @@ get_block_source :: (block: Block) -> Rect {
     stride := cast(int)(context.game_state.sprites.width / 16.0);
     source = Rect.{xx ((block.id % stride) * 16), xx ((block.id / stride) * 16), 16, 16};
     if get_block_type(block) == .NUMBERED {
-        source.y += 3;
+        source.h = 26;
     }
 
     if block.id == 138 || block.id == 139 || block.id == 140 {
@@ -196,7 +196,13 @@ Block :: struct {
         FLIPPED_Y :: 8;
         TIMER :: 16;
         LINKED :: 32;
+        ROTATE_90 :: 64;
+        ROTATE_180 :: 128;
     }
+}
+
+get_block_rotation :: (block: Block) -> s32 {
+    return xx (block.flags & (.ROTATE_90 | .ROTATE_180));
 }
 
 // Linked blocks work as follows:

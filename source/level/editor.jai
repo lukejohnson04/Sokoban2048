@@ -347,7 +347,7 @@ draw_editor :: () {
             draw_list.AddQuad(draw_list, img_pos + p1, img_pos + p2, img_pos + p3, img_pos + p4, ImGui.GetColorU32(colf), 2);
         }
 
-        // Draw green rect around selected tile
+        // Draw red rect around selected tile
         p1 := ImGui.ImVec2.{editor.selected_block_pos.x * TILE_SIZE, editor.selected_block_pos.y * TILE_SIZE};
         p2 := p1 + .{TILE_SIZE, 0};
         p3 := p1 + .{TILE_SIZE, TILE_SIZE};

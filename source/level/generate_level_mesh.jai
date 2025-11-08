@@ -45,7 +45,7 @@ generate_screen_mesh :: () {
 
 }
 
-CHARACTER_DRAW_OFFSET :: 18;
+CHARACTER_DRAW_OFFSET :: 16;
 
 generate_screen_mesh :: (screen_pos: v2i, blocks: *type_of(Level.grid), mesh: *Level_Mesh, mesh_layer: *Mesh, generate_lights: bool, generate_tween: bool) {
     using context.game_state;
@@ -115,9 +115,7 @@ generate_screen_mesh :: (screen_pos: v2i, blocks: *type_of(Level.grid), mesh: *L
             source = get_block_source(block);
             dest = Rect.{xx (x * 64), xx (y * 64), 64, 64};
             if get_block_type(block) == .NUMBERED {
-                source.h = 22;
-                dest.h -= 3 * 4;
-                dest.h += 9 * 4;
+                dest.h += 10 * 4;
             }
             if block.id == 128 {
                 dest.y += CHARACTER_DRAW_OFFSET;

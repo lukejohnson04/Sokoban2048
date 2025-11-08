@@ -296,11 +296,8 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
 
             // Draw tweened blocks
             if movement_tween {
-                print("tween!\n");
                 if turn_memory.curr.prev {
-                    print("prev!\n");
                     if turn_memory.curr.prev.type == .MOVE {
-                        print("move!\n");
                         delta_data := turn_memory.curr.prev.move_delta;
                         if delta_data.tween_count > 0 {
                             for 0..delta_data.tween_count-1 {
@@ -313,9 +310,8 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
                                 dest.x = xx lerp(cast(float) old_pos.x, cast(float) new_pos.x, tween_value);
                                 dest.y = xx lerp(cast(float) old_pos.y, cast(float) new_pos.y, tween_value);
                                 if get_block_type(tween_change.value) == .NUMBERED {
-                                    source.h = 22;
-                                    dest.h -= 3 * 4;
-                                    dest.h += 9 * 4;
+                                    source.h = 26;
+                                    dest.h += 10 * 4;
                                 }
                                 // if get_block_type(tween_change.value) == .NUMBERED {
                                 //     source.h += 9;
@@ -324,8 +320,6 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
                                 draw_texture(source, dest, *sprites);
                             }
                         }
-                    } else {
-                        print("Move type is: %\n", turn_memory.curr.type);
                     }
                 }
             }
