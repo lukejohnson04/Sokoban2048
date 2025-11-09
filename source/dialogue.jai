@@ -170,8 +170,48 @@ generate_interaction_queue :: (state: *Dialogue_Player_State, block: Block) {
     count := level.dialogue_data.interaction_count[block.id][block.interaction_id];
     if block.id == {
         case 128; {
-            queue_text("You're welcome in my home as long as you don't smell of sewage.");
-            queue_text("My ex wife smelt like sewage all the time, and it really ruined the scent for me.");
+            if block.interaction_id == 2 {
+                // Corn
+                // See corn count
+                bound_begin, bound_end := get_camera_level_bounds(camera, *level);
+                corn_count := 0;
+                for x: bound_begin.x..bound_end.x {
+                    for y: bound_begin.y..bound_end.y {
+                        if level.grid[x][y].id == 141 {
+                            corn_count += 1;
+                        }
+                    }
+                }
+                if corn_count == 60 {
+                    if count == 0 {
+                        queue_text("I sure love my corn field! I got the best batch of corn in the whole underworld.");
+                        queue_text("Nothing brings me more joy than taking care of my corn batch, knowing it will feed the whole underworld.");
+                        queue_text("It sure would be a shame if something were to happen to it!");
+                    } else if count == 1 {
+                        queue_text("Boy, do I love this corn farm!");
+                        queue_text("I just love and adore it. I think I couldn't go on if something were to happen to it!");
+                    } else if count == 2 {
+                        queue_text("This corn farm brings me so much joy. It feeds my family, it brings food and peace throughout the underworld!");
+                        queue_text("I heard a story on the news of someone who's corn farm was destroyed with one of those giant corn erasers you see on TV!");
+                        queue_text("I think I do not have what it would take to go on in that situation. I just don't think I could do it. I love it too much.");
+                    } else {
+                        queue_text("I sure do love my corn farm!");
+                    }
+                } else if corn_count > 50 {
+                    queue_text("What?! No.. What are you doing?! Stop that!");
+                } else if corn_count > 30 {
+                    queue_text("Please... I have a family.");
+                    queue_text("I'm nothing without my corn farm!");
+                } else if corn_count > 10 {
+                    queue_text("Please just save me a drop. Save me something for myself.");
+                    queue_text("I'm begging you, please!");
+                } else {
+                    queue_text("...");
+                }
+            } else {
+                queue_text("You're welcome in my home as long as you don't smell of sewage.");
+                queue_text("My ex wife smelt like sewage all the time, and it really ruined the scent for me.");
+            }
         }
         // Guy in hidden house
         case 112; {
@@ -291,6 +331,10 @@ generate_interaction_queue :: (state: *Dialogue_Player_State, block: Block) {
                     queue_text("I knocked on her door to come out of her room, and she got all quiet as if she wasn't there.");
                     queue_text("I knocked another time and she started yelling, and name calling.");
                     queue_text("It hurts to care so much for someone and have them throw it in your face.");
+                }
+                case 15; {
+                    queue_text("GIANT CORN ERASER");
+                    queue_text("DO NOT USE UNDER ANY CIRCUMSTANCE, EXCEPT IN EMERGENCIES");
                 }
                 case 150; {
                     queue_text("I just want to go home.");

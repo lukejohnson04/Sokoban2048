@@ -14,6 +14,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     Remap_Context();
     context.game_state = game_state;
     using context.game_state;
+    input_state = input;
 
     if memory_initialized == false {
         ImGui.SetCurrentContext(imgui_context);

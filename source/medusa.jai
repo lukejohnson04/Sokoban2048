@@ -59,6 +59,9 @@ fire_medusa_cannon :: (cannon_pos: v2i) {
             level.grid[x][y].id = 144;
             break;
         }
+        if level.grid[x][y].id == 141 {
+            level.grid[x][y] = BLOCK_NONE;
+        }
         if type == .WALL {
             break;
         }

@@ -1,7 +1,10 @@
 
 Editor_State :: struct {
     selected_block : Block;
+    block_flags: Block.Flag;
     selected_block_pos : Vector2;
+    selected_block_size : Vector2;
+    dragging_block_selection := false;
 
     enabled : bool;
     #if BUILD == .DEBUG {
@@ -192,36 +195,59 @@ draw_editor :: () {
     ImGui.SeparatorText("Tools");
     {
         using ImGui.Col;
-        ImGui.PushStyleColor(ImGuiCol_Button, HSV(0.0, 0.6, 0.6));
-        ImGui.PushStyleColor(ImGuiCol_ButtonHovered, HSV(0, 0.7, 0.7));
-        ImGui.PushStyleColor(ImGuiCol_ButtonActive, HSV(0, 0.8, 0.8));
+        active := false;
+        set_color_if_active :: (tool: Editor_State.Editor_Tool) #expand {
+            if editor.tool == tool {
+                active = true;
+                ImGui.PushStyleColor(ImGuiCol_Button, HSV(0.0, 0.6, 0.6));
+                ImGui.PushStyleColor(ImGuiCol_ButtonHovered, HSV(0, 0.7, 0.7));
+                ImGui.PushStyleColor(ImGuiCol_ButtonActive, HSV(0, 0.8, 0.8));
+            }
+        }
+        pop_color_if_active :: () #expand {
+            if active {
+                active = false;
+                ImGui.PopStyleColor(3);
+            }
+        }
+
+        set_color_if_active(.BRUSH);
         if ImGui.Button("Brush") {
             editor.tool = .BRUSH;
+            editor.selected_block_size = .{1, 1};
         }
-        ImGui.PopStyleColor(3);
+        pop_color_if_active();
         ImGui.SameLine();
+        set_color_if_active(.SELECT);
         if ImGui.Button("Select") {
             editor.tool = .SELECT;
             editor.select_state = .NOT_STARTED;
         }
+        pop_color_if_active();
         ImGui.SameLine();
+        set_color_if_active(.MOVE);
         if ImGui.Button("Move") {
             if editor.tool == .SELECT && editor.select_state == .FINISHED {
                 editor.tool = .MOVE;
                 editor.move_state = .NOT_STARTED;
             }
         }
+        pop_color_if_active();
         ImGui.SameLine();
+        set_color_if_active(.FILL);
         if ImGui.Button("Fill") {
             editor.tool = .FILL;
         }
-
+        pop_color_if_active();
         ImGui.SameLine();
+        set_color_if_active(.STAMP);
+
         if ImGui.Button("Stamp") {
             if editor.copy_size != .{0, 0} {
                 editor.tool = .STAMP;
             }
         } 
+        pop_color_if_active();
 
         ImGui.PushStyleColor(ImGuiCol_Button, HSV(0.0, 0.6, 0.6));
         ImGui.PushStyleColor(ImGuiCol_ButtonHovered, HSV(0, 0.7, 0.7));
@@ -328,7 +354,28 @@ draw_editor :: () {
                 highlighted_block = xx (highlighted_xy.x + highlighted_xy.y * 16);
                 highlighted = true;
 
-                if ImGui.IsMouseDown(ImGui.MouseButton.Left) {
+                using context.game_state;
+                rmouse := ImGui.IsMouseDown(ImGui.MouseButton.Right);
+                if editor.dragging_block_selection == false {
+                    if rmouse {
+                        editor.dragging_block_selection = true;
+                        editor.selected_block_pos = highlighted_xy;                    
+                        editor.selected_block_size = .{1, 1};
+                    }
+                } else {
+                    if rmouse {
+                        editor.selected_block_size.x = highlighted_xy.x - editor.selected_block_pos.x + 1;
+                        editor.selected_block_size.y = highlighted_xy.y - editor.selected_block_pos.y + 1;
+                    } else {
+                        editor.dragging_block_selection = false;
+                        editor.tool = .STAMP;
+                        editor.copy_size = .{xx editor.selected_block_size.x, xx editor.selected_block_size.y};
+                        copy_tiles_from_tile_picker_into_copy_buffer(*editor.copy_buffer);
+                    }
+                }
+
+
+                if editor.dragging_block_selection == false && ImGui.IsMouseDown(ImGui.MouseButton.Left) {
                     block: Block;
                     block.id = xx highlighted_block;
                     editor.selected_block = block;
@@ -336,25 +383,37 @@ draw_editor :: () {
                 }
             }
         }
-        // Draw yellow rect around hovered tile
-        if highlighted && editor.selected_block_pos != highlighted_xy {
-            p1 := ImGui.ImVec2.{highlighted_xy.x * TILE_SIZE, highlighted_xy.y * TILE_SIZE};
+        if editor.dragging_block_selection || editor.selected_block_size.x > 1 || editor.selected_block_size.y > 1 {
+            using editor;
+            // Draw red rect around selected tile
+            p1 := ImGui.ImVec2.{selected_block_pos.x * TILE_SIZE, selected_block_pos.y * TILE_SIZE};
+            p2 := p1 + .{TILE_SIZE, 0} * selected_block_size.x;
+            p3 := p1 + .{TILE_SIZE, TILE_SIZE} * selected_block_size;
+            p4 := p1 + .{0, TILE_SIZE} * selected_block_size.y;
+            colf := Vector4.{0, 1, 0, 1};
+            
+            draw_list.AddQuad(draw_list, img_pos + p1, img_pos + p2, img_pos + p3, img_pos + p4, ImGui.GetColorU32(colf), 2);
+        } else {
+            // Draw yellow rect around hovered tile
+            if highlighted && editor.selected_block_pos != highlighted_xy {
+                p1 := ImGui.ImVec2.{highlighted_xy.x * TILE_SIZE, highlighted_xy.y * TILE_SIZE};
+                p2 := p1 + .{TILE_SIZE, 0};
+                p3 := p1 + .{TILE_SIZE, TILE_SIZE};
+                p4 := p1 + .{0, TILE_SIZE};
+                colf := Vector4.{1, 1, 0, 1};
+                
+                draw_list.AddQuad(draw_list, img_pos + p1, img_pos + p2, img_pos + p3, img_pos + p4, ImGui.GetColorU32(colf), 2);
+            }
+
+            // Draw red rect around selected tile
+            p1 := ImGui.ImVec2.{editor.selected_block_pos.x * TILE_SIZE, editor.selected_block_pos.y * TILE_SIZE};
             p2 := p1 + .{TILE_SIZE, 0};
             p3 := p1 + .{TILE_SIZE, TILE_SIZE};
             p4 := p1 + .{0, TILE_SIZE};
-            colf := Vector4.{1, 1, 0, 1};
+            colf := Vector4.{1, 0, 0, 1};
             
             draw_list.AddQuad(draw_list, img_pos + p1, img_pos + p2, img_pos + p3, img_pos + p4, ImGui.GetColorU32(colf), 2);
         }
-
-        // Draw red rect around selected tile
-        p1 := ImGui.ImVec2.{editor.selected_block_pos.x * TILE_SIZE, editor.selected_block_pos.y * TILE_SIZE};
-        p2 := p1 + .{TILE_SIZE, 0};
-        p3 := p1 + .{TILE_SIZE, TILE_SIZE};
-        p4 := p1 + .{0, TILE_SIZE};
-        colf := Vector4.{1, 0, 0, 1};
-        
-        draw_list.AddQuad(draw_list, img_pos + p1, img_pos + p2, img_pos + p3, img_pos + p4, ImGui.GetColorU32(colf), 2);
     }
     // Make sure flip is always synchronized with checkbox
     if get_block_type(editor.selected_block) != .NONE {
@@ -783,6 +842,38 @@ rotate_tiles :: (blocks: *type_of(Level.grid), $clockwise: bool) {
     editor.select_end.y = editor.select_start.y + selection_size.x - 1;
     level_mesh_needs_update = true;
 }
+
+copy_tiles_from_tile_picker_into_copy_buffer :: (copy_buffer: *type_of(Editor_State.copy_buffer)) {
+    using context.game_state;
+    start, end : v2i;
+    select_start := editor.selected_block_pos;
+    select_end := editor.selected_block_pos + editor.selected_block_size;
+    
+    start.x = xx min(select_end.x, select_start.x);
+    start.y = xx min(select_end.y, select_start.y);
+    end.x   = xx max(select_end.x, select_start.x);
+    end.y   = xx max(select_end.y, select_start.y);
+
+    selection_size := end - start;
+
+    if selection_size.x > EDITOR_MAX_COPY_SIZE || selection_size.y > EDITOR_MAX_COPY_SIZE {
+        print("ERROR: Selection too big to copy!\n");
+        return;
+    }
+
+    editor.copy_size = selection_size;
+    for x: 0..selection_size.x {
+        for y: 0..selection_size.y {
+            highlighted_xy := Vector2.{xx (select_start.x + x), xx (select_start.y + y)};
+            block: Block;
+            block.id = xx (highlighted_xy.x + highlighted_xy.y * 16);
+            block.flags = editor.block_flags;
+            editor.copy_buffer[x][y] = block;
+        }
+    }
+    level_mesh_needs_update = true;
+}
+// TODO: The stamp-from-tile-picker is 1x1 dimensions too large
 
 copy_tiles :: (blocks: *type_of(Level.grid), copy_buffer: *type_of(Editor_State.copy_buffer)) {
     using context.game_state;

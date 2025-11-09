@@ -101,6 +101,8 @@ Game_State :: struct {
     character_draw_buffer: Stack(Character_Draw_Params, 512);
 
     medusa_firings: Medusa_Fire_Array;
+
+    input_state: *Input_State;
     memory_initialized := false;
 }
 
