@@ -1,21 +1,10 @@
 MAX_TEXT_LENGTH :: 256;
 
-Dialogue_Node :: struct {
-    text_buffer: [MAX_TEXT_LENGTH] u8;
-    text_buffer_size := 0;
-
-    data_delta: Dialogue_Data_Delta;
-    type := Node_Type.DIALOGUE;
-
-    Node_Type :: enum #specified {
-        DIALOGUE :: 0;
-        DATA_DELTA :: 1;
-    }
-}
-
 Text_Buffer :: struct {
     memory: [MAX_TEXT_LENGTH] u8;
     size := 0;
+    speaker : u16 = 0;
+    draw_portrait_right := false;
     flip_open := false;
 }
 
@@ -68,8 +57,6 @@ dialogue_update :: (dialogue_state: *Dialogue_Player_State, input: *Input_State)
     }
 
     if do_action(.REDO) {
-        print("Line finished: %\n", dialogue_line_finished());
-
         if dialogue_line_finished() {
             interaction_len := 0;
             iter := context.game_state.turn_memory.curr.next;
@@ -77,10 +64,8 @@ dialogue_update :: (dialogue_state: *Dialogue_Player_State, input: *Input_State)
                 interaction_len += 1;
                 iter = iter.next;
             }
-            print("Len %\n", interaction_len);
 
             apply_turn();
-            print("applied turn\n");
         } else {
             dialogue_state.index = dialogue_state.buffer.size;
             return;
@@ -97,13 +82,6 @@ dialogue_update :: (dialogue_state: *Dialogue_Player_State, input: *Input_State)
     }
 }
 
-dialogue_queue_text :: (dialogue_state: *Dialogue_Player_State, text: string) {
-
-    // node := queue_add(*dialogue_state.nodes);
-    // memcpy(node.text_buffer.data, text.data, text.count);
-    // node.text_buffer_size = text.count;
-    // node.type = .DIALOGUE;
-}
 
 generate_interaction_queue :: (state: *Dialogue_Player_State, block: Block) {
     using context.game_state;
@@ -112,7 +90,7 @@ generate_interaction_queue :: (state: *Dialogue_Player_State, block: Block) {
     new_interaction := false;
     top := turn_memory.curr;
 
-    queue_text :: (text: string) #expand {
+    queue_text :: (text: string, speaker_id : u16 = 0, draw_portrait_right := false) #expand {
         if new_interaction == false || text.count == 0 {
             top.text.flip_open = true;
         }
@@ -126,6 +104,8 @@ generate_interaction_queue :: (state: *Dialogue_Player_State, block: Block) {
         assert(text.count < MAX_TEXT_LENGTH);
         memcpy(top.text.memory.data, text.data, text.count);
         top.text.size = text.count;
+        top.text.speaker = speaker_id;
+        top.text.draw_portrait_right = draw_portrait_right;
 
         top += 1;
         top.next = null;
@@ -151,13 +131,6 @@ generate_interaction_queue :: (state: *Dialogue_Player_State, block: Block) {
         top.prev = top - 1;
     }
 
-    Tile_Name :: enum u8 #specified {
-        HIDDEN_HOUSE_OLD_MAN :: 0;
-        ATLAS :: 8;
-        PURPLE_GUY :: 9;
-    }
-
-    using Tile_Name;
 
     if block.interaction_id == 10_000 {
         queue_text("Game has been saved.");
@@ -169,6 +142,40 @@ generate_interaction_queue :: (state: *Dialogue_Player_State, block: Block) {
 
     count := level.dialogue_data.interaction_count[block.id][block.interaction_id];
     if block.id == {
+        // Blue guy
+        case 240; {
+            if count == 0 {
+                queue_text("Oh, hey.", 240);
+                queue_text("Did you just get here too?", 240);
+                queue_text("Yeah. This is a strange place, huh?", 108, true);
+                queue_text("You're telling me! I walked by someone catatonic earlier.", 240);
+                queue_text("Literally just sitting on the ground with a blank stare. This place is full of weirdos.", 240);
+                queue_text("I just want to get out of here as soon as possible. I had plans with a lady friend.", 240);
+                queue_text("I think we must be in the same boat then.", 108, true);
+                queue_text("I mean, on the getting out of here part, not the lady friend part.", 108, true);
+                queue_text("Do you know if there's like a ferry or something that could take us off the island?", 108, true);
+                queue_text("I'm really not sure. This place is strange. I have no expectations.", 240);
+            } else if count == 1 {
+                queue_text("So what brought you to the island?", 108, true);
+                queue_text("I'm honestly not certain?", 240);
+                queue_text("I was on my boat trying to fall asleep. And then I woke up on the shore.", 240);
+                queue_text("So you're a sailor as well!", 108, true);
+                queue_text("Did everyone come here from shipwreck?", 108, true);
+                queue_text("I don't think I was shipwrecked.", 240);
+                queue_text("I have no idea where my boat and crew went.", 240);
+                queue_text("I walked along the shoreline to see if it washed up, but there was nothing.", 240);
+                queue_text("The waters were also smooth that night. I don't know how my boat could have sunk.", 240);
+                queue_text("I mean, if it did sink, there's always a chance you could have blacked out?", 108, true);
+                queue_text("I don't remember exactly how I got here either.", 108, true);
+                queue_text("Well, I fell overboard. And it was stormy.", 108, true);
+                queue_text("And now I'm here.", 108, true);
+                queue_text("I think it might be a while before we get to the bottom of this place.", 240);
+                queue_text("But regardless of the objective truth of the matter, I think it's best if we put our heads together when possible.", 240);
+                queue_text("I agree wholeheartedly.", 108, true);
+            } else {
+                queue_text("We've got to get out of this place.", 240);
+            }
+        }
         // Bell
         case 179; {
             queue_text("Bell sfx");

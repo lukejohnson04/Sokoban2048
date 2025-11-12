@@ -117,7 +117,7 @@ generate_screen_mesh :: (screen_pos: v2i, blocks: *type_of(Level.grid), mesh: *L
             if get_block_type(block) == .NUMBERED {
                 dest.h += 10 * 4;
             }
-            if block.id == 128 {
+            if block.id == 128 || block.id == 240 {
                 dest.y += CHARACTER_DRAW_OFFSET;
             }
 

@@ -132,24 +132,35 @@ draw_line :: (p1: Vector2, p2: Vector2, vao: GLuint, vbo: GLuint) {
     glBindVertexArray(0);
 }
 
-draw_texture :: (source: Rect, dest: Rect, tex: *Texture) {
+draw_texture :: (source: Rect, dest: Rect, tex: *Texture, flip_x := false, flip_y := false) {
     use_shader(context.game_state.texture_shader);
-    draw_texture(source, dest, tex, context.game_state.intermediate_vao, context.game_state.intermediate_vbo);
+    draw_texture(source, dest, tex, context.game_state.intermediate_vao, context.game_state.intermediate_vbo, flip_x = flip_x, flip_y = flip_y);
 }
 
-draw_texture :: (source: Rect, dest: Rect, tex: *Texture, vao: GLuint, vbo: GLuint) {
+draw_texture :: (source: Rect, dest: Rect, tex: *Texture, vao: GLuint, vbo: GLuint, flip_x := false, flip_y := false) {
     use_shader(context.game_state.texture_shader);
     bind_texture(tex.id);
-    draw_texture(source, dest, .{xx tex.width, xx tex.height}, vao, vbo);
+    draw_texture(source, dest, .{xx tex.width, xx tex.height}, vao, vbo, flip_x = flip_x, flip_y = flip_y);
 }
 
-draw_texture :: (source: Rect, dest: Rect, texture_size: v2i, vao: GLuint, vbo: GLuint) {
+draw_texture :: (source_rect: Rect, dest_rect: Rect, texture_size: v2i, vao: GLuint, vbo: GLuint, flip_x := false, flip_y := false) {
+    source := source_rect;
+    dest := dest_rect;
+    if flip_x {
+        dest.x += dest.w;
+        dest.w *= -1;
+    } if flip_y {
+        dest.y += dest.h;
+        dest.h *= -1;
+    }
     u1, u2, v1, v2 : float32;
     u1 = source.x / texture_size.x;
     u2 = (source.x + source.w) / texture_size.x;
     v1 = source.y / texture_size.y;
     v2 = (source.y + source.h) / texture_size.y;
 
+    // Z buffer shenanigans. This changes render order when using the depth buffer
+    // but doesn't mess up the way it draws because the projection is orthogonal
     z_pos := -(1.0 - (dest.y / (512 * 64.0)));
     vertices := float32.[
         dest.x,         dest.y,         z_pos,  u1, v1,

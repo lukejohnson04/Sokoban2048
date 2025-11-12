@@ -18,6 +18,12 @@
 // }
 
 
+get_block_source :: (id: u16) -> Rect {
+    block: Block;
+    block.id = id;
+    return get_block_source(block);
+}
+
 get_block_source :: (block: Block) -> Rect {
     source : Rect;
     stride := cast(int)(context.game_state.sprites.width / 16.0);
@@ -35,7 +41,7 @@ get_block_source :: (block: Block) -> Rect {
         source.x -= offset * 16;
         source.x += frame_num * 16;
         
-    } if block.id == 128 {
+    } if block.id == 128 || block.id == 240 {
         using context.game_state;
 
         if dialogue_state.open && dialogue_line_finished() == false {
@@ -136,6 +142,7 @@ get_block_type :: (block: Block) -> Block_Type {
         case 128; return .INTERACTABLE;
         case 179; return .INTERACTABLE;
         case 196; return .INTERACTABLE;
+        case 240; return .INTERACTABLE;
 
         case 144; return .WALL;
         case 145; return .BOULDER;

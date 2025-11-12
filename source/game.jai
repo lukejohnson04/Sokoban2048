@@ -397,13 +397,32 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         bind_texture(dialogue_player_texture);
         draw_texture(.{0, 0, 320, 180}, .{0, 0, WINDOW_WIDTH, WINDOW_HEIGHT}, *dialogue_player_texture, intermediate_vao, intermediate_vbo);
 
-        uniform(text_shader, "view", Matrix4_Identity);
-        uniform(text_shader, "color", .{1, 1, 1, 1});
         
         str: string;
         str.data = dialogue_state.buffer.memory.data;
         str.count = dialogue_state.index;
-        draw_text(str, .{64, 120}, *font_m5x7, intermediate_vao, intermediate_vbo, WINDOW_WIDTH - 200);
+
+        text_dest := Vector2.{64, 120};
+        PORTRAIT_SIZE :: 200.0;
+        PROTRAIT_MARGIN :: 40.0;
+        text_wrap := WINDOW_WIDTH - 200.0;
+        if dialogue_state.buffer.speaker != 0 {
+            portrait_dest := Vector2.{64, 100};
+            text_wrap -= PORTRAIT_SIZE + PROTRAIT_MARGIN;
+            if dialogue_state.buffer.draw_portrait_right {
+                portrait_dest.x += text_wrap + PROTRAIT_MARGIN;
+            } else {
+                text_dest.x += PORTRAIT_SIZE + PROTRAIT_MARGIN;
+            }
+            // Draw portrait
+            portrait_source := get_block_source(dialogue_state.buffer.speaker);
+            portrait_source.h = 11;
+            draw_texture(portrait_source, .{portrait_dest.x, portrait_dest.y, PORTRAIT_SIZE, (portrait_source.h / 16.0) * PORTRAIT_SIZE}, *sprites, flip_x = dialogue_state.buffer.draw_portrait_right);
+        }
+
+        uniform(text_shader, "view", Matrix4_Identity);
+        uniform(text_shader, "color", .{1, 1, 1, 1});
+        draw_text(str, text_dest, *font_m5x7, intermediate_vao, intermediate_vbo, xx text_wrap);
     }
 
     // Map
