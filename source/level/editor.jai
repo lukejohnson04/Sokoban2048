@@ -277,7 +277,7 @@ draw_editor :: () {
             }
             
             if ImGui.Button("Copy") {
-                copy_tiles(*level.grid, *editor.copy_buffer);
+                copy_tiles(get_current_layer(*editor, *level), *editor.copy_buffer);
             }
         }
     }
@@ -599,7 +599,7 @@ update_editor :: (input: *Input_State) {
         }
         case .STAMP; {
             if input.mouse_just_pressed {
-                stamp_tiles(*level.grid, *editor.copy_buffer);
+                stamp_tiles(get_current_layer(*editor, *level), *editor.copy_buffer);
             }
         }
         case .LINK; {
@@ -913,6 +913,16 @@ stamp_tiles :: (blocks: *type_of(Level.grid), copy_buffer: *type_of(Editor_State
     level_mesh_needs_update = true;
 }
 
+get_current_layer :: (editor: *Editor_State, level: *Level) -> *type_of(Level.grid) {
+    blocks: *type_of(Level.grid);
+    if editor.layer == 0 {
+        blocks = *level.grid;
+    } else if editor.layer == 1 {
+        blocks = *level.floor;
+    }
+    return blocks;
+}
+
 paint_fill :: (level: *Level, editor: *Editor_State, start_pos: v2i, start_block: Block) {
     field := cast(*Visibility_Field)New(Visibility_Field);
     for x: 0..level.dimensions.x-1 {
@@ -921,12 +931,8 @@ paint_fill :: (level: *Level, editor: *Editor_State, start_pos: v2i, start_block
         }
     }
 
-    blocks: *type_of(Level.grid);
-    if editor.layer == 0 {
-        blocks = *level.grid;
-    } else if editor.layer == 1 {
-        blocks = *level.floor;
-    }
+    blocks := get_current_layer(editor, level);
+
 
     queue := cast(*Queue(v2i, 1000))New(Queue(v2i, 1000));
     queue_add(queue, start_pos);

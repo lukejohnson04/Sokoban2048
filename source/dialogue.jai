@@ -169,6 +169,14 @@ generate_interaction_queue :: (state: *Dialogue_Player_State, block: Block) {
 
     count := level.dialogue_data.interaction_count[block.id][block.interaction_id];
     if block.id == {
+        // Bell
+        case 179; {
+            queue_text("Bell sfx");
+        }
+        // Sign in waiting room
+        case 196; {
+            queue_text("Welcome! Ring bell for service and someone will be with you shortly.");
+        }
         case 128; {
             if block.interaction_id == 2 {
                 // Corn

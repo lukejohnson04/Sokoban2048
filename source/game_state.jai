@@ -48,6 +48,8 @@ Game_State :: struct {
     note_echo : *Mix_Chunk;
     footsteps : [7]*Mix_Chunk;
 
+    shoreline_music: *Mix_Music;
+
     font_arial: Resource(Font);
     font_m5x7: Resource(Font);
 
@@ -171,6 +173,9 @@ on_startup :: () {
     photograph_song = Mix_LoadWAV("data/audio/photograph_song.ogg");
     note_normal = Mix_LoadWAV("data/audio/note_normal.ogg");
     note_echo = Mix_LoadWAV("data/audio/note_echo.ogg");
+
+    shoreline_music = Mix_LoadMUS("data/audio/shoreline.mp3");
+    // Mix_PlayMusic(shoreline_music, -1);
 
     turn_memory.curr = *turn_memory.turns[0];
 

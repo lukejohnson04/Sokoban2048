@@ -134,6 +134,8 @@ get_block_type :: (block: Block) -> Block_Type {
         case 9; return .SPIKED;
         case 10; return .PORTAL;
         case 128; return .INTERACTABLE;
+        case 179; return .INTERACTABLE;
+        case 196; return .INTERACTABLE;
 
         case 144; return .WALL;
         case 145; return .BOULDER;
