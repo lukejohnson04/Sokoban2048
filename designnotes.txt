@@ -410,14 +410,18 @@ Don't worry about the allegory too much. Just write how I feel!!!
 
 Combat System ideas
 
-Undertal e style but you can rotate your cursor guy
+Undertale style but you can rotate your cursor guy
 
 Turn based (like a generic RPG)
 Turn based tile based combat - almost like Xcom? You time your movements to dodge projectiles e.g. a fireball
 Undertale but you can rotate the character and shoot, like a bullet hell style
 
-
+Blocks that blast upward every few moves so you have to time movements to not be on top of it
 
 
 Music/audio:
 - Area with old timey bar music, sort of like django reinhardt, like the instrumental of styrofoam by lil ugly mane
+
+
+
+Combat is real time, puzzles are turn based

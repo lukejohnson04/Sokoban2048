@@ -15,9 +15,8 @@ Old_Level :: struct {
     dialogue_data: Dialogue_Data;
 }
 
-
 Old_Block :: struct {
-    id: u8;
+    id: u16;
     flags: Flag;
     interaction_id: u16;
     
@@ -37,6 +36,8 @@ Old_Block :: struct {
         FLIPPED_Y :: 8;
         TIMER :: 16;
         LINKED :: 32;
+        ROTATE_90 :: 64;
+        ROTATE_180 :: 128;
     }
 }
 
@@ -70,15 +71,21 @@ level_format_converter :: (level: *Level, old_level: *Old_Level) {
         for y: 0..level.dimensions.y-1 {
             level.grid[x][y] = .{};
             level.floor[x][y] = .{};
-            level.grid[x][y].id = xx old_level.grid[x][y].id;
-            level.grid[x][y].flags = xx old_level.grid[x][y].flags;
+            copy_block :: (block: *Block, old_block: *Old_Block) {
+                block.id = xx old_block.id;
+                block.flags = xx old_block.flags;
+                block.spawn_time = 0.0;
 
-            level.grid[x][y].interaction_id = old_level.grid[x][y].interaction_id;
+                block.interaction_id = old_block.interaction_id;
 
-            level.grid[x][y].turns_on_active = old_level.grid[x][y].turns_on_active;
-            level.grid[x][y].turns_on_inactive = old_level.grid[x][y].turns_on_inactive;
-            level.grid[x][y].timer_turns_left = old_level.grid[x][y].timer_turns_left;
-            level.grid[x][y].timer_is_solid = old_level.grid[x][y].timer_is_solid;
+                block.turns_on_active = old_block.turns_on_active;
+                block.turns_on_inactive = old_block.turns_on_inactive;
+                block.timer_turns_left = old_block.timer_turns_left;
+                block.timer_is_solid = old_block.timer_is_solid;
+            }
+
+            copy_block(*level.grid[x][y], *old_level.grid[x][y]);
+            copy_block(*level.floor[x][y], *old_level.floor[x][y]);
         }
     }
 }

@@ -112,8 +112,6 @@ level_on_play :: () {
     turn_count = 0;
     camera.zoom = 1;
 
-    map.display_map = true;
-    map.display_minimap = true;
     stats = .{};
 
     generate_portal_pairs();

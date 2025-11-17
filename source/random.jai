@@ -7,4 +7,3 @@ random_unit_vector :: () -> Vector2 {
     rand_num := Random.random_get_within_range(0, 360);
     return radians_to_vector(rand_num);
 }
-

@@ -12,6 +12,7 @@ BUILD :: BUILD_TYPE.DEBUG;
 update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Window, just_reloaded_dll: *bool, imgui_context: *ImGui.ImGuiContext) -> s32 {
     game_state := cast(*Game_State) game_memory;
     Remap_Context();
+    context.random_state = game_state.old_rand_state;
     context.game_state = game_state;
     using context.game_state;
     input_state = input;
@@ -172,6 +173,10 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
 
     if input.just_pressed[SDL_SCANCODE_G] {
         spawn_particle(*particle_system, Vector2.{xx (level.player_pos.x * 64), xx ((level.player_pos.y + 1)* 64) });
+    }
+
+    if level_hook.active && editor.editing_level == false {
+        hook_update(*level_hook);
     }
 
     // Render begin
@@ -499,6 +504,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
 
 
     reset_temporary_storage();
+    old_rand_state = context.random_state;
     return 1;
 }
 

@@ -142,6 +142,7 @@ get_block_type :: (block: Block) -> Block_Type {
         case 128; return .INTERACTABLE;
         case 179; return .INTERACTABLE;
         case 196; return .INTERACTABLE;
+        case 197; return .INTERACTABLE;
         case 240; return .INTERACTABLE;
 
         case 144; return .WALL;
@@ -188,6 +189,7 @@ Block :: struct {
     id: u16;
     flags: Flag;
     interaction_id: u16;
+    spawn_time: float;
     
     union {
         struct {

@@ -184,6 +184,9 @@ generate_interaction_queue :: (state: *Dialogue_Player_State, block: Block) {
         case 196; {
             queue_text("Welcome! Ring bell for service and someone will be with you shortly.");
         }
+        case 197; {
+            level_hook.active = true;
+        }
         case 128; {
             if block.interaction_id == 2 {
                 // Corn

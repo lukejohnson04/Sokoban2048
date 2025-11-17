@@ -99,13 +99,17 @@ Game_State :: struct {
     level_mesh_needs_update := false;
 
     player_flip := false;
+    health := 5;
 
     character_draw_buffer: Stack(Character_Draw_Params, 512);
 
     medusa_firings: Medusa_Fire_Array;
+    level_hook: Hook;
 
     input_state: *Input_State;
     memory_initialized := false;
+
+    old_rand_state: Random.Random_State;
 }
 
 
@@ -210,3 +214,4 @@ Hash :: #import "Hash";
 
 #load "save_load_game.jai";
 #load "ui.jai";
+#load "level/level_hooks.jai";
