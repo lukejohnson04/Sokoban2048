@@ -148,6 +148,7 @@ draw_editor :: () {
     
     if editor.editing_level == false {
         if ImGui.Button("Edit Level") {
+            level_hook.active = false;
             editor.editing_level = true;
             loaded = load_level(*level, xx level.name, *game_state.field);
             if loaded {

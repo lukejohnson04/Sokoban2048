@@ -97,6 +97,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
                         np := spawn_particle(*particle_system);
                         np.pos = Vector2.{xx (old_ppos.x * 64), xx (old_ppos.y* 64)};
                         np.pos += .{32, 72};
+                        np.pos.y -= 32;
                         np.pos -= reverse_dir_vec * 30;
                         np.life_length = 0.35;
                         np.vel = reverse_dir_vec * 60 + random_unit_vector() * 20;
@@ -177,6 +178,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
 
     if level_hook.active && editor.editing_level == false {
         hook_update(*level_hook);
+        tweens_update(*game_tweens);
     }
 
     // Render begin
@@ -347,6 +349,18 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
                         draw_texture(source, dest, *sprites);
                     }
                 }
+            }
+        }
+        // Draw sprites
+        if game_sprites.count > 0 {
+            for 0..game_sprites.count-1 {
+                print("Draw sprite!\n");
+                sprite := *game_sprites.sprites[it];
+                dest := Rect.{sprite.pos.x, sprite.pos.y, 64, 64};
+                dest.x -= dest.w * 0.5;
+                dest.y -= dest.h * 0.5;
+                print("Dest: %\n", dest);
+                draw_texture(sprite.rect, dest, *sprites);
             }
         }
     }
@@ -561,3 +575,4 @@ Sort :: #import "Sort";
 #load "assets/assets.jai";
 #load "light.jai";
 #load "map.jai";
+#load "tween.jai";

@@ -5,6 +5,11 @@ Texture :: struct {
     channels: s32;
 }
 
+Sprite :: struct {
+    rect: Rect;
+    pos: Vector2;
+}
+
 load_texture :: (path: string, log_errors := false) -> Texture, bool {
     tex: Texture;
 

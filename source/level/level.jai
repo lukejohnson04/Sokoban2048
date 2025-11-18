@@ -113,7 +113,7 @@ level_on_play :: () {
     camera.zoom = 1;
 
     stats = .{};
-
+    level_hook.active = false;
     generate_portal_pairs();
     
     render_map();
