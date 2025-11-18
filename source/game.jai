@@ -354,13 +354,13 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         // Draw sprites
         if game_sprites.count > 0 {
             for 0..game_sprites.count-1 {
-                print("Draw sprite!\n");
                 sprite := *game_sprites.sprites[it];
                 dest := Rect.{sprite.pos.x, sprite.pos.y, 64, 64};
+                dest.w *= sprite.scale.x;
+                dest.h *= sprite.scale.y;
                 dest.x -= dest.w * 0.5;
                 dest.y -= dest.h * 0.5;
-                print("Dest: %\n", dest);
-                draw_texture(sprite.rect, dest, *sprites);
+                draw_texture(sprite.rect, dest, *sprites, ordering = false);
             }
         }
     }

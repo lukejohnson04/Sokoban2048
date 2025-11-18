@@ -8,6 +8,7 @@ Texture :: struct {
 Sprite :: struct {
     rect: Rect;
     pos: Vector2;
+    scale: Vector2;
 }
 
 load_texture :: (path: string, log_errors := false) -> Texture, bool {
@@ -137,18 +138,18 @@ draw_line :: (p1: Vector2, p2: Vector2, vao: GLuint, vbo: GLuint) {
     glBindVertexArray(0);
 }
 
-draw_texture :: (source: Rect, dest: Rect, tex: *Texture, flip_x := false, flip_y := false) {
+draw_texture :: (source: Rect, dest: Rect, tex: *Texture, flip_x := false, flip_y := false, $ordering := true) {
     use_shader(context.game_state.texture_shader);
-    draw_texture(source, dest, tex, context.game_state.intermediate_vao, context.game_state.intermediate_vbo, flip_x = flip_x, flip_y = flip_y);
+    draw_texture(source, dest, tex, context.game_state.intermediate_vao, context.game_state.intermediate_vbo, flip_x = flip_x, flip_y = flip_y, ordering = ordering);
 }
 
-draw_texture :: (source: Rect, dest: Rect, tex: *Texture, vao: GLuint, vbo: GLuint, flip_x := false, flip_y := false) {
+draw_texture :: (source: Rect, dest: Rect, tex: *Texture, vao: GLuint, vbo: GLuint, flip_x := false, flip_y := false, $ordering := true) {
     use_shader(context.game_state.texture_shader);
     bind_texture(tex.id);
-    draw_texture(source, dest, .{xx tex.width, xx tex.height}, vao, vbo, flip_x = flip_x, flip_y = flip_y);
+    draw_texture(source, dest, .{xx tex.width, xx tex.height}, vao, vbo, flip_x = flip_x, flip_y = flip_y, ordering = ordering);
 }
 
-draw_texture :: (source_rect: Rect, dest_rect: Rect, texture_size: v2i, vao: GLuint, vbo: GLuint, flip_x := false, flip_y := false) {
+draw_texture :: (source_rect: Rect, dest_rect: Rect, texture_size: v2i, vao: GLuint, vbo: GLuint, flip_x := false, flip_y := false, $ordering := true) {
     source := source_rect;
     dest := dest_rect;
     if flip_x {
@@ -166,7 +167,10 @@ draw_texture :: (source_rect: Rect, dest_rect: Rect, texture_size: v2i, vao: GLu
 
     // Z buffer shenanigans. This changes render order when using the depth buffer
     // but doesn't mess up the way it draws because the projection is orthogonal
-    z_pos := -(1.0 - (dest.y / (512 * 64.0)));
+    z_pos := 0.0;
+    #if ordering {
+        z_pos = -(1.0 - (dest.y / (512 * 64.0)));
+    }
     vertices := float32.[
         dest.x,         dest.y,         z_pos,  u1, v1,
         dest.x+dest.w,  dest.y,         z_pos,  u2, v1,

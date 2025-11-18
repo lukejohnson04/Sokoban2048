@@ -75,7 +75,7 @@ hook_update :: (using hook: *Hook) {
             stage += 1;
         }
     } else if stage == 1 {
-        spawn_delta := 2.0;
+        spawn_delta := 1.25;
         spawn_cycles := 5;
         spawn_length := spawn_cycles * spawn_delta;
         if timer > spawn_delta {
@@ -85,16 +85,21 @@ hook_update :: (using hook: *Hook) {
             pos.x = xx (Random.random_get() % xx (end.x-start.x));
             pos.y = xx (Random.random_get() % xx (end.y-start.y));
             pos += start;
-            block := *level.floor[pos.x][pos.y];
-            block.* = .{};
-            block.id = 172;
+            for px: pos.x-2..pos.x+2 {
+                for py: pos.y-2..pos.y+2 {
+                    if abs(px - pos.x) + abs(py - pos.y) > 2 continue;
+                    block := *level.floor[px][py];
+                    block.* = .{};
+                    block.id = 172;
+                }
+            }
 
-            start_pos := Vector2.{pos.x * 64.0, (start.y - 6) * 64.0};
+            start_pos := Vector2.{pos.x * 64.0, (start.y - 10) * 64.0};
             start_pos += .{32, 32};
             dest := Vector2.{pos.x * 64.0, pos.y * 64.0};
             dest += .{32, 32};
-            meteor := add_sprite(.{.{192, 176, 32, 32}, dest});//Vector2.{pos.x * 64.0, (start.y - 6) * 64.0}});
-            create_tween(*meteor.pos.y, start=start_pos.y, end=dest.y, len=2.0);
+            meteor := add_sprite(.{.{192, 176, 32, 32}, dest, .{2, 2}});
+            create_tween(*meteor.pos.y, start=start_pos.y, end=dest.y, len=1.25);
 
             // Spawned last meteor
             if elapsed_total > spawn_delta * spawn_cycles {
