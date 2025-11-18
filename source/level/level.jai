@@ -114,6 +114,8 @@ level_on_play :: () {
 
     stats = .{};
     level_hook.active = false;
+    game_sprites.count = 0;
+    game_tweens.count = 0;
     generate_portal_pairs();
     
     render_map();
