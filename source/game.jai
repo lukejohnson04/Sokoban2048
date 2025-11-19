@@ -351,16 +351,25 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
                 }
             }
         }
+
         // Draw sprites
         if game_sprites.count > 0 {
             for 0..game_sprites.count-1 {
                 sprite := *game_sprites.sprites[it];
-                dest := Rect.{sprite.pos.x, sprite.pos.y, 64, 64};
+                dest := Rect.{sprite.pos.x, sprite.pos.y, sprite.rect.w, sprite.rect.h};
                 dest.w *= sprite.scale.x;
                 dest.h *= sprite.scale.y;
                 dest.x -= dest.w * 0.5;
                 dest.y -= dest.h * 0.5;
-                draw_texture(sprite.rect, dest, *sprites, ordering = false);
+
+                draw_texture(sprite.rect, dest, *sprites, ordering = false, rotation = sprite.rotation);
+            }
+        }
+        if game_lines.count > 0 {
+            for 0..game_lines.count-1 {
+                line := *game_lines.lines[it];
+                uniform(color_shader, "color", line.color);
+                draw_line_with_thickness(line.p1, line.p2, line.thickness);
             }
         }
     }

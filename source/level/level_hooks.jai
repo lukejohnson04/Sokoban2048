@@ -3,6 +3,8 @@ Hook :: struct {
     timer : float32 = 0.0;
     start_time : float32;
     active := false;
+    laser : *Sprite;
+    laser_line : *Line;
     stage := 0;
 }
 
@@ -17,7 +19,7 @@ hook_update :: (using hook: *Hook) {
     start, end := get_camera_level_bounds(camera, *level);
     start += .{6, 6};
     end -= .{6, 6};
-    stage = 1;
+    stage = 2;
     if stage == 0 {
         // Spawn
         spawn_delta := 1.0;
@@ -74,6 +76,8 @@ hook_update :: (using hook: *Hook) {
             timer = 0.0;
             stage += 1;
         }
+    
+    // Big meteor
     } else if stage == 1 {
         spawn_delta := 1.25;
         spawn_cycles := 5;
@@ -98,8 +102,9 @@ hook_update :: (using hook: *Hook) {
             start_pos += .{32, 32};
             dest := Vector2.{pos.x * 64.0, pos.y * 64.0};
             dest += .{32, 32};
-            meteor := add_sprite(.{.{192, 176, 32, 32}, dest, .{2, 2}});
+            meteor := add_sprite(.{.{192, 176, 32, 32}, dest, .{2, 2}, 0});
             create_tween(*meteor.pos.y, start=start_pos.y, end=dest.y, len=1.25);
+            create_tween(*meteor.rotation, start=0.0, end=5.0, len=1.25);
 
             // Spawned last meteor
             if elapsed_total > spawn_delta * spawn_cycles {
@@ -107,6 +112,32 @@ hook_update :: (using hook: *Hook) {
                 timer = 0;
                 start_time = xx global_timer;
             }
+        }
+
+    } else if stage == 2 {
+        if !laser {
+            laser_pos := Vector2.{(start.x + 3) * 64.0, start.y * 64.0};
+            laser = add_sprite(.{.{32, 144, 16, 16}, laser_pos, .{4, 4}, 0});
+            laser_line = add_line(.{laser_pos, .{0, 0}, .{0.6, 0.5, 0.5, 1.0}, 15.0});
+        }
+        
+        // Spinning state
+        if timer < 2.5 {
+            player_pos :=  Vector2.{xx level.player_pos.x * 64.0, xx level.player_pos.y * 64.0};
+            laser.rotation = lerp(laser.rotation, angle_to_point(laser.pos, player_pos) + PI, 0.05);
+
+            laser_line.p2 = laser_line.p1 + radians_to_vector(laser.rotation) * 1000.0;
+            if timer > 2.0 {
+                sub := timer - 2.0;
+                if sub < 0.125 || sub > 0.25 && sub < 0.375 {
+                    laser_line.color = .{0.9, 0.3, 0.3, 1.0};
+                } else {
+                    laser_line.color = .{0.8, 0.5, 0.5, 1.0};
+                }
+            }
+        } else if timer >= 2.5 && timer < 4.0 {
+            laser_line.thickness = 30.0;
+            laser_line.color = .{1, 0, 0, 1};
         }
     }
 }

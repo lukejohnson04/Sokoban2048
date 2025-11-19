@@ -9,6 +9,14 @@ Sprite :: struct {
     rect: Rect;
     pos: Vector2;
     scale: Vector2;
+    rotation: float = 0.0;
+}
+
+Line :: struct {
+    p1: Vector2;
+    p2: Vector2;
+    color: Vector4;
+    thickness: float;
 }
 
 load_texture :: (path: string, log_errors := false) -> Texture, bool {
@@ -138,20 +146,22 @@ draw_line :: (p1: Vector2, p2: Vector2, vao: GLuint, vbo: GLuint) {
     glBindVertexArray(0);
 }
 
-draw_texture :: (source: Rect, dest: Rect, tex: *Texture, flip_x := false, flip_y := false, $ordering := true) {
+draw_texture :: (source: Rect, dest: Rect, tex: *Texture, flip_x := false, flip_y := false, $ordering := true, rotation := 0.0) {
     use_shader(context.game_state.texture_shader);
-    draw_texture(source, dest, tex, context.game_state.intermediate_vao, context.game_state.intermediate_vbo, flip_x = flip_x, flip_y = flip_y, ordering = ordering);
+    draw_texture(source, dest, tex, context.game_state.intermediate_vao, context.game_state.intermediate_vbo, flip_x = flip_x, flip_y = flip_y, ordering = ordering, rotation = rotation);
 }
 
-draw_texture :: (source: Rect, dest: Rect, tex: *Texture, vao: GLuint, vbo: GLuint, flip_x := false, flip_y := false, $ordering := true) {
+draw_texture :: (source: Rect, dest: Rect, tex: *Texture, vao: GLuint, vbo: GLuint, flip_x := false, flip_y := false, $ordering := true, rotation := 0.0) {
     use_shader(context.game_state.texture_shader);
     bind_texture(tex.id);
-    draw_texture(source, dest, .{xx tex.width, xx tex.height}, vao, vbo, flip_x = flip_x, flip_y = flip_y, ordering = ordering);
+    draw_texture(source, dest, .{xx tex.width, xx tex.height}, vao, vbo, flip_x = flip_x, flip_y = flip_y, ordering = ordering, rotation = rotation);
 }
 
-draw_texture :: (source_rect: Rect, dest_rect: Rect, texture_size: v2i, vao: GLuint, vbo: GLuint, flip_x := false, flip_y := false, $ordering := true) {
+draw_texture :: (source_rect: Rect, dest_rect: Rect, texture_size: v2i, vao: GLuint, vbo: GLuint, flip_x := false, flip_y := false, $ordering := true, rotation := 0.0) {
     source := source_rect;
     dest := dest_rect;
+    
+
     if flip_x {
         dest.x += dest.w;
         dest.w *= -1;
@@ -169,13 +179,27 @@ draw_texture :: (source_rect: Rect, dest_rect: Rect, texture_size: v2i, vao: GLu
     // but doesn't mess up the way it draws because the projection is orthogonal
     z_pos := 0.0;
     #if ordering {
-        z_pos = -(1.0 - (dest.y / (512 * 64.0)));
+        z_pos = -(1.0 - (dest_rect.y / (512 * 64.0)));
     }
+
+    p1 := Vector2.{dest.x, dest.y};
+    p2 := Vector2.{dest.x+dest.w, dest.y};
+    p3 := Vector2.{dest.x+dest.w, dest.y+dest.h};
+    p4 := Vector2.{dest.x, dest.y+dest.h};
+
+    if rotation != 0.0 {
+        origin := Vector2.{dest.x + dest.w * 0.5, dest.y + dest.h * 0.5};
+        p1 = rotate(p1 - origin, rotation) + origin;
+        p2 = rotate(p2 - origin, rotation) + origin;
+        p3 = rotate(p3 - origin, rotation) + origin;
+        p4 = rotate(p4 - origin, rotation) + origin;
+    }
+
     vertices := float32.[
-        dest.x,         dest.y,         z_pos,  u1, v1,
-        dest.x+dest.w,  dest.y,         z_pos,  u2, v1,
-        dest.x+dest.w,  dest.y+dest.h,  z_pos,  u2, v2,
-        dest.x,         dest.y+dest.h,  z_pos,  u1, v2
+        p1.x, p1.y, z_pos,  u1, v1,
+        p2.x, p2.y, z_pos,  u2, v1,
+        p3.x, p3.y, z_pos,  u2, v2,
+        p4.x, p4.y, z_pos,  u1, v2
     ];
 
     glBindVertexArray(vao);

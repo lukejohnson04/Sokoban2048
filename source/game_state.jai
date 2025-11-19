@@ -109,6 +109,7 @@ Game_State :: struct {
     input_state: *Input_State;
     game_tweens: Tween_Data;
     game_sprites: Sprite_Data;
+    game_lines: Line_Data;
 
     memory_initialized := false;
 
@@ -122,6 +123,11 @@ Sprite_Data :: struct {
     MAX_SPRITE_COUNT :: 256;
 }
 
+Line_Data :: struct {
+    lines: [MAX_LINE_COUNT] Line;
+    count := 0;
+    MAX_LINE_COUNT :: 256;
+}
 
 add_sprite :: (n_sprite: Sprite) -> *Sprite {
     using context.game_state;
@@ -130,6 +136,15 @@ add_sprite :: (n_sprite: Sprite) -> *Sprite {
 
     sprite.* = n_sprite;
     return sprite;
+}
+
+add_line :: (n_line: Line) -> *Line {
+    using context.game_state;
+    line := *game_lines.lines[game_lines.count];
+    game_lines.count += 1;
+
+    line.* = n_line;
+    return line;
 }
 
 
