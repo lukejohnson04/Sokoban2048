@@ -17,24 +17,18 @@ add_number :: (value: int) -> int {
     return value + 1;
 }
 
-Tween_Data :: struct {
-    tweens: [MAX_TWEEN_COUNT] Tween;
-    count := 0;
-    MAX_TWEEN_COUNT :: 256;
-}
 
-
-tweens_update :: (tweens: *Tween_Data) {
+tweens_update :: (tweens: *Array(Tween)) {
     using context.game_state;
     ind := 0;
     while ind < tweens.count {
-        tween := *tweens.tweens[ind];
+        tween := *tweens.data[ind];
         tween.timer += delta;
         t := tween.timer / tween.len;
         if t > 1.0 {
             // delete
             tween.ptr = null;
-            tweens.tweens[ind] = tweens.tweens[tweens.count-1];
+            tweens.data[ind] = tweens.data[tweens.count-1];
             tweens.count -= 1;
             ind -= 1;
         } else {
@@ -46,14 +40,11 @@ tweens_update :: (tweens: *Tween_Data) {
 
 create_tween :: (ptr: *float, start: float, end: float, len: float) -> *Tween {
     using context.game_state;
-    tween := *game_tweens.tweens[game_tweens.count];
-    tween.* = .{};
-    game_tweens.count += 1;
-
+    tween: Tween;
     tween.ptr = ptr;
     tween.start = start;
     tween.end = end;
     tween.len = len;
     
-    return tween;
+    return add_to_array(*game_tweens, tween);
 }

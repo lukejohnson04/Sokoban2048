@@ -107,47 +107,14 @@ Game_State :: struct {
     level_hook: Hook;
 
     input_state: *Input_State;
-    game_tweens: Tween_Data;
-    game_sprites: Sprite_Data;
-    game_lines: Line_Data;
+    game_tweens: Array(Tween);
+    game_sprites: Array(Sprite);
+    game_lines: Array(Line);
 
     memory_initialized := false;
 
     old_rand_state: Random.Random_State;
 }
-
-
-Sprite_Data :: struct {
-    sprites: [MAX_SPRITE_COUNT] Sprite;
-    count := 0;
-    MAX_SPRITE_COUNT :: 256;
-}
-
-Line_Data :: struct {
-    lines: [MAX_LINE_COUNT] Line;
-    count := 0;
-    MAX_LINE_COUNT :: 256;
-}
-
-add_sprite :: (n_sprite: Sprite) -> *Sprite {
-    using context.game_state;
-    sprite := *game_sprites.sprites[game_sprites.count];
-    game_sprites.count += 1;
-
-    sprite.* = n_sprite;
-    return sprite;
-}
-
-add_line :: (n_line: Line) -> *Line {
-    using context.game_state;
-    line := *game_lines.lines[game_lines.count];
-    game_lines.count += 1;
-
-    line.* = n_line;
-    return line;
-}
-
-
 
 on_startup :: () {
     context.game_state.* = .{};

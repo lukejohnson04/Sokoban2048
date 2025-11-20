@@ -1,4 +1,17 @@
 
+Array :: struct($T: Type, $MAX_COUNT := 256) {
+    data: [MAX_COUNT] T;
+    count := 0;
+}
+
+add_to_array :: (array: *Array, a: array.T) -> *array.T {
+    res := *array.data[array.count];
+    array.count += 1;
+
+    res.* = a;
+    return res;
+}
+
 Stack :: struct($T: Type, $MAX_SIZE: s64 = 50) {
     memory: [MAX_SIZE]T;
     count: s64;
