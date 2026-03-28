@@ -11,9 +11,12 @@ Level :: struct {
     
     name : [MAX_LEVEL_NAME_LENGTH]u8;
     id : u32 = 0;
-    
+
     dialogue_data: Dialogue_Data;
+    
+    level_preview_names: [1024][MAX_LEVEL_PREVIEW_NAME_LENGTH] u8;
 }
+
 
 WORLD_ROOM_WIDTH :: (Level.MAX_WIDTH / SCREEN_TILE_WIDTH) + 1;
 WORLD_ROOM_HEIGHT :: (Level.MAX_HEIGHT / SCREEN_TILE_HEIGHT) + 1;

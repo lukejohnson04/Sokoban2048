@@ -269,7 +269,54 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
 
     use_shader(texture_shader);
 
+    editor_draw();
+    
+    use_shader(color_shader);
+    uniform(color_shader, "color", Vector4.{1, 0, 0, 1});
+    uniform(color_shader, "view", view);
+
+    level_screen_width := level.dimensions.x / SCREEN_TILE_WIDTH;
+    level_screen_height := level.dimensions.y / SCREEN_TILE_HEIGHT;
+
+    bound_begin, bound_end := get_camera_level_bounds(camera, *level);
+    for x: 0..level_screen_width-1 {
+        dimension_x : float32 = (SCREEN_TILE_WIDTH * 64);
+        for y: 0..level_screen_height-1 {
+            dimension_y : float32 = (SCREEN_TILE_HEIGHT * 64);
+            if SCREEN_TILE_WIDTH * (x+1) < xx bound_begin.x {
+                continue;
+            }
+            if SCREEN_TILE_HEIGHT * (y+1) < xx bound_begin.y {
+                continue;
+            }
+            if SCREEN_TILE_WIDTH * x > xx bound_end.x {
+                continue;
+            }
+            if SCREEN_TILE_HEIGHT * y > xx bound_end.y{
+                continue;
+            }
+            draw_rect_with_outline(CoordRect(Rect.{dimension_x * x, dimension_y * y, xx dimension_x, xx dimension_y}), 4);
+        }
+    }
+
+    if lighting_enabled == false || editor.editing_level {
+        set_framebuffer(null);
+        glDisable(GL_DEPTH_TEST);
+        
+        uniform(texture_shader, "view", Matrix4_Identity);
+        bind_texture(floor_buffer.tex);
+        draw_texture(Rect.{0, 0, WINDOW_WIDTH, WINDOW_HEIGHT}, .{0, WINDOW_HEIGHT, WINDOW_WIDTH, -WINDOW_HEIGHT}, floor_buffer.tex);
+        bind_texture(world_buffer.tex);
+        draw_texture(Rect.{0, 0, WINDOW_WIDTH, WINDOW_HEIGHT}, .{0, WINDOW_HEIGHT, WINDOW_WIDTH, -WINDOW_HEIGHT}, world_buffer.tex);
+
+    } else {
+        draw_lighting();
+    }
+
     if editor.editing_level == false {
+        uniform(texture_shader, "view", view);
+        use_shader(texture_shader);
+
         time := seconds_since_init();
         time_since_last_move := time - time_of_last_move;
         {
@@ -298,7 +345,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
                 source.x += 16;
                 source.w *= -1;
             }
-            dest.y += CHARACTER_DRAW_OFFSET;
+            // dest.y += CHARACTER_DRAW_OFFSET;
             bind_texture(sprites);
             draw_texture(source, dest, sprites);
 
@@ -318,8 +365,8 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
                                 dest.x = xx lerp(cast(float) old_pos.x, cast(float) new_pos.x, tween_value);
                                 dest.y = xx lerp(cast(float) old_pos.y, cast(float) new_pos.y, tween_value);
                                 if get_block_type(tween_change.value) == .NUMBERED {
-                                    source.h = 26;
-                                    dest.h += 10 * 4;
+                                    source.h = 16;
+                                    // dest.h += 10 * 4;
                                 }
                                 // if get_block_type(tween_change.value) == .NUMBERED {
                                 //     source.h += 9;
@@ -372,50 +419,18 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
                 draw_line_with_thickness(line.p1, line.p2, line.thickness);
             }
         }
-    }
-
-    editor_draw();
-    
-    use_shader(color_shader);
-    uniform(color_shader, "color", Vector4.{1, 0, 0, 1});
-    uniform(color_shader, "view", view);
-
-    level_screen_width := level.dimensions.x / SCREEN_TILE_WIDTH;
-    level_screen_height := level.dimensions.y / SCREEN_TILE_HEIGHT;
-
-    bound_begin, bound_end := get_camera_level_bounds(camera, *level);
-    for x: 0..level_screen_width-1 {
-        dimension_x : float32 = (SCREEN_TILE_WIDTH * 64);
-        for y: 0..level_screen_height-1 {
-            dimension_y : float32 = (SCREEN_TILE_HEIGHT * 64);
-            if SCREEN_TILE_WIDTH * (x+1) < xx bound_begin.x {
-                continue;
-            }
-            if SCREEN_TILE_HEIGHT * (y+1) < xx bound_begin.y {
-                continue;
-            }
-            if SCREEN_TILE_WIDTH * x > xx bound_end.x {
-                continue;
-            }
-            if SCREEN_TILE_HEIGHT * y > xx bound_end.y{
-                continue;
-            }
-            draw_rect_with_outline(CoordRect(Rect.{dimension_x * x, dimension_y * y, xx dimension_x, xx dimension_y}), 4);
+        block := level.grid[level.player_pos.x][level.player_pos.y];
+        if get_block_type(block) == .LEVEL_BLOCK {
+            assert(block.interaction_id < 1024);
+            uniform(text_shader, "view", Matrix4_Identity);
+            alpha_level: float32;
+            time_since_move : float32 = xx (prev_frame_time - time_of_last_move);
+            fade_in_time := 0.1;
+            alpha_level = min(1.0, time_since_move / fade_in_time);
+            uniform(text_shader, "color", .{1, 1, 1, alpha_level});
+            str := to_string(level.level_preview_names[block.interaction_id].data);
+            draw_text(str, {WINDOW_WIDTH / 2, WINDOW_HEIGHT * 0.8}, *font_m5x7, intermediate_vao, intermediate_vbo, scale = 2.0);
         }
-    }
-
-    if lighting_enabled == false || editor.editing_level {
-        set_framebuffer(null);
-        glDisable(GL_DEPTH_TEST);
-        
-        uniform(texture_shader, "view", Matrix4_Identity);
-        bind_texture(floor_buffer.tex);
-        draw_texture(Rect.{0, 0, WINDOW_WIDTH, WINDOW_HEIGHT}, .{0, WINDOW_HEIGHT, WINDOW_WIDTH, -WINDOW_HEIGHT}, floor_buffer.tex);
-        bind_texture(world_buffer.tex);
-        draw_texture(Rect.{0, 0, WINDOW_WIDTH, WINDOW_HEIGHT}, .{0, WINDOW_HEIGHT, WINDOW_WIDTH, -WINDOW_HEIGHT}, world_buffer.tex);
-
-    } else {
-        draw_lighting();
     }
 
     // GUI Elements

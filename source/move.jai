@@ -37,7 +37,6 @@ move_player :: (move: v2i) -> success: bool {
     new_pos := player_pos + move;
 
     success := false;
-
     delta_data : Move_Delta_Data;
     delta_data.old_player_pos = player_pos;
 
@@ -62,7 +61,7 @@ move_player :: (move: v2i) -> success: bool {
     } else if new_pos_type == .SPIKED {
         success = false;
     // Player walks into air or onto barrier block. Easy case.
-    } else if new_pos_type == .NONE || new_pos_type == .BLOCK_BARRIER {
+    } else if new_pos_type == .NONE || new_pos_type == .BLOCK_BARRIER || new_pos_type == .LEVEL_BLOCK {
         success = true;
         player_pos = new_pos;
     } else {

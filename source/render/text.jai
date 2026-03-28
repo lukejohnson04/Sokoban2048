@@ -28,7 +28,7 @@ Character_Draw_Params :: struct {
 }
 
 
-draw_text :: (text: string, position: Vector2, font: *Font, vao: GLuint, vbo: GLuint, max_width: int = 0, fancy_format: bool = false) {
+draw_text :: (text: string, position: Vector2, font: *Font, vao: GLuint, vbo: GLuint, max_width: int = 0, fancy_format: bool = false, scale := 1.0) {
     base_x  := position.x;
     base_y  := position.y;
     line_ht := font.size;           // baseline-to-baseline distance
@@ -110,12 +110,12 @@ draw_text :: (text: string, position: Vector2, font: *Font, vao: GLuint, vbo: GL
             code := text[j];
             ch   := face.characters[code];
 
-            w := ch.size.x;
-            h := ch.size.y;
-            x := xpos + ch.bearing.x;
-            y := ypos - ch.bearing.y;
+            w := ch.size.x * scale;
+            h := ch.size.y * scale;
+            x := xpos + (ch.bearing.x * scale);
+            y := ypos - (ch.bearing.y * scale);
 
-            stack_push(*context.game_state.character_draw_buffer, Character_Draw_Params.{ch.texture, xx x, xx y, w, h});
+            stack_push(*context.game_state.character_draw_buffer, Character_Draw_Params.{ch.texture, xx x, xx y, xx w, xx h});
             texture_size.x = max(texture_size.x, xx (x + w));
             texture_size.y = max(texture_size.y, xx (y + h));
             // glBindTexture(GL_TEXTURE_2D, ch.texture);
@@ -126,7 +126,7 @@ draw_text :: (text: string, position: Vector2, font: *Font, vao: GLuint, vbo: GL
             //     vao, vbo
             // );
 
-            xpos += ch.advance >> 6;
+            xpos += (ch.advance >> 6) * scale;
             j += 1;
         }
 
@@ -135,10 +135,12 @@ draw_text :: (text: string, position: Vector2, font: *Font, vao: GLuint, vbo: GL
         // ----------------------------------------------------------
         if has_space {
             space_ch := face.characters[32];
-            xpos    += space_ch.advance >> 6;
+            xpos    += (space_ch.advance >> 6) * scale;
             i       += 1;              // swallow the space
         }
     }
+
+    total_width := xpos - base_x;
 
     while stack_is_empty(*context.game_state.character_draw_buffer) == false {
         call := stack_pop(*context.game_state.character_draw_buffer);
@@ -146,7 +148,7 @@ draw_text :: (text: string, position: Vector2, font: *Font, vao: GLuint, vbo: GL
         glBindTexture(GL_TEXTURE_2D, texture);
         draw_texture(
             .{0, 0, xx w, xx h},
-            .{xx x, xx y, xx w, xx h},
+            .{xx (x - (total_width / 2.0)), xx y, xx w, xx h},
             v2i.{xx w, xx h},
             vao, vbo
         );

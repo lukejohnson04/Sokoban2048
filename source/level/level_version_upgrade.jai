@@ -3,17 +3,18 @@ Old_Level :: struct {
     MAX_WIDTH :: 512;
     MAX_HEIGHT :: 512;
     dimensions := v2i.{4, 4};
-    grid: [MAX_WIDTH][MAX_HEIGHT] Old_Block;
-    floor: [MAX_WIDTH][MAX_HEIGHT] Old_Block;
+    grid: [MAX_WIDTH][MAX_HEIGHT] Block;
+    floor: [MAX_WIDTH][MAX_HEIGHT] Block;
 
     player_pos := v2i.{0, 0};
     player_spawn_pos := v2i.{0, 0};
-
+    
     name : [MAX_LEVEL_NAME_LENGTH]u8;
     id : u32 = 0;
-    
+
     dialogue_data: Dialogue_Data;
 }
+
 
 Old_Block :: struct {
     id: u16;
@@ -57,37 +58,41 @@ one_time_conversion :: (level_name: string) {
     print("One time level conversion completed successfully.\n");
 }
 
+#run one_time_conversion("yowza");
 // #run one_time_conversion("open");
 
 level_format_converter :: (level: *Level, old_level: *Old_Level) {
-    level.dimensions = old_level.dimensions;
-    level.player_pos = old_level.player_pos;
-    level.player_spawn_pos = old_level.player_spawn_pos;
-    level.dialogue_data = old_level.dialogue_data;
-    level.name = old_level.name;
-    level.id = old_level.id;
+    level.* = {};
+    memcpy(level, old_level, size_of(Old_Level));
 
-    for x: 0..level.dimensions.x-1 {
-        for y: 0..level.dimensions.y-1 {
-            level.grid[x][y] = .{};
-            level.floor[x][y] = .{};
-            copy_block :: (block: *Block, old_block: *Old_Block) {
-                block.id = xx old_block.id;
-                block.flags = xx old_block.flags;
-                block.spawn_time = 0.0;
+    // level.dimensions = old_level.dimensions;
+    // level.player_pos = old_level.player_pos;
+    // level.player_spawn_pos = old_level.player_spawn_pos;
+    // level.dialogue_data = old_level.dialogue_data;
+    // level.name = old_level.name;
+    // level.id = old_level.id;
 
-                block.interaction_id = old_block.interaction_id;
+    // for x: 0..level.dimensions.x-1 {
+    //     for y: 0..level.dimensions.y-1 {
+    //         level.grid[x][y] = .{};
+    //         level.floor[x][y] = .{};
+    //         copy_block :: (block: *Block, old_block: *Old_Block) {
+    //             block.id = xx old_block.id;
+    //             block.flags = xx old_block.flags;
+    //             block.spawn_time = 0.0;
 
-                block.turns_on_active = old_block.turns_on_active;
-                block.turns_on_inactive = old_block.turns_on_inactive;
-                block.timer_turns_left = old_block.timer_turns_left;
-                block.timer_is_solid = old_block.timer_is_solid;
-            }
+    //             block.interaction_id = old_block.interaction_id;
 
-            copy_block(*level.grid[x][y], *old_level.grid[x][y]);
-            copy_block(*level.floor[x][y], *old_level.floor[x][y]);
-        }
-    }
+    //             block.turns_on_active = old_block.turns_on_active;
+    //             block.turns_on_inactive = old_block.turns_on_inactive;
+    //             block.timer_turns_left = old_block.timer_turns_left;
+    //             block.timer_is_solid = old_block.timer_is_solid;
+    //         }
+
+    //         copy_block(*level.grid[x][y], *old_level.grid[x][y]);
+    //         copy_block(*level.floor[x][y], *old_level.floor[x][y]);
+    //     }
+    // }
 }
 
 load_old_level :: (level: *Old_Level, name: string) -> bool {

@@ -58,6 +58,8 @@ generate_screen_mesh :: (screen_pos: v2i, blocks: *type_of(Level.grid), mesh: *L
                 if timer_is_active(block) == false {
                     continue;
                 }
+            } if get_block_type(block) == .LEVEL_SPAWN {
+                continue;
             }
             // Empty block
             is_player := level.player_pos.x == xx x && level.player_pos.y == xx y;
@@ -114,9 +116,9 @@ generate_screen_mesh :: (screen_pos: v2i, blocks: *type_of(Level.grid), mesh: *L
             source, dest: Rect;
             source = get_block_source(block);
             dest = Rect.{xx (x * 64), xx (y * 64), 64, 64};
-            if get_block_type(block) == .NUMBERED {
-                dest.h += 10 * 4;
-            }
+            // if get_block_type(block) == .NUMBERED {
+            //     dest.h += 10 * 4;
+            // }
             if block.id == 128 || block.id == 240 {
                 dest.y += CHARACTER_DRAW_OFFSET;
             }

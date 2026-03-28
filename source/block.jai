@@ -29,7 +29,7 @@ get_block_source :: (block: Block) -> Rect {
     stride := cast(int)(context.game_state.sprites.width / 16.0);
     source = Rect.{xx ((block.id % stride) * 16), xx ((block.id / stride) * 16), 16, 16};
     if get_block_type(block) == .NUMBERED {
-        source.h = 26;
+        source.h = 16;
     }
 
     if block.id == 138 || block.id == 139 || block.id == 140 {
@@ -139,6 +139,11 @@ get_block_type :: (block: Block) -> Block_Type {
         case 7; return .INTERACTABLE; // Save point specifically
         case 9; return .SPIKED;
         case 10; return .PORTAL;
+
+        case 272; return .LEVEL_BLOCK;
+        case 273; return .LEVEL_BLOCK;
+        case 274; return .LEVEL_BLOCK;
+
         case 128; return .INTERACTABLE;
         case 179; return .INTERACTABLE;
         case 196; return .INTERACTABLE;
@@ -257,6 +262,8 @@ Block_Type :: enum u8 #specified {
     SPIKED :: 8;
     PORTAL :: 9;
     MEDUSA_CANNON :: 10;
+    LEVEL_BLOCK :: 11;
+    LEVEL_SPAWN :: 12;
 }
 
 
