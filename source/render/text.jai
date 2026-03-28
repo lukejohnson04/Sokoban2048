@@ -28,7 +28,7 @@ Character_Draw_Params :: struct {
 }
 
 
-draw_text :: (text: string, position: Vector2, font: *Font, vao: GLuint, vbo: GLuint, max_width: int = 0, fancy_format: bool = false, scale := 1.0) {
+draw_text :: (text: string, position: Vector2, font: *Font, vao: GLuint, vbo: GLuint, max_width: int = 0, fancy_format: bool = false, scale := 1.0, centered := false) {
     base_x  := position.x;
     base_y  := position.y;
     line_ht := font.size;           // baseline-to-baseline distance
@@ -148,7 +148,7 @@ draw_text :: (text: string, position: Vector2, font: *Font, vao: GLuint, vbo: GL
         glBindTexture(GL_TEXTURE_2D, texture);
         draw_texture(
             .{0, 0, xx w, xx h},
-            .{xx (x - (total_width / 2.0)), xx y, xx w, xx h},
+            .{xx (x - ifx centered then (total_width / 2.0) else 0), xx y, xx w, xx h},
             v2i.{xx w, xx h},
             vao, vbo
         );

@@ -68,6 +68,12 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
 
     if !moved_this_turn && editor.editing_level == false && just_got_photograph == false && dialogue_state.open == false {
         // This is a shocking amount of code for how simple this task is
+        if do_action(Bindings.Action_Type.PLAY_LEVEL) {
+            block := level.grid[level.player_pos.x][level.player_pos.y];
+            if get_block_type(block) == .LEVEL_BLOCK && block.id != LOCKED_LEVEL_ID {
+                enter_level(*level, block.interaction_id);
+            }
+        }
         for Bindings.Action_Type.[.LEFT, .RIGHT, .UP, .DOWN] {
             if do_action(it) == false continue;
             move := v2i.{0, 0};
@@ -103,6 +109,10 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
                         np.vel = reverse_dir_vec * 60 + random_unit_vector() * 20;
                         np.size_start = 1.0;
                         np.size_end = 0.0;
+                    }
+
+                    if get_block_type(level.grid[level.player_pos.x][level.player_pos.y]) == .LEVEL_GOAL {
+                        finish_level(*level);
                     }
                 }
             }
@@ -428,8 +438,14 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
             fade_in_time := 0.1;
             alpha_level = min(1.0, time_since_move / fade_in_time);
             uniform(text_shader, "color", .{1, 1, 1, alpha_level});
-            str := to_string(level.level_preview_names[block.interaction_id].data);
-            draw_text(str, {WINDOW_WIDTH / 2, WINDOW_HEIGHT * 0.8}, *font_m5x7, intermediate_vao, intermediate_vbo, scale = 2.0);
+            str: string;
+
+            if block.id == LOCKED_LEVEL_ID {
+                str = "???";
+            } else {
+                str = to_string(level.level_preview_names[block.interaction_id].data);
+            }
+            draw_text(str, {WINDOW_WIDTH / 2, WINDOW_HEIGHT * 0.8}, *font_m5x7, intermediate_vao, intermediate_vbo, scale = 2.0, centered = true);
         }
     }
 

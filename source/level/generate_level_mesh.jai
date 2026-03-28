@@ -58,8 +58,6 @@ generate_screen_mesh :: (screen_pos: v2i, blocks: *type_of(Level.grid), mesh: *L
                 if timer_is_active(block) == false {
                     continue;
                 }
-            } if get_block_type(block) == .LEVEL_SPAWN {
-                continue;
             }
             // Empty block
             is_player := level.player_pos.x == xx x && level.player_pos.y == xx y;

@@ -139,6 +139,9 @@ get_block_type :: (block: Block) -> Block_Type {
         case 7; return .INTERACTABLE; // Save point specifically
         case 9; return .SPIKED;
         case 10; return .PORTAL;
+        
+        case 24; return .LEVEL_GOAL;
+        case 26; return .LEVEL_SPAWN;
 
         case 272; return .LEVEL_BLOCK;
         case 273; return .LEVEL_BLOCK;
@@ -217,6 +220,10 @@ Block :: struct {
     }
 }
 
+LOCKED_LEVEL_ID :: 272;
+UNBEATEN_LEVEL_ID :: 273;
+BEATEN_LEVEL_ID :: 274;
+
 get_block_rotation :: (block: Block) -> s32 {
     return xx (block.flags & (.ROTATE_90 | .ROTATE_180));
 }
@@ -264,6 +271,7 @@ Block_Type :: enum u8 #specified {
     MEDUSA_CANNON :: 10;
     LEVEL_BLOCK :: 11;
     LEVEL_SPAWN :: 12;
+    LEVEL_GOAL :: 13;
 }
 
 

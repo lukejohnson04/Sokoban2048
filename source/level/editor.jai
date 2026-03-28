@@ -457,11 +457,11 @@ draw_editor :: () {
     editor.selected_block.turns_on_active = xx editor.turns_on_active;
     editor.selected_block.turns_on_inactive = xx editor.turns_on_inactive;
 
-
     if editor.tool == .SELECT && editor.select_start == editor.select_end {
 
         block := level.grid[editor.select_start.x][editor.select_start.y];
         if get_block_type(block) == .LEVEL_BLOCK {
+            print("Id: %\n", block.interaction_id);
             ImGui.InputText("##level_preview_name", level.level_preview_names[block.interaction_id].data, MAX_LEVEL_PREVIEW_NAME_LENGTH);
         }
         

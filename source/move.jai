@@ -61,7 +61,7 @@ move_player :: (move: v2i) -> success: bool {
     } else if new_pos_type == .SPIKED {
         success = false;
     // Player walks into air or onto barrier block. Easy case.
-    } else if new_pos_type == .NONE || new_pos_type == .BLOCK_BARRIER || new_pos_type == .LEVEL_BLOCK {
+    } else if new_pos_type == .NONE || new_pos_type == .BLOCK_BARRIER || new_pos_type == .LEVEL_BLOCK || new_pos_type == .LEVEL_SPAWN || new_pos_type == .LEVEL_GOAL {
         success = true;
         player_pos = new_pos;
     } else {

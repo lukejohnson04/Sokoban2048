@@ -14,15 +14,18 @@ Action :: struct {
 }
 
 Bindings :: struct {
-    actions: [6] Action;
+    actions: [Action_Type.ACTION_COUNT] Action;
 
-    using Action_Type :: enum s32 #specified {
+    using Action_Type :: enum s32 {
         LEFT :: 0;
         RIGHT :: 1;
         UP :: 2;
         DOWN :: 3;
         UNDO :: 4;
         REDO :: 5;
+        PLAY_LEVEL :: 6;
+
+        ACTION_COUNT;
     }
 
     repeat_fast_repitition_threshold :: 25;
@@ -35,6 +38,7 @@ Bindings :: struct {
     actions[UP].keys[1] =     SDL_SCANCODE_W;
     actions[DOWN].keys[0] =   SDL_SCANCODE_DOWN;
     actions[DOWN].keys[1] =   SDL_SCANCODE_S;
+    actions[PLAY_LEVEL].keys[0] = SDL_SCANCODE_SPACE;
 
     // actions[LEFT].repeat_initial =  true; 
     // actions[RIGHT].repeat_initial = true;

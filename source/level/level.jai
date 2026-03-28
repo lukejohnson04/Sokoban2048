@@ -15,6 +15,8 @@ Level :: struct {
     dialogue_data: Dialogue_Data;
     
     level_preview_names: [1024][MAX_LEVEL_PREVIEW_NAME_LENGTH] u8;
+
+    current_level: u16;
 }
 
 
@@ -34,6 +36,59 @@ load_empty_level :: (level: *Level) {
     level.* = .{};
     level.dimensions = .{8, 8};
     level.id = 0;
+}
+
+enter_level :: (level: *Level, level_id: u16) {
+    assert(level_id != 0);
+    assert(level_id < 1024);
+    level.current_level = level_id;
+    for x: 0..level.dimensions.x-1 {
+        for y: 0..level.dimensions.y-1 {
+            block := level.grid[x][y];
+            if get_block_type(block) != .LEVEL_SPAWN continue;
+
+            if block.interaction_id == level_id {
+                level.player_pos = {x, y};
+                break x;
+            }
+        }
+    }
+}
+
+finish_level :: (level: *Level) {
+    assert(level.current_level != 0);
+    assert(level.current_level < 1024);
+    print("Beating level %\n", level.current_level);
+
+    for x: 0..level.dimensions.x-1 {
+        for y: 0..level.dimensions.y-1 {
+            block := level.grid[x][y];
+            if get_block_type(block) != .LEVEL_BLOCK continue;
+
+            if block.interaction_id == level.current_level {
+                level.player_pos = {x, y};
+                if block.id == UNBEATEN_LEVEL_ID {
+                    level.grid[x][y].id = BEATEN_LEVEL_ID;
+                    print("Chaing to be a beaten level!\n");
+                }
+                break x;
+            }
+        }
+    }
+    for x: 0..level.dimensions.x-1 {
+        for y: 0..level.dimensions.y-1 {
+            block := level.grid[x][y];
+            if get_block_type(block) != .LEVEL_BLOCK continue;
+
+            if block.interaction_id == level.current_level + 1 {
+                if block.id == LOCKED_LEVEL_ID {
+                    level.grid[x][y].id = UNBEATEN_LEVEL_ID;
+                    break x;
+                }
+            }
+        }
+    }
+    level.current_level = 0;
 }
 
 level_increase_dimensions :: (level: *Level, left: int, right: int, top: int, bottom: int) {
