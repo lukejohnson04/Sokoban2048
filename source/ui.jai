@@ -17,11 +17,9 @@ UIElement :: struct {
 
     position: Vector2;
     size: Vector2;
-    #place size;
-    struct {
-        width: float;
-        height: float;
-    }
+
+    #overlay (size.x) #as width: float;
+    #overlay (size.y) #as height: float;
 
     grow: Vector2;
 
@@ -157,7 +155,7 @@ Layout_Draw :: (head: *UIElement, position := Vector2.{0, 0}) {
         draw_rect(Rect.{p1 = position, p2 = position + head.size});
     }
     if head.type == .LABEL {
-        draw_texture(.{0, 0, xx head.texture.width, xx head.texture.height}, .{position.x, position.y + head.texture.height, xx head.texture.width, xx -head.texture.height}, *head.texture, context.game_state.intermediate_vao, context.game_state.intermediate_vbo);
+        draw_texture(.{0, 0, xx head.texture.width, xx head.texture.height}, .{position.x, position.y + head.texture.height, xx head.texture.width, xx -head.texture.height}, head.texture, context.game_state.intermediate_vao, context.game_state.intermediate_vbo);
     }
 
     for *head.children {

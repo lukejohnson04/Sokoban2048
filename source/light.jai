@@ -293,7 +293,7 @@ draw_lighting :: () {
 
         fb_projection := orthographic_projection_matrix(0, xx light.shadow_buffer.w, xx light.shadow_buffer.h, 0, -1, 1);
 
-        uniform(color_shader, "projection", *fb_projection);
+        uniform(color_shader, "projection", fb_projection);
         light_color := Vector4.{1, 1, 1, 1};
         uniform(color_shader, "color", light_color);
         uniform(color_shader, "view", Matrix4_Identity);

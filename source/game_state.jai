@@ -126,7 +126,7 @@ on_startup :: () {
     {
         time := current_time_monotonic();
         seed := to_microseconds(time);
-        Random.random_seed(<< (cast(*u64) *seed));
+        Random.random_seed((cast(*u64) *seed).*);
     }
 
     glGenBuffers(1, *intermediate_vbo);

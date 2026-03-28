@@ -57,6 +57,6 @@ particles_update_and_render :: (using system: *Particle_System) {
         dest.x -= dest.w / 2;
         dest.y -= dest.h / 2;
 
-        draw_texture(source, dest, *sprite_particles);
+        draw_texture(source, dest, sprite_particles);
     }
 }

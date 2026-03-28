@@ -45,7 +45,7 @@ generate_screen_mesh :: () {
 
 }
 
-CHARACTER_DRAW_OFFSET :: -16;
+CHARACTER_DRAW_OFFSET :: 24;
 
 generate_screen_mesh :: (screen_pos: v2i, blocks: *type_of(Level.grid), mesh: *Level_Mesh, mesh_layer: *Mesh, generate_lights: bool, generate_tween: bool) {
     using context.game_state;

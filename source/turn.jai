@@ -76,7 +76,7 @@ undo_turn :: () {
         // For example, we could change a block to air, and then later change that same block to another block.
         // We could calculate a simplified delta list when making a move, but we can also just reverse the
         // Order we undo them, which works just fine.
-        for #v2 < 0..turn_memory.curr.move_delta.count-1 {
+        for < 0..turn_memory.curr.move_delta.count-1 {
             delta := turn_memory.curr.move_delta.deltas[it];
             level.grid[delta.coord.x][delta.coord.y] = delta.old_value;
         }

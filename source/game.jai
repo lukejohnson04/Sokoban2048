@@ -300,7 +300,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
             }
             dest.y += CHARACTER_DRAW_OFFSET;
             bind_texture(sprites);
-            draw_texture(source, dest, *sprites);
+            draw_texture(source, dest, sprites);
 
             // Draw tweened blocks
             if movement_tween {
@@ -325,7 +325,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
                                 //     source.h += 9;
                                 //     dest.h += 9 * 4;
                                 // }
-                                draw_texture(source, dest, *sprites);
+                                draw_texture(source, dest, sprites);
                             }
                         }
                     }
@@ -339,14 +339,14 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
                 firing := medusa_firings.data[it];
                 source := Rect.{96, 144, 16, 16};
                 dest := Rect.{xx (firing.origin.x * 64), xx (firing.origin.y * 64), 64, 64};
-                draw_texture(source, dest, *sprites);
+                draw_texture(source, dest, sprites);
 
                 if firing.length > 0 {
                     // Draw laser
                     source = .{112, 144, 16, 16};
                     for 0..firing.length {
                         dest.x += 64;
-                        draw_texture(source, dest, *sprites);
+                        draw_texture(source, dest, sprites);
                     }
                 }
             }
@@ -362,7 +362,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
                 dest.x -= dest.w * 0.5;
                 dest.y -= dest.h * 0.5;
 
-                draw_texture(sprite.rect, dest, *sprites, ordering = false, rotation = sprite.rotation);
+                draw_texture(sprite.rect, dest, sprites, ordering = false, rotation = sprite.rotation);
             }
         }
         if game_lines.count > 0 {
@@ -423,7 +423,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     if dialogue_state.open {
         uniform(texture_shader, "view", Matrix4_Identity);
         bind_texture(dialogue_player_texture);
-        draw_texture(.{0, 0, 320, 180}, .{0, 0, WINDOW_WIDTH, WINDOW_HEIGHT}, *dialogue_player_texture, intermediate_vao, intermediate_vbo);
+        draw_texture(.{0, 0, 320, 180}, .{0, 0, WINDOW_WIDTH, WINDOW_HEIGHT}, dialogue_player_texture);
 
         
         str: string;
@@ -445,7 +445,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
             // Draw portrait
             portrait_source := get_block_source(dialogue_state.buffer.speaker);
             portrait_source.h = 11;
-            draw_texture(portrait_source, .{portrait_dest.x, portrait_dest.y, PORTRAIT_SIZE, (portrait_source.h / 16.0) * PORTRAIT_SIZE}, *sprites, flip_x = dialogue_state.buffer.draw_portrait_right);
+            draw_texture(portrait_source, .{portrait_dest.x, portrait_dest.y, PORTRAIT_SIZE, (portrait_source.h / 16.0) * PORTRAIT_SIZE}, sprites, flip_x = dialogue_state.buffer.draw_portrait_right);
         }
 
         uniform(text_shader, "view", Matrix4_Identity);
@@ -565,7 +565,7 @@ FPS_MAX : float64 : 60.0;
 #import "GL";
 #import "File";
 #import "stb_image";
-#import "freetype-2.12.1";
+#import "freetype";
 
 
 File_Utilities :: #import "File_Utilities";

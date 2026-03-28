@@ -35,15 +35,18 @@ Rect :: struct {
     w: float32;
     h: float32;
 
-    #place x;
-    pos: Vector2 = ---;
-    #place w;
-    size: Vector2 = ---;
+    #overlay (x) #as pos: Vector2;
+    // pos: Vector2 = ---;
+    #overlay (w) #as size: Vector2;
+    // #place w;
+    // size: Vector2 = ---;
 
-    #place x;
-    p1: Vector2 = ---;
-    #place w;
-    p2: Vector2 = ---;
+    #overlay (x) #as p1: Vector2;
+    #overlay (w) #as p2: Vector2;
+    // #place x;
+    // p1: Vector2 = ---;
+    // #place w;
+    // p2: Vector2 = ---;
 }
 
 DiscreteRect :: struct {
@@ -69,7 +72,7 @@ v2i :: v2(s64);
 v2f :: v2(float32);
 v2d :: v2(float64);
 
-rect_contains_point :: (using rect: iRect, px: s64, py: s64) -> bool {
+rect_contains_point :: (using rect: Rect, px: float, py: float) -> bool {
     if (!w || !h) {
         return false;
     }

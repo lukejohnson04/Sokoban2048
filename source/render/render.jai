@@ -146,12 +146,12 @@ draw_line :: (p1: Vector2, p2: Vector2, vao: GLuint, vbo: GLuint) {
     glBindVertexArray(0);
 }
 
-draw_texture :: (source: Rect, dest: Rect, tex: *Texture, flip_x := false, flip_y := false, $ordering := true, rotation := 0.0) {
+draw_texture :: (source: Rect, dest: Rect, tex: Texture, flip_x := false, flip_y := false, $ordering := true, rotation := 0.0) {
     use_shader(context.game_state.texture_shader);
     draw_texture(source, dest, tex, context.game_state.intermediate_vao, context.game_state.intermediate_vbo, flip_x = flip_x, flip_y = flip_y, ordering = ordering, rotation = rotation);
 }
 
-draw_texture :: (source: Rect, dest: Rect, tex: *Texture, vao: GLuint, vbo: GLuint, flip_x := false, flip_y := false, $ordering := true, rotation := 0.0) {
+draw_texture :: (source: Rect, dest: Rect, tex: Texture, vao: GLuint, vbo: GLuint, flip_x := false, flip_y := false, $ordering := true, rotation := 0.0) {
     use_shader(context.game_state.texture_shader);
     bind_texture(tex.id);
     draw_texture(source, dest, .{xx tex.width, xx tex.height}, vao, vbo, flip_x = flip_x, flip_y = flip_y, ordering = ordering, rotation = rotation);

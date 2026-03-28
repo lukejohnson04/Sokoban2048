@@ -51,7 +51,7 @@ level_increase_dimensions :: (level: *Level, left: int, right: int, top: int, bo
         old_dimension := level.dimensions.x;
         level.dimensions.x += left;
         if left > 0 {
-            for #v2 < x: 0..level.dimensions.x {
+            for < x: 0..level.dimensions.x {
                 for y: 0..level.dimensions.y-1 {
                     if x >= left {
                         level.grid[x][y] = level.grid[x - left][y];
@@ -78,7 +78,7 @@ level_increase_dimensions :: (level: *Level, left: int, right: int, top: int, bo
         level.dimensions.y += top;
         if top > 0 {
             for x: 0..level.dimensions.x-1 {
-                for #v2 < y: 0..level.dimensions.y-1 {
+                for < y: 0..level.dimensions.y-1 {
                     if y >= top {
                         level.grid[x][y] = level.grid[x][y - top];
                         level.floor[x][y] = level.floor[x][y - top];

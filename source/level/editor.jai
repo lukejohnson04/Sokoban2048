@@ -647,14 +647,14 @@ editor_draw :: () {
         block := editor.selected_block;
         source := get_block_source(block);
         dest := Rect.{xx (editor.mouse_tile.x * 64), xx (editor.mouse_tile.y * 64), 64, 64};
-        draw_texture(source, dest, *sprites, intermediate_vao, intermediate_vbo);
+        draw_texture(source, dest, sprites);
     }
 
     spawn : Block;
     spawn.id = 4;
     source := get_block_source(spawn);
     dest := Rect.{xx (level.player_spawn_pos.x*64), xx (level.player_spawn_pos.y*64), 64, 64};
-    draw_texture(source, dest, *sprites, intermediate_vao, intermediate_vbo);
+    draw_texture(source, dest, sprites);
 
     // Editor draw final pass
     use_shader(color_shader);
