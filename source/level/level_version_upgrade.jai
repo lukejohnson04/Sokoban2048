@@ -58,7 +58,7 @@ one_time_conversion :: (level_name: string) {
     print("One time level conversion completed successfully.\n");
 }
 
-#run one_time_conversion("yowza");
+// #run one_time_conversion("yowza");
 // #run one_time_conversion("open");
 
 level_format_converter :: (level: *Level, old_level: *Old_Level) {
