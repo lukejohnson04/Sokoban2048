@@ -106,8 +106,13 @@ generate_screen_mesh :: (screen_pos: v2i, blocks: *type_of(Level.grid), mesh: *L
                 }
             }
 
-            if editor.editing_level == false && field[x][y].visible == false {
-                // continue;
+            // Flag for rendering based on vfield
+            if is_currently_in_level(*level) {
+                if level.level_visibility_field[level.current_level] {
+                    if editor.editing_level == false && field[x][y].visible == false {
+                        continue;
+                    }
+                }
             }
 
             // Section for changing how the rendering based on the type of the block

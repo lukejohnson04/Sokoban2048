@@ -149,7 +149,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
 
     if moved_this_turn {
         level_mesh_needs_update = true;
-        // vfield_generate_flood_fill(*level, field);
+        vfield_generate_flood_fill(*level, field);
         // generate_level_mesh();
     }
 
@@ -168,7 +168,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     if level_mesh_needs_update || editor.editing_level == false {
         if editor.editing_level == false {
             // Disabled flood fill for now because we will have to rework the visibilty system anyways to account for walls
-            // vfield_generate_flood_fill(*level, field);
+            vfield_generate_flood_fill(*level, field);
         }
         if editor.editing_level == false {
             generate_level_mesh(true);

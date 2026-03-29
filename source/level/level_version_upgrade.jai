@@ -13,6 +13,13 @@ Old_Level :: struct {
     id : u32 = 0;
 
     dialogue_data: Dialogue_Data;
+    
+    level_preview_names: [1024][MAX_LEVEL_PREVIEW_NAME_LENGTH] u8;
+
+    current_level: u16;
+    grid_buffer: [MAX_WIDTH][MAX_HEIGHT] Block;
+
+    level_visibility_field: [1024] bool;
 }
 
 

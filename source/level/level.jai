@@ -17,6 +17,11 @@ Level :: struct {
     level_preview_names: [1024][MAX_LEVEL_PREVIEW_NAME_LENGTH] u8;
 
     current_level: u16;
+    grid_buffer: [MAX_WIDTH][MAX_HEIGHT] Block;
+
+    level_visibility_field: [1024] bool;
+
+    unlock_levels_on_load := false;
 }
 
 
@@ -53,12 +58,14 @@ enter_level :: (level: *Level, level_id: u16) {
             }
         }
     }
+
+    level.grid_buffer = level.grid;
 }
 
 finish_level :: (level: *Level) {
-    assert(level.current_level != 0);
+    assert(is_currently_in_level(level));
     assert(level.current_level < 1024);
-    print("Beating level %\n", level.current_level);
+    level.grid = level.grid_buffer;
 
     for x: 0..level.dimensions.x-1 {
         for y: 0..level.dimensions.y-1 {
@@ -163,6 +170,10 @@ is_in_bounds :: (pos: v2i, level: *Level) -> bool {
     return pos.x >= 0 && pos.y >= 0 && pos.x < level.dimensions.x && pos.y < level.dimensions.y;
 }
 
+is_currently_in_level :: (level: *Level) -> bool {
+    return level.current_level != 0;
+}
+
 level_on_play :: () {
     using context.game_state;
 
@@ -175,8 +186,28 @@ level_on_play :: () {
     game_sprites.count = 0;
     game_tweens.count = 0;
     generate_portal_pairs();
+
+    if level.unlock_levels_on_load {
+        unlock_all_levels(*level);
+    }
     
     render_map();
+}
+
+is_valid_level :: (level_id: u16) -> bool {
+    return level_id != 0 && level_id < 1024;
+}
+
+unlock_all_levels :: (level: *Level) {
+    for x: 0..level.dimensions.x-1 {
+        for y: 0..level.dimensions.y-1 {
+            block := level.grid[x][y];
+            if get_block_type(block) != .LEVEL_BLOCK continue;
+            if block.interaction_id == 0 continue;
+
+            level.grid[x][y].id = UNBEATEN_LEVEL_ID;
+        }
+    }
 }
 
 
