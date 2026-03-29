@@ -79,6 +79,10 @@ rect_contains_point :: (using rect: Rect, px: float, py: float) -> bool {
     return (px >= x && px <= x + w && py >= y && py <= y + h);
 }
 
+rect_contains_point :: (using rect: Rect, p: Vector2) -> bool {
+    return rect_contains_point(rect, p.x, p.y);
+}
+
 radians :: (degrees: float32) -> float32 {
     return degrees * (PI / 180.0);
 }

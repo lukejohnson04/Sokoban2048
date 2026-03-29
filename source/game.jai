@@ -33,8 +33,8 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
 
     frame_number += 1;
 
-    if input.is_pressed[SDL_SCANCODE_ESCAPE] {
-        input.just_closed_window = true;
+    if input.just_pressed[SDL_SCANCODE_ESCAPE] {
+        menu_open = !menu_open;
     }
 
     if input.just_closed_window {
@@ -66,7 +66,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         }
     }
 
-    if !moved_this_turn && editor.editing_level == false && just_got_photograph == false && dialogue_state.open == false {
+    if !moved_this_turn && editor.editing_level == false && just_got_photograph == false && dialogue_state.open == false && menu_open == false {
         // This is a shocking amount of code for how simple this task is
         if do_action(Bindings.Action_Type.PLAY_LEVEL) {
             block := level.grid[level.player_pos.x][level.player_pos.y];
@@ -527,6 +527,84 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
             bind_texture(map_display_buffer.tex);
             fin_dest := Rect.{map_dest.x, map_dest.y + map_dest.h, xx map_dest.w, xx -map_dest.h};
             draw_texture(.{0, 0, xx map_display_buffer.w, xx map_display_buffer.h}, fin_dest, map_display_buffer.tex);
+        }
+    }
+
+    // Pause Menu
+    if menu_open {
+        uniform(texture_shader, "view", Matrix4_Identity);
+        uniform(texture_shader, "view", Matrix4_Identity);
+        uniform(color_shader, "view", Matrix4_Identity);
+        uniform(color_shader, "color", {0, 0, 0, 0.5});
+        draw_rect(.{0, 0, WINDOW_WIDTH, WINDOW_HEIGHT});
+
+        button_click_id := -1;
+
+        spacing := 20.0;
+        for 0..3 {
+            button_src := Rect.{0, 32, 80, 32};
+            button_dest: Rect;
+            button_dest.w = 400;
+            button_dest.h = 80;
+
+            button_dest.x = WINDOW_WIDTH * 0.5 - button_dest.w * 0.5;
+            button_dest.y = 200;
+            button_dest.y += it * button_dest.h + (spacing * it);
+
+            text_color := Vector4.{0, 0, 0, 1};
+            if rect_contains_point(button_dest, get_mouse_position()) {
+                button_src.y += 32;
+                text_color = {1, 1, 1, 1};
+                if input.mouse_just_pressed {
+                    button_click_id = it;
+                }
+            }
+            draw_texture(button_src, button_dest, ui_sprites);
+            uniform(text_shader, "color", text_color);
+            text_dest := Vector2.{button_dest.x + button_dest.w * 0.5, button_dest.y + 50.0};
+
+            str: string;
+            if it == {
+                case 0; str = "Resume";
+                case 1; str = "Settings";
+                case 2; {
+                    if is_world(level.current_level) {
+                        str = "Back to hub";
+                    } else if is_currently_in_level(*level) {
+                        str = "Back to world";
+                    }
+                }
+                case 3; str = "Main menu";
+            }
+
+            draw_text(str, text_dest, *font_m5x7, intermediate_vao, intermediate_vbo, centered = true);
+        }
+
+        if button_click_id == {
+            case -1;
+            // Resume
+            case 0; {
+                menu_open = false;
+            }
+            // Settings
+            case 1; {
+
+            }
+            // Back to world
+            case 2; {
+                // Exit to world without beating level
+                if is_currently_in_level(*level) {
+                    menu_open = false;
+                    finish_level(*level, beaten = false);
+                } else if is_world(level.current_level) {
+                    menu_open = false;
+                    finish_level(*level);
+                }
+            }
+            // Main menu
+            case 3; {
+
+            }
         }
     }
 

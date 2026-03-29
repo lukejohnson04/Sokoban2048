@@ -93,7 +93,6 @@ Game_State :: struct {
 
     map: Map_State;
 
-    ui_node: UIElement;
     player_animation_timer: float;
 
     level_mesh_needs_update := false;
@@ -110,6 +109,9 @@ Game_State :: struct {
     game_tweens: Array(Tween);
     game_sprites: Array(Sprite);
     game_lines: Array(Line);
+
+    // ui_memory: UI_Memory;
+    menu_open := false;
 
     memory_initialized := false;
 
@@ -205,9 +207,8 @@ on_startup :: () {
     
     level_mesh_needs_update = true;
 
-    ui_node = Layout_Test();
+    // menu = Pause_Menu();
     // text_test = bake_text("Hello my good friend! How are you today?\nI'm doing so good!!!", *font_m5x7, intermediate_vao, intermediate_vbo, fancy_format = true);
-
 }
 
 REWIND_TIME :: 1.25;
@@ -216,5 +217,5 @@ MOVE_REPEAT_TIME :: 0.4;
 Hash :: #import "Hash";
 
 #load "save_load_game.jai";
-#load "ui.jai";
+// #load "ui.jai";
 #load "level/level_hooks.jai";

@@ -75,8 +75,8 @@ is_world :: (level_id: u16) -> bool {
     return level_id % 100 == 0;
 }
 
-finish_level :: (level: *Level) {
-    assert(is_currently_in_level(level));
+finish_level :: (level: *Level, beaten := true) {
+    assert(is_currently_in_level(level) || is_world(level.current_level));
     assert(level.current_level < 1024);
 
     // If we just finshed a world, check if it's beaten
@@ -131,13 +131,17 @@ finish_level :: (level: *Level) {
 
             if block.interaction_id == level.current_level {
                 level.player_pos = {x, y};
-                if block.id == UNBEATEN_LEVEL_ID {
-                    level.grid[x][y].id = BEATEN_LEVEL_ID;
+                if beaten {
+                    if block.id == UNBEATEN_LEVEL_ID {
+                        level.grid[x][y].id = BEATEN_LEVEL_ID;
+                    }
                 }
             }
-            if block.interaction_id == level.current_level + 1 {
-                if block.id == LOCKED_LEVEL_ID {
-                    level.grid[x][y].id = UNBEATEN_LEVEL_ID;
+            if beaten {
+                if block.interaction_id == level.current_level + 1 {
+                    if block.id == LOCKED_LEVEL_ID {
+                        level.grid[x][y].id = UNBEATEN_LEVEL_ID;
+                    }
                 }
             }
         }
@@ -219,7 +223,7 @@ is_in_bounds :: (pos: v2i, level: *Level) -> bool {
 }
 
 is_currently_in_level :: (level: *Level) -> bool {
-    return level.current_level != 0;
+    return level.current_level != 0 && is_world(level.current_level) == false;
 }
 
 level_on_play :: () {
