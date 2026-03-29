@@ -348,6 +348,7 @@ draw_editor :: () {
         if get_block_type(block) == .LEVEL_BLOCK && is_valid_level(block.interaction_id) {
             ImGui.InputText("Level preview name", level.level_preview_names[block.interaction_id].data, MAX_LEVEL_PREVIEW_NAME_LENGTH);
             ImGui.Checkbox("Visibility Field", *level.level_visibility_field[block.interaction_id]);
+            ImGui.Checkbox("World block", *level.grid[editor.select_start.x][editor.select_start.y].is_world_block);
         }
     }
 

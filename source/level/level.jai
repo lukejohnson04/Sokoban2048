@@ -47,6 +47,7 @@ enter_level :: (level: *Level, level_id: u16) {
     assert(level_id != 0);
     assert(level_id < 1024);
     level.current_level = level_id;
+
     for x: 0..level.dimensions.x-1 {
         for y: 0..level.dimensions.y-1 {
             block := level.grid[x][y];
@@ -62,11 +63,67 @@ enter_level :: (level: *Level, level_id: u16) {
     level.grid_buffer = level.grid;
 }
 
+is_in_world :: (level_id: u16, world_id: u16) -> bool {
+    return level_id > world_id && level_id < world_id + 100;
+}
+
+get_world :: (level_id: u16) -> u16 {
+    return level_id - (level_id % 100);
+}
+
+is_world :: (level_id: u16) -> bool {
+    return level_id % 100 == 0;
+}
+
 finish_level :: (level: *Level) {
     assert(is_currently_in_level(level));
     assert(level.current_level < 1024);
-    level.grid = level.grid_buffer;
 
+    // If we just finshed a world, check if it's beaten
+    // and if so unlock next world
+    if is_world(level.current_level) {
+        beaten_world := true;
+        for x: 0..level.dimensions.x-1 {
+            for y: 0..level.dimensions.y-1 {
+                block := level.grid[x][y];
+                if get_block_type(block) != .LEVEL_BLOCK continue;
+
+                if is_in_world(block.interaction_id, level.current_level) {
+                    if block.id == UNBEATEN_LEVEL_ID || block.id == LOCKED_LEVEL_ID {
+                        print("Locked!\n");
+                        beaten_world = false;
+                        break x;
+                    }
+                }
+            }
+        }
+
+        for x: 0..level.dimensions.x-1 {
+            for y: 0..level.dimensions.y-1 {
+                block := level.grid[x][y];
+                if get_block_type(block) != .LEVEL_BLOCK continue;
+                if block.interaction_id == level.current_level {
+                    level.player_pos = {x, y};
+                }
+
+                if beaten_world {
+                    if block.interaction_id == level.current_level {
+                        block.id = BEATEN_LEVEL_ID;
+                    }
+                    if block.interaction_id == level.current_level + 100 {
+                        if block.id == LOCKED_LEVEL_ID {
+                            block.id = UNBEATEN_LEVEL_ID;
+                        }
+                    }
+                }
+            }
+        }
+        return;
+    } else {
+        level.grid = level.grid_buffer;
+    }
+
+    // Beat level
     for x: 0..level.dimensions.x-1 {
         for y: 0..level.dimensions.y-1 {
             block := level.grid[x][y];
@@ -76,26 +133,17 @@ finish_level :: (level: *Level) {
                 level.player_pos = {x, y};
                 if block.id == UNBEATEN_LEVEL_ID {
                     level.grid[x][y].id = BEATEN_LEVEL_ID;
-                    print("Chaing to be a beaten level!\n");
                 }
-                break x;
             }
-        }
-    }
-    for x: 0..level.dimensions.x-1 {
-        for y: 0..level.dimensions.y-1 {
-            block := level.grid[x][y];
-            if get_block_type(block) != .LEVEL_BLOCK continue;
-
             if block.interaction_id == level.current_level + 1 {
                 if block.id == LOCKED_LEVEL_ID {
                     level.grid[x][y].id = UNBEATEN_LEVEL_ID;
-                    break x;
                 }
             }
         }
     }
-    level.current_level = 0;
+
+    level.current_level = (level.current_level) - (level.current_level % 100);
 }
 
 level_increase_dimensions :: (level: *Level, left: int, right: int, top: int, bottom: int) {

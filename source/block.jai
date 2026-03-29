@@ -206,6 +206,9 @@ Block :: struct {
             timer_turns_left: u8;
             timer_is_solid: bool;
         }
+        struct {
+            is_world_block := false;
+        }
     }
 
     Flag :: enum u8 #specified {
