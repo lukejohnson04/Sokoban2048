@@ -610,10 +610,11 @@ update_editor :: (input: *Input_State) {
                 if get_block_type(level.grid[mouse_tile.x][mouse_tile.y]) != .PORTAL {
                     return;
                 }
-                level.grid[editor.link_start.x][editor.link_start.y].interaction_id = 9999;
-                level.grid[mouse_tile.x][mouse_tile.y].interaction_id = 9999;
+                level.grid[editor.link_start.x][editor.link_start.y].interaction_id = xx (context.game_state.portal_list.count+2);
+                level.grid[mouse_tile.x][mouse_tile.y].interaction_id = xx (context.game_state.portal_list.count+2);
                 level_mesh_needs_update = true;
                 editor.link_state = .NOT_STARTED;
+                generate_portal_pairs();
             }
         }
     }

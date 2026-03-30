@@ -139,9 +139,13 @@ get_block_type :: (block: Block) -> Block_Type {
         case 7; return .INTERACTABLE; // Save point specifically
         case 9; return .SPIKED;
         case 10; return .PORTAL;
+
+        case 74; return .WALL;
         
         case 24; return .LEVEL_GOAL;
         case 26; return .LEVEL_SPAWN;
+
+        case 124; return .INTERACTABLE;
 
         case 272; return .LEVEL_BLOCK;
         case 273; return .LEVEL_BLOCK;

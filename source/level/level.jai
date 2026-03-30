@@ -44,8 +44,7 @@ load_empty_level :: (level: *Level) {
 }
 
 enter_level :: (level: *Level, level_id: u16) {
-    assert(level_id != 0);
-    assert(level_id < 1024);
+    assert(is_valid_level(level_id));
     level.current_level = level_id;
 
     for x: 0..level.dimensions.x-1 {
@@ -90,7 +89,6 @@ finish_level :: (level: *Level, beaten := true) {
 
                 if is_in_world(block.interaction_id, level.current_level) {
                     if block.id == UNBEATEN_LEVEL_ID || block.id == LOCKED_LEVEL_ID {
-                        print("Locked!\n");
                         beaten_world = false;
                         break x;
                     }

@@ -112,6 +112,11 @@ Game_State :: struct {
 
     // ui_memory: UI_Memory;
     menu_open := false;
+    main_menu := true;
+
+    DRAW_GAME := true;
+
+    save_file_exists := false;
 
     memory_initialized := false;
 
@@ -195,14 +200,16 @@ on_startup :: () {
             load_empty_level(*level);
         }    
     }
+
     #if BUILD == .RELEASE {
-        success := load_save(false);
-        if success == false {
+        save_file_exists = load_save(false);
+        if save_file_exists == false {
             // Start a new game
             load_level(*level, "open", *field, false);
         }
-        camera.pos.x = xx (level.player_pos.x * 64);
-        camera.pos.y = xx (level.player_pos.y * 64);
+        // camera.pos.x = xx (level.player_pos.x * 64);
+        // camera.pos.y = xx (level.player_pos.y * 64);
+        // Check for save file
     }
     
     level_mesh_needs_update = true;

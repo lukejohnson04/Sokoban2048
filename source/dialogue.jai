@@ -142,39 +142,24 @@ generate_interaction_queue :: (state: *Dialogue_Player_State, block: Block) {
 
     count := level.dialogue_data.interaction_count[block.id][block.interaction_id];
     if block.id == {
+        case 119; {
+            queue_text("Face it kid, you don't stand a chance.", 119);
+            queue_text("Only the LEGENDARY PUZZLE MASTER is capable of passing through the puzzle trials.", 119);
+        }
+        case 124; {
+            queue_text("I've been trying to tamper my way through the door for hours.", 124);
+            queue_text("Nothing I do will work!", 124);
+            queue_text("It must really be impossible to cheat in the puzzle trials!", 124);
+        }
+        case 128; {
+            queue_text("I've just barely finished the first few puzzles and am already stuck.", 128);
+            queue_text("I didn't think I would make it to the end, but I thought it would be fun to see how far I could get.", 128);
+            queue_text("The answer is not very far.", 128);
+        }
         // Blue guy
         case 240; {
-            if count == 0 {
-                queue_text("Oh, hey.", 240);
-                queue_text("Did you just get here too?", 240);
-                queue_text("Yeah. This is a strange place, huh?", 108, true);
-                queue_text("You're telling me! I walked by someone catatonic earlier.", 240);
-                queue_text("Literally just sitting on the ground with a blank stare. This place is full of weirdos.", 240);
-                queue_text("I just want to get out of here as soon as possible. I had plans with a lady friend.", 240);
-                queue_text("I think we must be in the same boat then.", 108, true);
-                queue_text("I mean, on the getting out of here part, not the lady friend part.", 108, true);
-                queue_text("Do you know if there's like a ferry or something that could take us off the island?", 108, true);
-                queue_text("I'm really not sure. This place is strange. I have no expectations.", 240);
-            } else if count == 1 {
-                queue_text("So what brought you to the island?", 108, true);
-                queue_text("I'm honestly not certain?", 240);
-                queue_text("I was on my boat trying to fall asleep. And then I woke up on the shore.", 240);
-                queue_text("So you're a sailor as well!", 108, true);
-                queue_text("Did everyone come here from shipwreck?", 108, true);
-                queue_text("I don't think I was shipwrecked.", 240);
-                queue_text("I have no idea where my boat and crew went.", 240);
-                queue_text("I walked along the shoreline to see if it washed up, but there was nothing.", 240);
-                queue_text("The waters were also smooth that night. I don't know how my boat could have sunk.", 240);
-                queue_text("I mean, if it did sink, there's always a chance you could have blacked out?", 108, true);
-                queue_text("I don't remember exactly how I got here either.", 108, true);
-                queue_text("Well, I fell overboard. And it was stormy.", 108, true);
-                queue_text("And now I'm here.", 108, true);
-                queue_text("I think it might be a while before we get to the bottom of this place.", 240);
-                queue_text("But regardless of the objective truth of the matter, I think it's best if we put our heads together when possible.", 240);
-                queue_text("I agree wholeheartedly.", 108, true);
-            } else {
-                queue_text("We've got to get out of this place.", 240);
-            }
+            queue_text("I've been stuck on this puzzle for months. I just can't quite get it.", 240);
+            queue_text("But I know I'll get it eventually. ", 240);
         }
         // Bell
         case 179; {
@@ -186,100 +171,6 @@ generate_interaction_queue :: (state: *Dialogue_Player_State, block: Block) {
         }
         case 197; {
             level_hook.active = true;
-        }
-        case 128; {
-            if block.interaction_id == 2 {
-                // Corn
-                // See corn count
-                bound_begin, bound_end := get_camera_level_bounds(camera, *level);
-                corn_count := 0;
-                for x: bound_begin.x..bound_end.x {
-                    for y: bound_begin.y..bound_end.y {
-                        if level.grid[x][y].id == 141 {
-                            corn_count += 1;
-                        }
-                    }
-                }
-                if corn_count == 60 {
-                    if count == 0 {
-                        queue_text("I sure love my corn field! I got the best batch of corn in the whole underworld.");
-                        queue_text("Nothing brings me more joy than taking care of my corn batch, knowing it will feed the whole underworld.");
-                        queue_text("It sure would be a shame if something were to happen to it!");
-                    } else if count == 1 {
-                        queue_text("Boy, do I love this corn farm!");
-                        queue_text("I just love and adore it. I think I couldn't go on if something were to happen to it!");
-                    } else if count == 2 {
-                        queue_text("This corn farm brings me so much joy. It feeds my family, it brings food and peace throughout the underworld!");
-                        queue_text("I heard a story on the news of someone who's corn farm was destroyed with one of those giant corn erasers you see on TV!");
-                        queue_text("I think I do not have what it would take to go on in that situation. I just don't think I could do it. I love it too much.");
-                    } else {
-                        queue_text("I sure do love my corn farm!");
-                    }
-                } else if corn_count > 50 {
-                    queue_text("What?! No.. What are you doing?! Stop that!");
-                } else if corn_count > 30 {
-                    queue_text("Please... I have a family.");
-                    queue_text("I'm nothing without my corn farm!");
-                } else if corn_count > 10 {
-                    queue_text("Please just save me a drop. Save me something for myself.");
-                    queue_text("I'm begging you, please!");
-                } else {
-                    queue_text("...");
-                }
-            } else {
-                queue_text("You're welcome in my home as long as you don't smell of sewage.");
-                queue_text("My ex wife smelt like sewage all the time, and it really ruined the scent for me.");
-            }
-        }
-        // Guy in hidden house
-        case 112; {
-            queue_text("Oh my goodness! Thank heavens you rescued me!");
-            queue_text("I spent so long trying to find the perfect hiding spot for a key to my house...");
-            queue_text("That I forgot I needed the key to get out as well!");
-            queue_text("I've been stuck here for so long, wasting away my years just patiently waiting for someone to come by.");
-            queue_text("Now that you've come by and restored my freedom, I'm now thinking nostalgically about the good times I had here.");
-            queue_text("I cannot hold my emotions any longer! I should have appreciated what I had before I lost it.");
-            queue_text("You know what? I think I'll stay put here after all!");
-        }
-        // Guy outside hot puzzle area
-        case 113; {
-            queue_text("I don't know why people even bother with some puzzles.");
-            queue_text("Solving puzzles is already so dangerous, and some of the solutions I've seen can be kind of... complicated?");
-            queue_text("I mean, not complicated. But like, involved.");
-            queue_text("I saw a friend of mine solve a puzzle once and the puzzle itself was kind of messed up.");
-            queue_text("As in, like, I couldn't tell if it was intentional or not, but to solve it he had to bring a block in from another room.");
-            queue_text("It's always felt a little tricky for me. Too many things to consider. Puzzle solving's just not for me I guess.");
-        }
-        // Blue boy
-        case 114; {
-            if block.interaction_id == {
-                // Top of town location
-                case 0; {
-                    queue_text("I don't care what my mom says. I am going to be the greatest block-pushing puzzle solver of all time!");
-                }
-                // Deep in puzzle location
-                case 1; {
-                    queue_text("Jeez lousie! I got so excited solving all these puzzles, that I ended up getting lost!");
-                    queue_text("Thanks for finding me. You are a gentleman and a scholar!");
-                }
-            }
-        }
-        // Kid and mom
-        case 115; #through;
-        case 116; {
-            queue_text("Mom look what I found!");
-            queue_text("Can I please keep him as a pet? Pleeeeease?");
-            queue_text("For the last time, no blocks allowed inside the house!");
-        }
-        // Guy with funny eyebrows
-        case 117; {
-            if block.interaction_id == {
-                case 0; {
-                    queue_text("I've been going through all the puzzles in the area and I can't help but ask myself...");
-                    queue_text("Is it all just puzzles?");
-                    queue_text("Are we the ones pushing boxes or is the mere concept of box pushing the one pushing us?");
-                }
-            }
         }
 
         // Sign
