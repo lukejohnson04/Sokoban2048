@@ -60,6 +60,7 @@ Game_State :: struct {
 
 
     camera := Camera2D.{.{WINDOW_WIDTH/2, WINDOW_HEIGHT/2}, 1};
+    camera_smooth := true;
     editor : Editor_State;
     dialogue_state : Dialogue_Player_State;
 

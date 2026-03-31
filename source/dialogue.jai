@@ -245,9 +245,15 @@ generate_interaction_queue :: (state: *Dialogue_Player_State, block: Block) {
                     queue_text("GIANT CORN ERASER");
                     queue_text("DO NOT USE UNDER ANY CIRCUMSTANCE, EXCEPT IN EMERGENCIES");
                 }
+
+                case 16; {
+                    queue_text("Prebirth");
+                }
+                
                 case 150; {
                     queue_text("I just want to go home.");
                 }
+                
             }
         }
 
