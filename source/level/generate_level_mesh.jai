@@ -49,10 +49,24 @@ CHARACTER_DRAW_OFFSET :: 24;
 
 generate_screen_mesh :: (screen_pos: v2i, blocks: *type_of(Level.grid), mesh: *Level_Mesh, mesh_layer: *Mesh, generate_lights: bool, generate_tween: bool) {
     using context.game_state;
+    // If smooth camera, we generate 9 chunks. Otherwise just 1
     start_x := SCREEN_TILE_WIDTH * screen_pos.x;
     start_y := SCREEN_TILE_HEIGHT * screen_pos.y;
-    for x: start_x..(SCREEN_TILE_WIDTH + start_x - 1) {
-        for y: start_y..(SCREEN_TILE_HEIGHT + start_y - 1) {
+    end_x := (SCREEN_TILE_WIDTH + start_x - 1);
+    end_y := (SCREEN_TILE_HEIGHT + start_y - 1);
+    if camera_smooth && editor.enabled == false {
+        start_x -= SCREEN_TILE_WIDTH;
+        end_x += SCREEN_TILE_WIDTH;
+        start_y -= SCREEN_TILE_HEIGHT;
+        end_y += SCREEN_TILE_HEIGHT;
+
+    }
+    start_x = max(start_x, 0);
+    start_y = max(start_y, 0);
+    end_x = min(end_x, Level.MAX_WIDTH);
+    end_y = min(end_y, Level.MAX_HEIGHT);
+    for x: start_x..end_x {
+        for y: start_y..end_y {
             block := blocks.*[x][y];
             if block.flags & .TIMER {
                 if timer_is_active(block) == false {

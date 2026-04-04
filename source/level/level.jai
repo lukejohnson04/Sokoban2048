@@ -45,6 +45,11 @@ load_empty_level :: (level: *Level) {
 
 enter_level :: (level: *Level, level_id: u16) {
     assert(is_valid_level(level_id));
+
+    // If we enter a level disable smooth camera
+    if is_world(level_id) == false {
+        context.game_state.camera_smooth = false;
+    }
     level.current_level = level_id;
 
     for x: 0..level.dimensions.x-1 {
@@ -77,6 +82,7 @@ is_world :: (level_id: u16) -> bool {
 finish_level :: (level: *Level, beaten := true) {
     assert(is_currently_in_level(level) || is_world(level.current_level));
     assert(level.current_level < 1024);
+
 
     // If we just finshed a world, check if it's beaten
     // and if so unlock next world
@@ -143,6 +149,12 @@ finish_level :: (level: *Level, beaten := true) {
                 }
             }
         }
+    }
+
+    // If we exit back to world enable smooth camera
+    if is_world(level.current_level) == false {
+        context.game_state.camera_smooth = true;
+        context.game_state.camera.pos = {level.player_pos.x * 64.0, level.player_pos.y * 64.0};
     }
 
     level.current_level = (level.current_level) - (level.current_level % 100);

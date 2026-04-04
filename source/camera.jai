@@ -89,9 +89,26 @@ get_current_screen_coord :: (level: *Level) -> v2i {
 lerp_player_camera :: (window: *SDL_Window) {
     using context.game_state;
     if editor.enabled == false || editor.editing_level == false {
-        screen_coord := get_current_screen_coord(*level);
-        camera.pos.x = screen_coord.x * WINDOW_WIDTH + WINDOW_WIDTH * 0.5;
-        camera.pos.y = screen_coord.y * WINDOW_HEIGHT + WINDOW_HEIGHT * 0.5;
+        if camera_smooth == false {
+            screen_coord := get_current_screen_coord(*level);
+            camera.pos.x = screen_coord.x * WINDOW_WIDTH + WINDOW_WIDTH * 0.5;
+            camera.pos.y = screen_coord.y * WINDOW_HEIGHT + WINDOW_HEIGHT * 0.5;
+        } else {
+
+            // camera deadzone
+            DEADZONE_PERCENT :: 0.065;
+            player_coord : Vector2;
+            player_coord.x = xx (level.player_pos.x * 64);
+            player_coord.y = xx (level.player_pos.y * 64);
+            camera_dest := player_coord + Vector2.{32, 32};
+            camera_step := 0.01;
+            if abs(camera.pos.x - camera_dest.x) > WINDOW_WIDTH * DEADZONE_PERCENT {
+                camera.pos.x = lerp(camera.pos.x, camera_dest.x, camera_step);
+            }
+            if abs(camera.pos.y - camera_dest.y) > WINDOW_HEIGHT * DEADZONE_PERCENT {
+                camera.pos.y = lerp(camera.pos.y, camera_dest.y, camera_step);
+            }
+        }
 
     } else if (SDL_GetWindowFlags(window) & SDL_WINDOW_INPUT_FOCUS) != 0 && editor.move_camera_with_mouse {
         DEBUG_CAMERA_SPEED := 12.0 * (1.0 / camera.zoom);
@@ -100,10 +117,6 @@ lerp_player_camera :: (window: *SDL_Window) {
         DEADZONE_HEIGHT := WINDOW_HEIGHT * DEADZONE_PERCENT;
 
         mouse_pos := get_mouse_position();
-
-        // if mouse_pos.x <= 0 || mouse_pos.y <= 0 || mouse_pos.y >= WINDOW_HEIGHT-1 || mouse_pos.x >= WINDOW_WIDTH-1 {
-        //     return;
-        // }
         
         if mouse_pos.x >= WINDOW_WIDTH - DEADZONE_WIDTH {
             camera.pos.x += DEBUG_CAMERA_SPEED;
@@ -116,22 +129,4 @@ lerp_player_camera :: (window: *SDL_Window) {
             camera.pos.y -= DEBUG_CAMERA_SPEED;
         }
     }
-    return;
-
-    /*
-    // camera deadzone
-    if editor.enabled == false || editor.editing_level == false {
-        DEADZONE_PERCENT :: 0.05;
-        player_coord : Vector2;
-        player_coord.x = xx (level.player_pos.x * 64);
-        player_coord.y = xx (level.player_pos.y * 64);
-        camera_dest := player_coord + Vector2.{32, 32};
-        if abs(camera.pos.x - camera_dest.x) > WINDOW_WIDTH * DEADZONE_PERCENT {
-            camera.pos.x = lerp(camera.pos.x, camera_dest.x, 0.008);
-        }
-        if abs(camera.pos.y - camera_dest.y) > WINDOW_HEIGHT * DEADZONE_PERCENT {
-            camera.pos.y = lerp(camera.pos.y, camera_dest.y, 0.008);
-        }
-
-    */
 }
