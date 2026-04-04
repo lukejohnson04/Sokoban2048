@@ -25,6 +25,8 @@ Editor_State :: struct {
     move_camera_with_mouse: bool;
     show_portal_connections: bool;
 
+    brush_state := Editor_Brush_State.NOT_STARTED;
+
     select_state := Editor_Select_State.NOT_STARTED;
     select_start : v2i;
     select_end : v2i;
@@ -54,6 +56,10 @@ Editor_State :: struct {
 
     // For rotating or other random junk
     temp_buffer : [EDITOR_MAX_COPY_SIZE][EDITOR_MAX_COPY_SIZE] Block;
+    change_stack : Stack_Circular(Move_Delta, 100000);
+    action_stack : Stack_Circular(Editor_Action, 1000);
+    current_action : Editor_Action;
+
 
     Editor_Tool :: enum {
         BRUSH;
@@ -62,6 +68,11 @@ Editor_State :: struct {
         FILL;
         STAMP;
         LINK;
+    }
+
+    Editor_Brush_State :: enum {
+        NOT_STARTED;
+        STARTED;
     }
 
     Editor_Select_State :: enum {
@@ -80,6 +91,13 @@ Editor_State :: struct {
         NOT_STARTED;
         STARTED;
     }
+}
+
+Editor_Action :: struct {
+    change_count := 0;
+    layer := 0;
+    old_player_spawn_pos: v2i;
+    new_player_spawn_pos: v2i;
 }
 
 EDITOR_MAX_COPY_SIZE :: 256;
@@ -486,6 +504,12 @@ update_editor :: (input: *Input_State) {
         camera_zoom(*camera, get_mouse_position(), zoom_factor);
     }
 
+    if (input.is_pressed[SDL_SCANCODE_LCTRL] && input.just_pressed[SDL_SCANCODE_Z]) || (input.is_pressed[SDL_SCANCODE_Z] && input.just_pressed[SDL_SCANCODE_LCTRL]) {
+        // Undo
+        undo_action();
+        return;
+    }
+
     blocks : *type_of(Level.grid);
     if editor.layer == 0 {
         blocks = *level.grid;
@@ -497,13 +521,20 @@ update_editor :: (input: *Input_State) {
 
     if editor.tool == {
         case .BRUSH; {
-            if input.mouse_pressed || input.rmouse_pressed || input.mwheel_pressed {
-                if is_in_bounds(mouse_tile, *level) {
-                    // Spawn blocks have special functionality and don't show up in game
+            // Start brush stroke
+            if editor.brush_state == .NOT_STARTED && (input.mouse_just_pressed || input.rmouse_just_pressed || input.mwheel_just_pressed) && is_in_bounds(mouse_tile, *level) {
+                editor.brush_state = .STARTED;
+                start_action();
+            } if editor.brush_state == .STARTED {
+                if input.mouse_just_released || input.rmouse_just_released || input.mwheel_just_released {
+                    editor.brush_state = .NOT_STARTED;
+                    end_action();
+                } else {
                     if get_block_type(editor.selected_block) == .PLAYER_SPAWN {
-                        level.player_spawn_pos = .{mouse_tile.x, mouse_tile.y};
-                    } else {
+                        change_player_spawn(mouse_tile);
+                    } else if is_in_bounds(mouse_tile, *level) {
                         if blocks == *level.floor {
+                            // Floor tiles must not have hitboxes
                             if get_block_type(editor.selected_block) != .NONE {
                                 return;
                             }
@@ -513,22 +544,17 @@ update_editor :: (input: *Input_State) {
                             new_block.flags |= Block.Flag.GOAL;
                         } else if input.mwheel_pressed || input.is_pressed[SDL_SCANCODE_LALT] {
                             new_block.flags |= Block.Flag.VANISH_GOAL;
-                        // } if input.is_pressed[SDL_SCANCODE_LCTRL] {
-                        //     new_block.flags |= Block.Flag.TIMER;
-                        //     new_block.timer_turns_left = 0;
-                        //     new_block.turns_on_active = cast(u8)editor.turns_on_active;
-                        //     new_block.turns_on_inactive = cast(u8)editor.turns_on_inactive;
-                        //     new_block.timer_is_solid = true;
                         }
+
                         if blocks.*[mouse_tile.x][mouse_tile.y] != new_block {
-                            blocks.*[mouse_tile.x][mouse_tile.y] = new_block;
+                            change_block(*blocks.*[mouse_tile.x][mouse_tile.y], new_block, mouse_tile);
                             level_mesh_needs_update = true;
                         }
                     }
                 }
             }
         }
-        case .FILL; {            
+        case .FILL; {
             if input.mouse_pressed || input.rmouse_pressed || input.mwheel_pressed {
                 if is_in_bounds(mouse_tile, *level) {
                     paint_fill(*level, *editor, mouse_tile, editor.selected_block);                    
@@ -907,7 +933,60 @@ get_current_layer :: (editor: *Editor_State, level: *Level) -> *type_of(Level.gr
     return blocks;
 }
 
+start_action :: () {
+    using context.game_state;
+    editor.current_action = {};
+    editor.current_action.layer = editor.layer;
+    editor.current_action.old_player_spawn_pos = level.player_spawn_pos;
+    editor.current_action.new_player_spawn_pos = level.player_spawn_pos;
+}
+
+
+change_player_spawn :: (pos: v2i) {
+    using context.game_state;
+    editor.current_action.new_player_spawn_pos = level.player_spawn_pos;
+    level.player_spawn_pos = pos;
+}
+
+change_block :: (block: *Block, value: Block, coord: v2i) {
+    using context.game_state;
+    old_value := block.*;
+    block.* = value;
+
+    move: Move_Delta;
+    move.coord = coord;
+    move.old_value = old_value;
+    move.new_value = value;
+    stack_push(*editor.change_stack, move);
+    editor.current_action.change_count += 1;
+}
+
+end_action :: () {
+    using context.game_state;
+    stack_push(*editor.action_stack, editor.current_action);
+    editor.current_action = {};
+}
+
+undo_action :: () {
+    using context.game_state;
+    assert(editor.action_stack.count > 0);
+    action := stack_pop(*editor.action_stack);
+
+    editor.layer = action.layer;
+    blocks := get_current_layer(*editor, *level);
+    for 0..action.change_count-1 {
+        delta := stack_pop(*editor.change_stack);
+        blocks.*[delta.coord.x][delta.coord.y] = delta.old_value;
+    }
+    level_mesh_needs_update = true;
+
+    level.player_spawn_pos = action.old_player_spawn_pos;
+}
+
+
 paint_fill :: (level: *Level, editor: *Editor_State, start_pos: v2i, start_block: Block) {
+    start_action();
+
     field := cast(*Visibility_Field)New(Visibility_Field);
     for x: 0..level.dimensions.x-1 {
         for y: 0..level.dimensions.y-1 {
@@ -962,6 +1041,7 @@ paint_fill :: (level: *Level, editor: *Editor_State, start_pos: v2i, start_block
     for x: 0..level.dimensions.x-1 {
         for y: 0..level.dimensions.y-1 {
             if field.*[x][y].visible {
+                // change_block(*blocks.*[x][y], start_block);
                 blocks.*[x][y] = start_block;
             }
         }
@@ -970,4 +1050,6 @@ paint_fill :: (level: *Level, editor: *Editor_State, start_pos: v2i, start_block
     free(queue);
     
     context.game_state.level_mesh_needs_update = true;
+    
+    end_action();
 }

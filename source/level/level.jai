@@ -24,7 +24,6 @@ Level :: struct {
     unlock_levels_on_load := false;
 }
 
-
 WORLD_ROOM_WIDTH :: (Level.MAX_WIDTH / SCREEN_TILE_WIDTH) + 1;
 WORLD_ROOM_HEIGHT :: (Level.MAX_HEIGHT / SCREEN_TILE_HEIGHT) + 1;
 
