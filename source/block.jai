@@ -146,6 +146,7 @@ get_block_type :: (block: Block) -> Block_Type {
         case 26; return .LEVEL_SPAWN;
 
         case 124; return .INTERACTABLE;
+        case 143; return .WALL;
 
         case 272; return .LEVEL_BLOCK;
         case 273; return .LEVEL_BLOCK;
@@ -295,6 +296,8 @@ Block_Type :: enum u8 #specified {
 // Then, we hardcode the necessary lookups in some method.
 
 FIRST_NUMBERED_BLOCK_ID : u16 : 8;
+TILE_SEED : u16 : 142;
+TILE_PLANT : u16 : 143;
 MEDUSA_ID_BEGIN :: 146;
 MEDUSA_ID_END :: 150;
 

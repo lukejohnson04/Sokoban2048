@@ -35,6 +35,7 @@ move_player :: (move: v2i) -> success: bool {
     using context.game_state;
     using level;
     new_pos := player_pos + move;
+    old_player_pos := player_pos;
 
     success := false;
     delta_data : Move_Delta_Data;
@@ -63,7 +64,6 @@ move_player :: (move: v2i) -> success: bool {
     // Player walks into air or onto barrier block. Easy case.
     } else if new_pos_type == .NONE || new_pos_type == .BLOCK_BARRIER || new_pos_type == .LEVEL_BLOCK || new_pos_type == .LEVEL_SPAWN || new_pos_type == .LEVEL_GOAL {
         success = true;
-        player_pos = new_pos;
     } else {
         stack : Stack(v2i);
         
@@ -108,10 +108,22 @@ move_player :: (move: v2i) -> success: bool {
                 }
             }
         }
-
     }
 
     if success {
+        // Check for plant
+        if level.grid[player_pos.x][player_pos.y].id == TILE_SEED {
+            plant_tile := level.grid[player_pos.x][player_pos.y];
+            plant_tile.id = TILE_PLANT;
+
+            delta := add_move_delta(*delta_data);
+            delta.coord = .{player_pos.x, player_pos.y};
+            delta.old_value = level.grid[player_pos.x][player_pos.y];
+            delta.new_value = plant_tile;
+
+            level.grid[player_pos.x][player_pos.y] = plant_tile;
+        } 
+
         player_pos = new_pos;
         delta_data.new_player_pos = new_pos;
         delta_data.old_player_flip = player_flip;
