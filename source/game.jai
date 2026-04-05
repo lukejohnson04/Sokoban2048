@@ -46,7 +46,11 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     if input.just_pressed[SDL_SCANCODE_GRAVE] {
         editor.enabled = !editor.enabled;
     }
-
+    if input.just_pressed[SDL_SCANCODE_V] {
+        print("Vfield: %\n", level.level_visibility_field[level.current_level]);
+        level.level_visibility_field[level.current_level] = !level.level_visibility_field[level.current_level];
+    }
+    level.current_level = 110;
 
     if main_menu == false {
         moved_this_turn := false;

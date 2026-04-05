@@ -112,7 +112,7 @@ move_player :: (move: v2i) -> success: bool {
 
     if success {
         // Check for plant
-        if level.grid[player_pos.x][player_pos.y].id == TILE_SEED {
+        if level.floor[player_pos.x][player_pos.y].id == TILE_SEED {
             plant_tile := level.grid[player_pos.x][player_pos.y];
             plant_tile.id = TILE_PLANT;
 
