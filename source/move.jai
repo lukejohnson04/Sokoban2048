@@ -53,7 +53,7 @@ move_player :: (move: v2i) -> success: bool {
         success = false;
     // Player walks into interactable
     } else if new_pos_type == .INTERACTABLE {
-        generate_interaction_queue(*dialogue_state, level.grid[new_pos.x][new_pos.y]);
+        generate_interaction_queue(*dialogue_state, level.grid[new_pos.x][new_pos.y], new_pos);
         apply_turn();
         dialogue_interaction = true;
         new_pos = player_pos;

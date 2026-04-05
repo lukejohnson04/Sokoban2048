@@ -111,6 +111,7 @@ Game_State :: struct {
     game_sprites: Array(Sprite);
     game_lines: Array(Line);
 
+    interaction_object_pos: v2i;
     // ui_memory: UI_Memory;
     menu_open := false;
     main_menu := true;

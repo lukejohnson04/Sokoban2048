@@ -83,7 +83,7 @@ dialogue_update :: (dialogue_state: *Dialogue_Player_State, input: *Input_State)
 }
 
 
-generate_interaction_queue :: (state: *Dialogue_Player_State, block: Block) {
+generate_interaction_queue :: (state: *Dialogue_Player_State, block: Block, block_pos: v2i) {
     using context.game_state;
     assert(get_block_type(block) == .INTERACTABLE);
 
@@ -342,6 +342,7 @@ generate_interaction_queue :: (state: *Dialogue_Player_State, block: Block) {
         addr := *level.dialogue_data.interaction_count[block.id][block.interaction_id];
         queue_dialogue_data_change(addr, addr.* + 1);
         queue_text("");
+        interaction_object_pos = block_pos;
     }
 
     // Ideas

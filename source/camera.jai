@@ -48,6 +48,24 @@ camera_zoom :: (using camera: *Camera2D, zoom_into: Vector2, zoom_factor: float3
     camera.pos += world_before - world_after;
 }
 
+camera_lerp_zoom :: (using camera: *Camera2D, value: float32, step: float32, threshold: float32, camera_width := WINDOW_WIDTH, camera_height := WINDOW_HEIGHT) {
+    if abs(camera.zoom - value) < threshold {
+        camera_set_zoom(camera, value, camera_width, camera_height);
+    } else {
+        camera_set_zoom(camera, lerp(camera.zoom, value, step), camera_width, camera_height);
+    }
+}
+
+camera_set_zoom :: (using camera: *Camera2D, value: float32, camera_width := WINDOW_WIDTH, camera_height := WINDOW_HEIGHT) {
+    screen_half := Vector2.{ camera_width * 0.5, camera_height * 0.5 };
+
+    // world_before := camera.pos + (camera.pos - screen_half) * (1.0 / camera.zoom);
+    camera.zoom = value;
+    world_after := camera.pos + (camera.pos - screen_half) * (1.0 / camera.zoom);
+
+    // camera.pos += world_before - world_after;
+}
+
 get_camera_rect :: (camera: Camera2D, camera_width := WINDOW_WIDTH, camera_height := WINDOW_HEIGHT) -> Rect {
     rect: Rect;
     zoom := 1.0 / camera.zoom;
@@ -86,7 +104,7 @@ get_current_screen_coord :: (level: *Level) -> v2i {
 }
 
 
-lerp_player_camera :: (window: *SDL_Window) {
+lerp_camera :: (window: *SDL_Window, target: Vector2) {
     using context.game_state;
     if editor.enabled == false || editor.editing_level == false {
         if camera_smooth == false {
@@ -94,13 +112,9 @@ lerp_player_camera :: (window: *SDL_Window) {
             camera.pos.x = screen_coord.x * WINDOW_WIDTH + WINDOW_WIDTH * 0.5;
             camera.pos.y = screen_coord.y * WINDOW_HEIGHT + WINDOW_HEIGHT * 0.5;
         } else {
-
             // camera deadzone
             DEADZONE_PERCENT :: 0.065;
-            player_coord : Vector2;
-            player_coord.x = xx (level.player_pos.x * 64);
-            player_coord.y = xx (level.player_pos.y * 64);
-            camera_dest := player_coord + Vector2.{32, 32};
+            camera_dest := target;
             camera_step := 0.01;
             if abs(camera.pos.x - camera_dest.x) > WINDOW_WIDTH * DEADZONE_PERCENT {
                 camera.pos.x = lerp(camera.pos.x, camera_dest.x, camera_step);
@@ -110,23 +124,32 @@ lerp_player_camera :: (window: *SDL_Window) {
             }
         }
 
-    } else if (SDL_GetWindowFlags(window) & SDL_WINDOW_INPUT_FOCUS) != 0 && editor.move_camera_with_mouse {
-        DEBUG_CAMERA_SPEED := 12.0 * (1.0 / camera.zoom);
-        DEADZONE_PERCENT :: 0.05;
-        DEADZONE_WIDTH := WINDOW_WIDTH * DEADZONE_PERCENT;
-        DEADZONE_HEIGHT := WINDOW_HEIGHT * DEADZONE_PERCENT;
+    // Editor camera
+    }
+}
 
-        mouse_pos := get_mouse_position();
-        
-        if mouse_pos.x >= WINDOW_WIDTH - DEADZONE_WIDTH {
-            camera.pos.x += DEBUG_CAMERA_SPEED;
-        } else if mouse_pos.x < DEADZONE_WIDTH {
-            camera.pos.x -= DEBUG_CAMERA_SPEED;
-        }
-        if mouse_pos.y >= WINDOW_HEIGHT - DEADZONE_HEIGHT {
-            camera.pos.y += DEBUG_CAMERA_SPEED;
-        } else if mouse_pos.y < DEADZONE_HEIGHT {
-            camera.pos.y -= DEBUG_CAMERA_SPEED;
-        }
+editor_control_camera :: (window: *SDL_Window) {
+    using context.game_state;
+
+    if (SDL_GetWindowFlags(window) & SDL_WINDOW_INPUT_FOCUS) == 0 || editor.move_camera_with_mouse == false {
+        return;
+    }
+
+    DEBUG_CAMERA_SPEED := 12.0 * (1.0 / camera.zoom);
+    DEADZONE_PERCENT :: 0.05;
+    DEADZONE_WIDTH := WINDOW_WIDTH * DEADZONE_PERCENT;
+    DEADZONE_HEIGHT := WINDOW_HEIGHT * DEADZONE_PERCENT;
+
+    mouse_pos := get_mouse_position();
+    
+    if mouse_pos.x >= WINDOW_WIDTH - DEADZONE_WIDTH {
+        camera.pos.x += DEBUG_CAMERA_SPEED;
+    } else if mouse_pos.x < DEADZONE_WIDTH {
+        camera.pos.x -= DEBUG_CAMERA_SPEED;
+    }
+    if mouse_pos.y >= WINDOW_HEIGHT - DEADZONE_HEIGHT {
+        camera.pos.y += DEBUG_CAMERA_SPEED;
+    } else if mouse_pos.y < DEADZONE_HEIGHT {
+        camera.pos.y -= DEBUG_CAMERA_SPEED;
     }
 }

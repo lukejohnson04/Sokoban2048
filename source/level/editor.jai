@@ -549,6 +549,10 @@ update_editor :: (input: *Input_State) {
                                 return;
                             }
                         }
+                        // Force plant tiles to be on main layer
+                        if blocks == *level.grid && editor.selected_block.id == TILE_SEED {
+                            blocks = *level.floor;
+                        }
                         new_block := editor.selected_block;
                         if input.rmouse_pressed {
                             new_block.flags |= Block.Flag.GOAL;

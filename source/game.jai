@@ -146,6 +146,7 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
         
         if dialogue_state.open {
             dialogue_update(*dialogue_state, input);
+            
         }
 
         if moved_this_turn {
@@ -217,7 +218,23 @@ update_and_render :: (game_memory: *void, input: *Input_State, window: *SDL_Wind
     set_framebuffer(*world_buffer);
     clear_framebuffer(0, 0, 0, 0);
 
-    lerp_player_camera(window);
+    if editor.enabled == false || editor.editing_level == false {
+        print("Camera pos: %\n", camera.pos);
+        player_coord : Vector2;
+        player_coord.x = xx (level.player_pos.x * 64);
+        player_coord.y = xx (level.player_pos.y * 64);
+        target := player_coord + Vector2.{32, 32};
+        if interaction_object_pos != {0, 0} && dialogue_state.open {
+            target = Vector2.{interaction_object_pos.x * 64.0, interaction_object_pos.y * 64.0} + Vector2.{32, 32};
+            lerp_camera(window, target);
+            camera_lerp_zoom(*camera, 2.0, 0.02, 0.01);
+        } else {
+            lerp_camera(window, target);
+            camera_lerp_zoom(*camera, 1.0, 0.02, 0.01);
+        }
+    } else {
+        editor_control_camera(window);
+    }
 
     view := camera_view_matrix(camera);
     projection := orthographic_projection_matrix(0, WINDOW_WIDTH, WINDOW_HEIGHT, 0, -1, 1);
