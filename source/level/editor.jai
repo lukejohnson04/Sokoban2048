@@ -57,9 +57,10 @@ Editor_State :: struct {
     // For rotating or other random junk
     temp_buffer : [EDITOR_MAX_COPY_SIZE][EDITOR_MAX_COPY_SIZE] Block;
     change_stack : Stack_Circular(Move_Delta, 100000);
+    redo_stack : Stack_Circular(Move_Delta, 100000);
     action_stack : Stack_Circular(Editor_Action, 1000);
+    redo_action_stack : Stack_Circular(Editor_Action, 1000);
     current_action : Editor_Action;
-
 
     Editor_Tool :: enum {
         BRUSH;
@@ -504,10 +505,19 @@ update_editor :: (input: *Input_State) {
         camera_zoom(*camera, get_mouse_position(), zoom_factor);
     }
 
-    if (input.is_pressed[SDL_SCANCODE_LCTRL] && input.just_pressed[SDL_SCANCODE_Z]) || (input.is_pressed[SDL_SCANCODE_Z] && input.just_pressed[SDL_SCANCODE_LCTRL]) {
-        // Undo
-        undo_action();
-        return;
+    // Undo
+    if editor.action_stack.count > 0 {
+        if (input.is_pressed[SDL_SCANCODE_LCTRL] && input.just_pressed[SDL_SCANCODE_Z]) || (input.is_pressed[SDL_SCANCODE_Z] && input.just_pressed[SDL_SCANCODE_LCTRL]) {
+            undo_action();
+            return;
+        }
+    }
+    // Redo
+    if editor.redo_action_stack.count > 0 {
+        if (input.is_pressed[SDL_SCANCODE_LCTRL] && input.just_pressed[SDL_SCANCODE_Y]) || (input.is_pressed[SDL_SCANCODE_Y] && input.just_pressed[SDL_SCANCODE_LCTRL]) {
+            redo_action();
+            return;
+        }
     }
 
     blocks : *type_of(Level.grid);
@@ -555,9 +565,9 @@ update_editor :: (input: *Input_State) {
             }
         }
         case .FILL; {
-            if input.mouse_pressed || input.rmouse_pressed || input.mwheel_pressed {
+            if input.mouse_just_pressed {
                 if is_in_bounds(mouse_tile, *level) {
-                    paint_fill(*level, *editor, mouse_tile, editor.selected_block);                    
+                    paint_fill(*level, *editor, mouse_tile, editor.selected_block);
                 }
             }
         }
@@ -598,8 +608,13 @@ update_editor :: (input: *Input_State) {
                     if input.mouse_just_released {
                         editor.move_state = .NOT_STARTED;
                         // Move all the tiles
-                        move_tiles(*level.grid, editor.move_end - editor.move_start);
-                        move_tiles(*level.floor, editor.move_end - editor.move_start);
+                        // old_layer := editor.layer;
+                        // editor.layer = 0;
+                        move_tiles(editor.move_end - editor.move_start);
+                        // editor.layer = 1;
+                        // move_tiles(editor.move_end - editor.move_start);
+                        // editor.layer = old_layer;
+
                         editor.select_start += editor.move_end - editor.move_start;
                         editor.select_end += editor.move_end - editor.move_start;
                     }
@@ -768,8 +783,13 @@ HSV :: (h: float, s: float, v: float, a: float = 1.0) -> Vector4 {
     return .{r, g, b, a};
 }
 
-move_tiles :: (blocks: *type_of(Level.grid), offset: v2i) {
+move_tiles :: (offset: v2i) {
     using context.game_state;
+ 
+    start_action();
+
+    blocks := get_current_layer(*editor, *level);
+
     start, end : v2i;
     start.x = min(editor.select_end.x, editor.select_start.x);
     start.y = min(editor.select_end.y, editor.select_start.y);
@@ -782,7 +802,7 @@ move_tiles :: (blocks: *type_of(Level.grid), offset: v2i) {
     for x: 0..selection_size.x-1 {
         for y: 0..selection_size.y-1 {
             memory[x + y * selection_size.x] = blocks.*[start.x + x][start.y + y];
-            blocks.*[start.x + x][start.y + y] = .{};
+            change_block(*blocks.*[start.x + x][start.y + y], {}, {start.x + x, start.y + y});
         }
     }
 
@@ -791,10 +811,13 @@ move_tiles :: (blocks: *type_of(Level.grid), offset: v2i) {
             copied_block := memory[x + y * selection_size.x];
             block_ptr := *blocks.*[start.x + x + offset.x][start.y + y + offset.y];
             if copied_block != .{} {
-                block_ptr.* = copied_block;
+                change_block(block_ptr, copied_block, {start.x + x + offset.x, start.y + y + offset.y});
             }
         }
     }
+    end_action();
+
+
     level_mesh_needs_update = true;
 }
 
@@ -933,13 +956,6 @@ get_current_layer :: (editor: *Editor_State, level: *Level) -> *type_of(Level.gr
     return blocks;
 }
 
-start_action :: () {
-    using context.game_state;
-    editor.current_action = {};
-    editor.current_action.layer = editor.layer;
-    editor.current_action.old_player_spawn_pos = level.player_spawn_pos;
-    editor.current_action.new_player_spawn_pos = level.player_spawn_pos;
-}
 
 
 change_player_spawn :: (pos: v2i) {
@@ -961,6 +977,17 @@ change_block :: (block: *Block, value: Block, coord: v2i) {
     editor.current_action.change_count += 1;
 }
 
+start_action :: () {
+    using context.game_state;
+    editor.current_action = {};
+    editor.current_action.layer = editor.layer;
+    editor.current_action.old_player_spawn_pos = level.player_spawn_pos;
+    editor.current_action.new_player_spawn_pos = level.player_spawn_pos;
+
+    editor.redo_stack.count = 0;
+    editor.redo_action_stack.count = 0;
+}
+
 end_action :: () {
     using context.game_state;
     stack_push(*editor.action_stack, editor.current_action);
@@ -970,17 +997,41 @@ end_action :: () {
 undo_action :: () {
     using context.game_state;
     assert(editor.action_stack.count > 0);
+    print("% actions\n", editor.action_stack.count);
     action := stack_pop(*editor.action_stack);
+    stack_push(*editor.redo_action_stack, action);
 
     editor.layer = action.layer;
     blocks := get_current_layer(*editor, *level);
+    print("Undoing % blocks affected\n", action.change_count);
     for 0..action.change_count-1 {
         delta := stack_pop(*editor.change_stack);
+        stack_push(*editor.redo_stack, delta);
         blocks.*[delta.coord.x][delta.coord.y] = delta.old_value;
     }
     level_mesh_needs_update = true;
 
     level.player_spawn_pos = action.old_player_spawn_pos;
+}
+
+redo_action :: () {
+    using context.game_state;
+    assert(editor.redo_stack.count > 0);
+    action := stack_pop(*editor.redo_action_stack);
+    stack_push(*editor.action_stack, action);
+
+    editor.layer = action.layer;
+    blocks := get_current_layer(*editor, *level);
+
+    print("Undoing % blocks affected\n", action.change_count);
+    for 0..action.change_count-1 {
+        delta := stack_pop(*editor.redo_stack);
+        stack_push(*editor.change_stack, delta);
+        blocks.*[delta.coord.x][delta.coord.y] = delta.new_value;
+    }
+    level_mesh_needs_update = true;
+
+    level.player_spawn_pos = action.new_player_spawn_pos;
 }
 
 
@@ -1041,8 +1092,7 @@ paint_fill :: (level: *Level, editor: *Editor_State, start_pos: v2i, start_block
     for x: 0..level.dimensions.x-1 {
         for y: 0..level.dimensions.y-1 {
             if field.*[x][y].visible {
-                // change_block(*blocks.*[x][y], start_block);
-                blocks.*[x][y] = start_block;
+                change_block(*blocks.*[x][y], start_block, {x, y});
             }
         }
     }
