@@ -823,6 +823,8 @@ move_tiles :: (offset: v2i) {
 
 flip_tiles :: (blocks: *type_of(Level.grid), flip_x: bool, flip_y: bool) {
     using context.game_state;
+    start_action();
+
     start, end : v2i;
     start.x = min(editor.select_end.x, editor.select_start.x);
     start.y = min(editor.select_end.y, editor.select_start.y);
@@ -834,16 +836,22 @@ flip_tiles :: (blocks: *type_of(Level.grid), flip_x: bool, flip_y: bool) {
     for x: 0..ifx flip_x selection_size.x/2 else selection_size.x {
         for y: 0..ifx flip_y selection_size.y/2 else selection_size.y {
             temp_block := blocks.*[start.x + x][start.y + y];
-            end_block := *blocks.*[ifx flip_x end.x - x else start.x + x][ifx flip_y end.y - y else start.y + y];
-            blocks.*[start.x + x][start.y + y] = end_block.*;
-            end_block.* = temp_block;
+            end_block_coord := v2i.{ifx flip_x end.x - x else start.x + x, ifx flip_y end.y - y else start.y + y};
+            end_block := *blocks.*[end_block_coord.x][end_block_coord.y];
+
+            change_block(*blocks.*[start.x + x][start.y + y], end_block.*, {start.x + x, start.y + y});
+            change_block(end_block, temp_block, end_block_coord);
         }
     }
     level_mesh_needs_update = true;
+    end_action();
 }
 
 rotate_tiles :: (blocks: *type_of(Level.grid), $clockwise: bool) {
     using context.game_state;
+
+    start_action();
+
     start, end : v2i;
     start.x = min(editor.select_end.x, editor.select_start.x);
     start.y = min(editor.select_end.y, editor.select_start.y);
@@ -854,7 +862,7 @@ rotate_tiles :: (blocks: *type_of(Level.grid), $clockwise: bool) {
     for x: 0..selection_size.x-1 {
         for y: 0..selection_size.y-1 {
             editor.temp_buffer[x][y] = blocks.*[start.x + x][start.y + y];
-            blocks.*[start.x + x][start.y + y] = BLOCK_NONE;
+            change_block(*blocks.*[start.x + x][start.y + y], BLOCK_NONE, {start.x + x, start.y + y});
         }
     }
 
@@ -867,12 +875,15 @@ rotate_tiles :: (blocks: *type_of(Level.grid), $clockwise: bool) {
                 dest_x := start.x + selection_size.y - 1 - src_y;
                 dest_y := start.y + src_x;
             }
-            blocks.*[dest_x][dest_y] = editor.temp_buffer[src_x][src_y];
+            change_block(*blocks.*[dest_x][dest_y], editor.temp_buffer[src_x][src_y], {dest_x, dest_y});
         }
     }
 
     editor.select_end.x = editor.select_start.x + selection_size.y - 1;
     editor.select_end.y = editor.select_start.y + selection_size.x - 1;
+
+    end_action();
+
     level_mesh_needs_update = true;
 }
 
@@ -934,15 +945,19 @@ copy_tiles :: (blocks: *type_of(Level.grid), copy_buffer: *type_of(Editor_State.
 
 stamp_tiles :: (blocks: *type_of(Level.grid), copy_buffer: *type_of(Editor_State.copy_buffer)) {
     using context.game_state;
+    start_action();
+    
     start, end : v2i;
     start = editor.mouse_tile;
     end = start + editor.copy_size;
     
     for x: 0..editor.copy_size.x-1 {
         for y: 0..editor.copy_size.y-1 {
-            blocks.*[start.x + x][start.y + y] = copy_buffer.*[x][y];
+            change_block(*blocks.*[start.x + x][start.y + y], copy_buffer.*[x][y], {start.x + x, start.y + y});
         }
     }
+
+    end_action();
     level_mesh_needs_update = true;
 }
 
