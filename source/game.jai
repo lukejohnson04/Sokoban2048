@@ -737,9 +737,6 @@ SCREEN_TILE_SIZE :: v2i.{SCREEN_TILE_WIDTH, SCREEN_TILE_HEIGHT};
 VSYNC :: true;
 FPS_MAX : float64 : 60.0;
 
-#load "render/render.jai";
-#load "render/text.jai";
-#load "render/shader.jai";
 #load "camera.jai";
 #load "intrinsics.jai";
 #load "game_state.jai";
@@ -770,9 +767,9 @@ Sort :: #import "Sort";
 #load "move.jai";
 #load "block.jai";
 #load "level/level.jai";
-#load "audio/audio.jai";
 #load "dialogue.jai";
-#load "assets/assets.jai";
 #load "light.jai";
 #load "map.jai";
 #load "tween.jai";
+
+#load "engine/engine.jai";

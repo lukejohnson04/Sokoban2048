@@ -275,6 +275,5 @@ unlock_all_levels :: (level: *Level) {
 MAX_LEVEL_NAME_LENGTH :: 16;
 
 #load "level_serializer.jai";
-#load "editor.jai";
 #load "visibility_field.jai";
 #load "generate_level_mesh.jai";

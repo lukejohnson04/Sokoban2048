@@ -491,3 +491,5 @@ load_texture_for_framebuffer :: (texture: *Resource(Texture), width: s32, height
 }
 
 #load "mesh.jai";
+#load "shader.jai";
+#load "text.jai";
