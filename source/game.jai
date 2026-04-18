@@ -737,11 +737,7 @@ SCREEN_TILE_SIZE :: v2i.{SCREEN_TILE_WIDTH, SCREEN_TILE_HEIGHT};
 VSYNC :: true;
 FPS_MAX : float64 : 60.0;
 
-#load "camera.jai";
-#load "intrinsics.jai";
 #load "game_state.jai";
-#load "controls.jai";
-#load "particles.jai";
 
 #import "Windows";
 #import "Basic";
@@ -761,15 +757,11 @@ Random :: #import "Random";
 Sort :: #import "Sort";
 #import "Remap_Context"(VERBOSE = false);
 
-#load "imgui.jai";
-#load "math.jai";
-#load "input.jai";
+#load "controls.jai";
+#load "engine/imgui.jai";
 #load "move.jai";
 #load "block.jai";
 #load "level/level.jai";
-#load "dialogue.jai";
-#load "light.jai";
 #load "map.jai";
-#load "tween.jai";
 
 #load "engine/engine.jai";

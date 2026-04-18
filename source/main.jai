@@ -140,7 +140,7 @@ VSYNC :: true;
 #import "File";
 #import "stb_image";
 
-#load "math.jai";
-#load "input.jai";
-#load "imgui.jai";
-#load "win32/code_reload.jai";
+#load "engine/math.jai";
+#load "engine/imgui.jai";
+#load "engine/win32/code_reload.jai";
+#load "engine/input.jai";
